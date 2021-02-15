@@ -1,5 +1,8 @@
 #include "Engine.hpp"
 
+#include <fstream>
+#include <filesystem>
+
 namespace karapo {
 	ProgramInterface Default_ProgramInterface = {
 		.DrawLine = [](int x1, int y1, int x2, int y2, Color c) { GetProgram()->engine.DrawLine(x1, y1, x2, y2, c); },
@@ -24,7 +27,16 @@ namespace karapo {
 	}
 
 	int Program::Main() {
-		event_manager.LoadEvent(L"main");
+		try {
+			// DLLフォルダ内のDLLを全て読み込む。
+			for (const auto& dll_dir : std::filesystem::directory_iterator(L"DLL")) {
+				auto& path = dll_dir.path();
+				if (In(path.c_str(), L".dll"))
+					dll_manager.Load(path);
+			}
+		} catch (std::filesystem::filesystem_error& error) {
+			MessageBoxA(nullptr, error.what(), "エラー", MB_OK | MB_ICONERROR);
+		}
 
 		while (UpdateMessage() == 0) {
 			engine.ClearScreen();
