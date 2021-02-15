@@ -8,9 +8,9 @@
 #include <future>
 #include <forward_list>
 
-namespace karapo::entity {
-	Entity::~Entity() {}
+karapo::Entity::~Entity(){}
 
+namespace karapo::entity {
 	void Manager::Update() noexcept {
 		for (auto& group : entities) {
 			std::thread th(&DefaultChunk::Update, &group);

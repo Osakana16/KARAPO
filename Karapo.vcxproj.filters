@@ -39,6 +39,9 @@
     <ClCompile Include="src\util.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\kapi.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Animation.hpp">
@@ -59,25 +62,19 @@
     <ClInclude Include="src\Phase.hpp">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="src\Resource.hpp">
-      <Filter>src</Filter>
-    </ClInclude>
     <ClInclude Include="src\stdafx.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="src\types.hpp">
-      <Filter>src</Filter>
-    </ClInclude>
     <ClInclude Include="src\Util.hpp">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Vector.hpp">
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\Entity.hpp">
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\Chunk.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\kapi.hpp">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>

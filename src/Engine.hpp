@@ -16,9 +16,21 @@ namespace karapo {
 
 	namespace dll {
 		class Manager {
-			std::unordered_map<String, HMODULE> dlls;
+			struct DLL {
+				using Initializer = void(WINAPI*)(ProgramInterface);
+				using LoopableMain = bool(WINAPI*)();
+
+				HMODULE mod;
+				Initializer Init;
+				LoopableMain Update;
+			};
+
+			std::unordered_map<String, DLL> dlls;
+			void Attach(const String&);
 		public:
-			void Attach(const String&), Detach(const String&);
+			void Detach(const String&);
+			void Load(const String&);
+			void Update();
 			HMODULE Get(const String&) noexcept;
 		};
 	}

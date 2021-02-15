@@ -10,7 +10,7 @@ namespace karapo {
 
 	class ImageLayer : public Layer {
 	protected:
-		Array<SmartPtr<entity::Entity>> drawing;
+		Array<SmartPtr<Entity>> drawing;
 	public:
 		ImageLayer() : Layer() {}
 		virtual void Execute() override {
@@ -22,14 +22,14 @@ namespace karapo {
 			p->engine.DrawRect(Rect{ 0, 0, 0, 0 }, Screen);
 		}
 
-		void Register(SmartPtr<entity::Entity> d) {
+		void Register(SmartPtr<Entity> d) {
 			if (IsRegistered(d))
 				return;
 
 			drawing.push_back(d);
 		}
 
-		bool IsRegistered(SmartPtr<entity::Entity> d) const noexcept {
+		bool IsRegistered(SmartPtr<Entity> d) const noexcept {
 			return std::find(drawing.begin(), drawing.end(), d) != drawing.end();
 		}
 
@@ -44,9 +44,9 @@ namespace karapo {
 	*/
 	class RelativeLayer : public ImageLayer {
 	private:
-		SmartPtr<entity::Entity> base;
+		SmartPtr<Entity> base;
 	public:
-		inline RelativeLayer(SmartPtr<entity::Entity> b) : ImageLayer() {
+		inline RelativeLayer(SmartPtr<Entity> b) : ImageLayer() {
 			base = b;
 		}
 
@@ -59,7 +59,7 @@ namespace karapo {
 			const ScreenVector Screen_Size { p->Width, p->Height };
 			const auto Draw_Origin = Screen_Size / 2;
 			auto base_origin = base->Origin();
-			std::queue<SmartPtr<entity::Entity>> dead;
+			std::queue<SmartPtr<Entity>> dead;
 			for (auto drawer : drawing) {
 				if (drawer->CanDelete()) {
 					dead.push(drawer);
@@ -86,7 +86,7 @@ namespace karapo {
 		void Draw() override {
 			auto p = GetProgram();
 	
-			std::queue<SmartPtr<entity::Entity>> dead;
+			std::queue<SmartPtr<Entity>> dead;
 			for (auto drawer : drawing) {
 				if (drawer->CanDelete()) {
 					dead.push(drawer);
@@ -104,7 +104,7 @@ namespace karapo {
 
 namespace karapo {
 	namespace {
-		karapo::RelativeLayer* MakeRelativeLayer(karapo::SmartPtr<entity::Entity> e) {
+		karapo::RelativeLayer* MakeRelativeLayer(karapo::SmartPtr<Entity> e) {
 			return new karapo::RelativeLayer(e);
 		}
 
@@ -131,7 +131,7 @@ namespace karapo {
 		AddLayer(static_cast<ImageLayer*>(layer));
 	}
 
-	void Canvas::Register(SmartPtr<entity::Entity> d, const int Index) {
+	void Canvas::Register(SmartPtr<Entity> d, const int Index) {
 		layers[Index]->Register(d);
 	}
 
@@ -140,7 +140,7 @@ namespace karapo {
 		layers.erase(std::find(layers.begin(), layers.end(), layers[Index]));
 	}
 
-	RelativeLayer *Canvas::MakeLayer(SmartPtr<entity::Entity> e) {
+	RelativeLayer *Canvas::MakeLayer(SmartPtr<Entity> e) {
 		return MakeRelativeLayer(e);
 	}
 

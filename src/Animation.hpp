@@ -1,5 +1,4 @@
 #pragma once
-#include "Resource.hpp"
 
 namespace karapo {
 	using SImage = std::shared_ptr<resource::Image>;

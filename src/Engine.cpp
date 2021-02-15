@@ -141,30 +141,6 @@ namespace karapo {
 		return ProcessMessage();
 	}
 
-	namespace resource {
-		ResourceType::operator Resource() const noexcept {
-			return resource;
-		}
-
-		void Image::Load(const String& Path) {
-			path = Path;
-			Reload();
-		}
-
-		void Image::Reload() {
-			resource = GetProgram()->engine.LoadImage(path);
-		}
-
-		void Sound::Load(const String& Path) {
-			path = Path;
-			Reload();
-		}
-
-		void Sound::Reload() {
-			resource = GetProgram()->engine.LoadSound(path);
-		}
-	}
-
 	namespace key {
 		const Key
 			F1 = (Key)KEY_INPUT_F1,

@@ -15,7 +15,7 @@ namespace karapo::event {
 		class EntityCommand : public Command {
 			String entity_name;
 		protected:
-			SmartPtr<karapo::entity::Entity> GetEntity() const noexcept {
+			SmartPtr<karapo::Entity> GetEntity() const noexcept {
 				return GetProgram()->entity_manager.GetEntity(entity_name.c_str());
 			}
 		};
@@ -328,7 +328,7 @@ namespace karapo::event {
 			inline Attach(const String& dname) : DLL(dname) {}
 			
 			void Execute() final {
-				GetProgram()->dll_manager.Attach(dll_name);
+				GetProgram()->dll_manager.Load(dll_name);
 			}
 		};
 

@@ -3,17 +3,13 @@
 
 #include <initializer_list>
 #include <utility>
-#include <functional>
-#include <string>
 #include <concepts>
-#include <memory>
 #include <random>
 
 #include <type_traits>
 #include <vector>
 #include <deque>
 #include <unordered_map>
-#include <valarray>
 #include <any>
 
 #include <cstdint>
@@ -24,9 +20,7 @@
 #undef min
 #undef max
 
+#include "kapi.hpp"
 #include "Util.hpp"
-#include "types.hpp"
-#include "Resource.hpp"
-#include "Vector.hpp"
 #include "Entity.hpp"
 #include "Event.hpp"

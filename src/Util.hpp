@@ -1,6 +1,4 @@
 ﻿#pragma once
-
-
 #define MYGAME_STRING(T) karapo::String(LT))
 
 #ifndef NDEBUG
@@ -13,6 +11,8 @@
 #define MYGAME_DELETE(PTR) delete PTR; PTR = nullptr
 
 namespace karapo {
+	extern ProgramInterface Default_ProgramInterface;
+
 	using wchar = wchar_t;
 	using char8 = char8_t;
 	using char16 = char16_t;
@@ -27,25 +27,6 @@ namespace karapo {
 	using uint16 = std::uint16_t;
 	using uint32 = std::uint32_t;
 	using uint64 = std::uint64_t;
-
-	using Char = wchar;				// 文字および文字列のポインタ
-	using String = std::wstring;	// 文字列
-
-	template<typename T>
-	using SmartPtr = std::shared_ptr<T>;
-
-	using Rect = RECT;
-	using Point = POINT;
-
-	struct Color {
-		int r, g, b;
-	};
-
-	// 浮動小数点数
-	using Dec = double;
-	// 頻繁に使用するSTL系配列
-	template<typename T>
-	using Array = std::vector<T>;
 
 	// 乱数関数
 	template<typename T>

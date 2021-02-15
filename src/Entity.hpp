@@ -5,28 +5,6 @@
 #include "Chunk.hpp"
 
 namespace karapo::entity {
-	// ゲームのキャラクターやオブジェクトの元となるクラス。
-	class Entity {
-	public:
-		virtual ~Entity() = 0;
-
-		// Entity実行関数
-		virtual int Main() = 0;
-		// 自身の位置
-		virtual WorldVector Origin() const noexcept = 0;
-		// 自身の名前
-		virtual const Char* Name() const noexcept = 0;
-
-		// 自身が削除できる状態にあるかを返す。
-		virtual bool CanDelete() const noexcept = 0;
-		// 自身を削除できる状態にする。
-		virtual void Delete() = 0;
-		// 描写する。
-		virtual void Draw(WorldVector, TargetRender) = 0;
-		// 指定した座標へテレポートする。
-		virtual void Teleport(WorldVector) = 0;
-	};
-
 	class Object : public Entity {
 	protected:
 		WorldVector origin;
@@ -37,7 +15,7 @@ namespace karapo::entity {
 
 	// 画像Entityクラス
 	class Image : public Object {
-		resource::Image image;
+		resource::Image image = resource::Image(&Default_ProgramInterface);
 		bool can_delete = false;
 	public:
 		inline Image(WorldVector WV) { origin = WV; }
@@ -51,7 +29,7 @@ namespace karapo::entity {
 
 	// 音Entityクラス
 	class Sound : public Object {
-		resource::Sound sound;
+		resource::Sound sound = resource::Sound(&Default_ProgramInterface);
 		bool can_delete = false;
 	public:
 		inline Sound(WorldVector WV) { origin = WV; }
@@ -71,7 +49,6 @@ namespace karapo::entity {
 	// Entityを管理するクラス。
 	class Manager {
 		std::vector<DefaultChunk> entities;
-		SmartPtr<Entity> SpawnCreature(const String&);
 	public:
 		// Entityを更新する。
 		void Update() noexcept;
