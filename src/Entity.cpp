@@ -8,8 +8,6 @@
 #include <future>
 #include <forward_list>
 
-karapo::Entity::~Entity(){}
-
 namespace karapo::entity {
 	void Manager::Update() noexcept {
 		for (auto& group : entities) {
