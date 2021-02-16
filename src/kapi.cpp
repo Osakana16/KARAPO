@@ -1,6 +1,7 @@
 #include "kapi.hpp"
 namespace karapo {
 	Entity::~Entity() {}
+	event::Command::~Command() {}
 
 	namespace resource {
 		Image::Image(ProgramInterface* pi) {

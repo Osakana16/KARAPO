@@ -4,23 +4,6 @@
 #pragma once
 
 namespace karapo::event {
-	namespace command {
-		class Command {
-		public:
-			virtual ~Command() = 0;
-
-			// コマンドを実行する。
-			virtual void Execute() = 0;
-
-			// 実行し終えたかどうか。
-			virtual bool Executed() const noexcept = 0;
-
-			// コマンドが不要になったかどうかを表す。
-			// trueを返す場合、再実行してはいけない事を意味する。
-			virtual bool IsUnnecessary() const noexcept = 0;
-		};
-	}
-
 	// イベント発生タイプ
 	enum class TriggerType {
 		None,					// 何もしない(call用)
@@ -29,8 +12,6 @@ namespace karapo::event {
 		Trigger,				// 触れている間に実行
 		Button					// 決定キー
 	};
-
-	using CommandPtr = std::unique_ptr<command::Command>;
 
 	// イベント
 	struct Event {

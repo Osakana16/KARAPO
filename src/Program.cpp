@@ -91,6 +91,7 @@ namespace karapo {
 			auto& dll = dlls.at(Path);
 			dll.Init = reinterpret_cast<DLL::Initializer>(GetProcAddress(dll.mod, "KarapoDLLInit"));
 			dll.Update = reinterpret_cast<DLL::LoopableMain>(GetProcAddress(dll.mod, "KarapoUpdate"));
+			dll.RegisterExternalCommand = reinterpret_cast<DLL::EventRegister>(GetProcAddress(dll.mod, "RegisterCommand"));
 			
 			dll.Init(Default_ProgramInterface);
 		}
@@ -107,6 +108,12 @@ namespace karapo {
 				auto path = detach_lists.front();
 				Detach(path);
 				detach_lists.pop();
+			}
+		}
+
+		void Manager::RegisterExternalCommand(std::unordered_map<String, event::GenerateFunc>* words) {
+			for (auto& dll : dlls) {
+				dll.second.RegisterExternalCommand(words);
 			}
 		}
 

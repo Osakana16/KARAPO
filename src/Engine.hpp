@@ -19,10 +19,12 @@ namespace karapo {
 			struct DLL {
 				using Initializer = void(WINAPI*)(ProgramInterface);
 				using LoopableMain = bool(WINAPI*)();
+				using EventRegister = void(WINAPI*)(std::unordered_map<String, event::GenerateFunc>*);
 
 				HMODULE mod;
 				Initializer Init;
 				LoopableMain Update;
+				EventRegister RegisterExternalCommand;
 			};
 
 			std::unordered_map<String, DLL> dlls;
@@ -31,6 +33,7 @@ namespace karapo {
 			void Detach(const String&);
 			void Load(const String&);
 			void Update();
+			void RegisterExternalCommand(std::unordered_map<String, event::GenerateFunc>*);
 			HMODULE Get(const String&) noexcept;
 		};
 	}
