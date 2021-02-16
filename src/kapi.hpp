@@ -108,6 +108,43 @@ namespace karapo {
 		virtual void Teleport(WorldVector) = 0;
 	};
 
+	namespace event {
+		// イベント用コマンド
+		class Command {
+		public:
+			virtual ~Command() = 0;
+
+			// コマンドを実行する。
+			virtual void Execute() = 0;
+
+			// 実行し終えたかどうか。
+			virtual bool Executed() const noexcept = 0;
+
+			// コマンドが不要になったかどうかを表す。
+			// trueを返す場合、再実行してはいけない事を意味する。
+			virtual bool IsUnnecessary() const noexcept = 0;
+		};
+
+		using CommandPtr = std::unique_ptr<Command>;
+
+		// コマンドの情報
+		struct KeywordInfo final {
+			// 生成したコマンドを返す。
+			std::function<CommandPtr()> Result = []() -> CommandPtr { return nullptr; };
+
+			// 引数の数が十分であるか否かを返す。
+			std::function<bool()> isEnough = []() -> bool { return false; };
+
+			// コマンドが解析中に実行されるか否かどうか。
+			bool is_static = false;
+
+			// コマンドがイベント実行中に実行されるか否かどうか。
+			bool is_dynamic = false;
+		};
+
+		using GenerateFunc = std::function<KeywordInfo(const Array<String>&)>;
+	}
+
 	enum class PlayType {
 		Normal = 1,
 		Loop = 3

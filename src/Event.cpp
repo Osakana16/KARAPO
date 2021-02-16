@@ -9,8 +9,6 @@
 
 namespace karapo::event {
 	namespace command {
-		Command::~Command() {}
-
 		// Entity操作系コマンド
 		class EntityCommand : public Command {
 			String entity_name;
@@ -690,29 +688,12 @@ namespace karapo::event {
 			// コマンド解析クラス
 			// 単語に基づくコマンドの生成と、それの結果を排出する。
 			class CommandParser final : public SubParser<L'{', L'}'> {
-				// コマンドの情報
-				struct KeywordInfo final {
-					// 生成したコマンドを返す。
-					std::function<CommandPtr()> Result = []() -> CommandPtr { MYGAME_ASSERT(0); return nullptr; };
-
-					// 引数の数が十分であるか否かを返す。
-					std::function<bool()> isEnough = []() -> bool { MYGAME_ASSERT(0); return false; };
-
-					// コマンドが解析中に実行されるか否かどうか。
-					bool is_static = false;
-
-					// コマンドがイベント実行中に実行されるか否かどうか。
-					bool is_dynamic = false;
-				};
-				
-				using FUNC = std::function<KeywordInfo(const Array<String>&)>;
-				
 				// 予約語
-				std::unordered_map<String, FUNC> words;
+				std::unordered_map<String, GenerateFunc> words;
 
 				Array<String> parameters;	// 引数
 				Event::Commands commands;	// 
-				FUNC liketoRun;				// 生成関数を実行するための関数ポインタ。
+				GenerateFunc liketoRun;				// 生成関数を実行するための関数ポインタ。
 				bool is_string = false;
 				bool is_newvar = false;
 
@@ -792,6 +773,8 @@ namespace karapo::event {
 
 					// ヒットさせる単語を登録する。
 	
+					GetProgram()->dll_manager.RegisterExternalCommand(&words);
+
 					words[L"music"] =
 						words[L"音楽"] =
 						words[L"BGM"] = [](const Array<String>& params) -> KeywordInfo
