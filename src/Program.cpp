@@ -30,14 +30,14 @@ namespace karapo {
 
 	int Program::Main() {
 		try {
-			// DLLフォルダ内のDLLを全て読み込む。
+			// DLL?t?H???_???DLL??S???????B
 			for (const auto& dll_dir : std::filesystem::directory_iterator(L"DLL")) {
 				auto& path = dll_dir.path();
 				if (In(path.c_str(), L".dll"))
 					dll_manager.Load(path);
 			}
 		} catch (std::filesystem::filesystem_error& error) {
-			MessageBoxA(nullptr, error.what(), "エラー", MB_OK | MB_ICONERROR);
+			MessageBoxA(nullptr, error.what(), "?G???[", MB_OK | MB_ICONERROR);
 		}
 
 		while (UpdateMessage() == 0) {
@@ -57,7 +57,7 @@ namespace karapo {
 	}
 
 	void Program::Frame() {
-		static std::chrono::system_clock::time_point frame_start_time;        // 60ＦＰＳ固定用、時間保存用変数
+		static std::chrono::system_clock::time_point frame_start_time;        // 60?e?o?r???p?A???????p???
 		frame_start_time = GetTime();
 		while ((GetTime() - frame_start_time).count() < 1000 / 120) {}
 		frame_start_time = GetTime();
