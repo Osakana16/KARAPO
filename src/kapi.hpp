@@ -34,21 +34,24 @@ namespace karapo {
 		protected:
 			Resource resource = Resource::Invalid;
 			String path;
+			ProgramInterface* pi;
 		public:
 			const String& Path = path;
 			std::function<void()> Reload;
-			inline auto Load(const String& P) { path = P; Reload(); }
+
+			ResourceType(ProgramInterface*);
+			void Load(const String&);
 		};
 
 		class Image : public ResourceType {
 		public:
 			using Length = int;
-			Image(ProgramInterface*);
+			using ResourceType::ResourceType;
 		};
 
 		class Sound : public ResourceType {
 		public:
-			Sound(ProgramInterface*);
+			using ResourceType::ResourceType;
 		};
 
 		class Video : public Image {

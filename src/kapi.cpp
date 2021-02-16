@@ -4,12 +4,16 @@ namespace karapo {
 	event::Command::~Command() {}
 
 	namespace resource {
-		Image::Image(ProgramInterface* pi) {
-			Reload = [&]() { resource = pi->LoadImage(Path); };
+		ResourceType::ResourceType(ProgramInterface* p) {
+			pi = p;
 		}
 
-		Sound::Sound(ProgramInterface* pi) {
-			Reload = [&]() { resource = pi->LoadSound(Path); };
+		void ResourceType::Load(const String& P) {
+			path = P;
+			if (Reload == nullptr) {
+				Reload = [&]() { resource = pi->LoadImage(Path); };
+			}
+			Reload();
 		}
 	}
 }

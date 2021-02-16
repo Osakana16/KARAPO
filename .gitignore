@@ -341,3 +341,4 @@ healthchecksdb
 
 # Ignore lib files
 lib/
+/DLL
