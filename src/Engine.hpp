@@ -66,7 +66,6 @@ namespace karapo {
 			void ClearScreen(), FlipScreen();
 		};
 
-		int width, height;
 		HWND handler;
 
 		int UpdateMessage();
@@ -74,6 +73,8 @@ namespace karapo {
 	public:
 		Program();
 		int Main();
+		HWND MainHandler() const noexcept;
+		std::pair<int, int> WindowSize() const noexcept;
 
 		std::chrono::system_clock::time_point GetTime();
 
@@ -83,7 +84,6 @@ namespace karapo {
 		entity::Manager entity_manager;
 		dll::Manager dll_manager;
 		variable::Manager var_manager;
-		const int& Width = width, &Height = height;
 	};
 
 	karapo::Program* GetProgram();

@@ -117,7 +117,7 @@ namespace karapo {
 	}
 
 	TargetRender Program::Engine::MakeScreen() {
-		auto raw_screen = DxLib::MakeScreen(GetProgram()->Width, GetProgram()->Height);
+		auto raw_screen = DxLib::MakeScreen(GetProgram()->WindowSize().first, GetProgram()->WindowSize().second);
 		auto screen = static_cast<TargetRender>(raw_screen);
 		if (raw_screen > -1)
 			screens.push_back(screen);
@@ -139,6 +139,12 @@ namespace karapo {
 
 	int Program::UpdateMessage() {
 		return ProcessMessage();
+	}
+
+	std::pair<int, int> Program::WindowSize() const noexcept {
+		int w, h;
+		DxLib::GetWindowSize(&w, &h);
+		return { w, h };
 	}
 
 	namespace key {

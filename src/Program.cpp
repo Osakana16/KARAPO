@@ -5,6 +5,8 @@
 
 namespace karapo {
 	ProgramInterface Default_ProgramInterface = {
+		.GetHandler = []() -> HWND { return GetProgram()->MainHandler(); },
+		.GetWindowLength = []() -> std::pair<int, int> { return GetProgram()->WindowSize(); },
 		.DrawLine = [](int x1, int y1, int x2, int y2, Color c) { GetProgram()->engine.DrawLine(x1, y1, x2, y2, c); },
 		.DrawRectImage = [](const Rect RC, const resource::Image& Img) { GetProgram()->engine.DrawRect(RC, Img); },
 		.DrawRectScreen = [](const Rect RC, const karapo::TargetRender TR) { GetProgram()->engine.DrawRect(RC, TR); },
@@ -48,6 +50,10 @@ namespace karapo {
 			engine.FlipScreen();
 		}
 		return 0;
+	}
+
+	HWND Program::MainHandler() const noexcept {
+		return handler;
 	}
 
 	void Program::Frame() {

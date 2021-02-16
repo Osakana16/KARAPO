@@ -56,7 +56,7 @@ namespace karapo {
 		*/
 		void Draw() override {
 			auto p = GetProgram();
-			const ScreenVector Screen_Size { p->Width, p->Height };
+			const ScreenVector Screen_Size { p->WindowSize().first, p->WindowSize().second };
 			const auto Draw_Origin = Screen_Size / 2;
 			auto base_origin = base->Origin();
 			std::queue<SmartPtr<Entity>> dead;
