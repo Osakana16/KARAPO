@@ -140,4 +140,10 @@ namespace karapo {
 	int Program::UpdateMessage() {
 		return ProcessMessage();
 	}
+
+	std::pair<int, int> Program::WindowSize() const noexcept {
+		int w, h;
+		DxLib::GetWindowSize(&w, &h);
+		return { w, h };
+	}
 }
