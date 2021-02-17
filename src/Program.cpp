@@ -25,7 +25,7 @@ namespace karapo {
 			throw;
 
 		engine.OnInit(this);
-		canvas.CreateLayer<AbsoluteLayer*>();
+		canvas.CreateAbsoluteLayer();
 	}
 
 	int Program::Main() {

@@ -17,38 +17,32 @@ namespace karapo {
 		virtual void Execute() = 0;
 	};
 
-	// - 前方宣言 -
+	class ImageLayer : public Layer {
+	protected:
+		Array<SmartPtr<Entity>> drawing;
+	public:
+		ImageLayer() : Layer() {}
+		virtual void Execute() override;
+		void Register(SmartPtr<Entity>);
+		bool IsRegistered(SmartPtr<Entity>) const noexcept;
 
-	class ImageLayer;		// 画像レイヤー
-	class RelativeLayer;	// 相対位置型レイヤー
-	class AbsoluteLayer;	// 絶対位置型レイヤー
+		virtual void Draw() = 0;
+	};
 
 	// キャンバス
 	class Canvas {
-		using Layers = std::vector<ImageLayer*>;
+		// レイヤーのポインタ
+		using LayerPtr = std::unique_ptr<ImageLayer>;
+		// レイヤー
+		using Layers = std::vector<LayerPtr>;
 		Layers layers;
-
-		RelativeLayer *MakeLayer(SmartPtr<Entity>);
-		AbsoluteLayer *MakeLayer();
-
-		void AddLayer(ImageLayer*), 
-			AddLayer(RelativeLayer*),
-			AddLayer(AbsoluteLayer *);
 	public:
 		void Update() noexcept;
 		void Register(SmartPtr<Entity>, const int);
 		void DeleteLayer(const int) noexcept;
 
-		template<class C>
-		void CreateLayer(SmartPtr<Entity> e = nullptr) {
-			if constexpr (std::is_same_v<C, RelativeLayer*>) {
-				AddLayer(MakeLayer(e));
-			} else if constexpr (std::is_same_v<C, AbsoluteLayer*>) {
-				AddLayer(MakeLayer());
-			} else {
-				static_assert(0);
-			}
-		}
+		// レイヤーを作成し、追加する。
+		void CreateRelativeLayer(SmartPtr<Entity>), CreateAbsoluteLayer();
 	};
 
 	class AudioManager {

@@ -8,36 +8,26 @@ namespace karapo {
 		screen = GetProgram()->engine.MakeScreen();
 	}
 
-	class ImageLayer : public Layer {
-	protected:
-		Array<SmartPtr<Entity>> drawing;
-	public:
-		ImageLayer() : Layer() {}
-		virtual void Execute() override {
-			auto p = GetProgram();
-			
-			p->engine.ClearScreen();
-			Draw();
-			p->engine.ChangeTargetScreen(p->engine.GetBackScreen());
-			p->engine.DrawRect(Rect{ 0, 0, 0, 0 }, Screen);
-		}
+	void ImageLayer::Execute() {
+		auto p = GetProgram();
 
-		void Register(SmartPtr<Entity> d) {
-			if (IsRegistered(d))
-				return;
+		p->engine.ClearScreen();
+		Draw();
+		p->engine.ChangeTargetScreen(p->engine.GetBackScreen());
+		p->engine.DrawRect(Rect{ 0, 0, 0, 0 }, Screen);
+	}
 
-			drawing.push_back(d);
-		}
+	void ImageLayer::Register(SmartPtr<Entity> d) {
+		if (IsRegistered(d))
+			return;
 
-		bool IsRegistered(SmartPtr<Entity> d) const noexcept {
-			return std::find(drawing.begin(), drawing.end(), d) != drawing.end();
-		}
+		drawing.push_back(d);
+	}
 
-		virtual void Draw() = 0;
-	};
-}
+	bool ImageLayer::IsRegistered(SmartPtr<Entity> d) const noexcept {
+		return std::find(drawing.begin(), drawing.end(), d) != drawing.end();
+	}
 
-namespace karapo {
 	/**
 	* 相対位置型レイヤー
 	* 座標base_originを中心とした相対位置による描写を行うレイヤー。
@@ -73,9 +63,7 @@ namespace karapo {
 			}
 		}
 	};
-}
 
-namespace karapo {
 	/**
 	* 絶対位置型レイヤー
 	*/
@@ -103,32 +91,10 @@ namespace karapo {
 }
 
 namespace karapo {
-	namespace {
-		karapo::RelativeLayer* MakeRelativeLayer(karapo::SmartPtr<Entity> e) {
-			return new karapo::RelativeLayer(e);
-		}
-
-		karapo::AbsoluteLayer* MakeAbsoluteLayer() {
-			return new karapo::AbsoluteLayer();
-		}
-	}
-
 	void Canvas::Update() noexcept {
 		for (auto& layer : layers) {
 			layer->Execute();
 		}
-	}
-
-	void Canvas::AddLayer(ImageLayer* layer) {
-		layers.push_back(layer);
-	}
-
-	void Canvas::AddLayer(RelativeLayer* layer) {
-		AddLayer(static_cast<ImageLayer*>(layer));
-	}
-
-	void Canvas::AddLayer(AbsoluteLayer* layer) {
-		AddLayer(static_cast<ImageLayer*>(layer));
 	}
 
 	void Canvas::Register(SmartPtr<Entity> d, const int Index) {
@@ -136,15 +102,14 @@ namespace karapo {
 	}
 
 	void Canvas::DeleteLayer(const int Index) noexcept {
-		delete layers[Index];
 		layers.erase(std::find(layers.begin(), layers.end(), layers[Index]));
 	}
 
-	RelativeLayer *Canvas::MakeLayer(SmartPtr<Entity> e) {
-		return MakeRelativeLayer(e);
+	void Canvas::CreateRelativeLayer(SmartPtr<Entity> e) {
+		layers.push_back(std::make_unique<RelativeLayer>(e));
 	}
 
-	AbsoluteLayer *Canvas::MakeLayer() {
-		return MakeAbsoluteLayer();
+	void Canvas::CreateAbsoluteLayer() {
+		layers.push_back(std::make_unique<AbsoluteLayer>());
 	}
 }
