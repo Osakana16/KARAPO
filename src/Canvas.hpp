@@ -42,7 +42,7 @@ namespace karapo {
 		void DeleteLayer(const int) noexcept;
 
 		// レイヤーを作成し、追加する。
-		void CreateRelativeLayer(SmartPtr<Entity>), CreateAbsoluteLayer();
+		size_t CreateRelativeLayer(SmartPtr<Entity>), CreateAbsoluteLayer();
 	};
 
 	class AudioManager {

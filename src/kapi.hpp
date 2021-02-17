@@ -164,6 +164,11 @@ namespace karapo {
 		std::function<resource::Resource(const String&)> LoadImage;
 		std::function<resource::Resource(const String&)> LoadSound;
 
+		// - Canvasån -
+
+		std::function<size_t()> CreateAbsoluteLayer;
+		std::function<size_t(SmartPtr<Entity>)> CreateRelativeLayer;
+
 		// - Entityån -
 
 		std::function<void(SmartPtr<Entity>)> RegisterEntity;

@@ -13,6 +13,8 @@ namespace karapo {
 		.IsPlayingSound = [](const resource::Resource R) -> bool { return GetProgram()->engine.IsPlayingSound(R); },
 		.LoadImage = [](const String& Path) -> resource::Resource { return GetProgram()->engine.LoadImage(Path); },
 		.LoadSound = [](const String& Path) -> resource::Resource { return GetProgram()->engine.LoadSound(Path); },
+		.CreateAbsoluteLayer = []()  -> size_t { return GetProgram()->canvas.CreateAbsoluteLayer(); },
+		.CreateRelativeLayer = [](SmartPtr<Entity> entity) -> size_t { return GetProgram()->canvas.CreateRelativeLayer(entity); },
 		.RegisterEntity = [](SmartPtr<Entity> entity) { GetProgram()->entity_manager.Register(entity); },
 		.KillEntity = [](const String& Name) { GetProgram()->entity_manager.Kill(Name); },
 		.GetEntity = [](const String& Name) -> SmartPtr<Entity> { return GetProgram()->entity_manager.GetEntity(Name); },

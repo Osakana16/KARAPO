@@ -105,11 +105,13 @@ namespace karapo {
 		layers.erase(std::find(layers.begin(), layers.end(), layers[Index]));
 	}
 
-	void Canvas::CreateRelativeLayer(SmartPtr<Entity> e) {
+	size_t Canvas::CreateRelativeLayer(SmartPtr<Entity> e) {
 		layers.push_back(std::make_unique<RelativeLayer>(e));
+		return layers.size();
 	}
 
-	void Canvas::CreateAbsoluteLayer() {
+	size_t Canvas::CreateAbsoluteLayer() {
 		layers.push_back(std::make_unique<AbsoluteLayer>());
+		return layers.size();
 	}
 }
