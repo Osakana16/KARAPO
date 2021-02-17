@@ -107,6 +107,10 @@ namespace karapo {
 		bool IsPressed() const noexcept;
 	};
 
+	namespace value {
+		KARAPO_NEWTYPE(Key, int);
+	}
+
 	// ゲームのキャラクターやオブジェクトの元となるクラス。
 	class Entity {
 	public:
@@ -198,5 +202,88 @@ namespace karapo {
 
 		std::function<void(const String&)> ExecuteEventByName;
 		std::function<void(const WorldVector)> ExecuteEventByOrigin;
+
+		struct {
+			value::Key
+				F1,
+				F2,
+				F3,
+				F4,
+				F5,
+				F6,
+				F7,
+				F8,
+				F9,
+				F10,
+				F11,
+				F12,
+				Up,
+				Left,
+				Right,
+				Down,
+				App,
+				Escape,
+				Space,
+				Backspace,
+				Enter,
+				Delete,
+				Home,
+				End,
+				Insert,
+				Page_Up,
+				Page_Down,
+				Tab,
+				Caps,
+				Pause,
+				At,
+				Colon,
+				SemiColon,
+				Plus,
+				Minus,
+				LBracket,
+				RBracket,
+				LCtrl,
+				RCtrl,
+				LShift,
+				RShift,
+				LAlt,
+				RAlt,
+				A,
+				B,
+				C,
+				D,
+				E,
+				F,
+				G,
+				H,
+				I,
+				J,
+				K,
+				L,
+				M,
+				N,
+				O,
+				P,
+				Q,
+				R,
+				S,
+				T,
+				U,
+				V,
+				W,
+				X,
+				Y,
+				Z,
+				N0,
+				N1,
+				N2,
+				N3,
+				N4,
+				N5,
+				N6,
+				N7,
+				N8,
+				N9;
+		} keys;
 	};
 }
