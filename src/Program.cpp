@@ -4,25 +4,6 @@
 #include <filesystem>
 
 namespace karapo {
-	ProgramInterface Default_ProgramInterface = {
-		.GetHandler = []() -> HWND { return GetProgram()->MainHandler(); },
-		.GetWindowLength = []() -> std::pair<int, int> { return GetProgram()->WindowSize(); },
-		.DrawLine = [](int x1, int y1, int x2, int y2, Color c) { GetProgram()->engine.DrawLine(x1, y1, x2, y2, c); },
-		.DrawRectImage = [](const Rect RC, const resource::Image& Img) { GetProgram()->engine.DrawRect(RC, Img); },
-		.DrawRectScreen = [](const Rect RC, const karapo::TargetRender TR) { GetProgram()->engine.DrawRect(RC, TR); },
-		.IsPlayingSound = [](const resource::Resource R) -> bool { return GetProgram()->engine.IsPlayingSound(R); },
-		.LoadImage = [](const String& Path) -> resource::Resource { return GetProgram()->engine.LoadImage(Path); },
-		.LoadSound = [](const String& Path) -> resource::Resource { return GetProgram()->engine.LoadSound(Path); },
-		.CreateAbsoluteLayer = []()  -> size_t { return GetProgram()->canvas.CreateAbsoluteLayer(); },
-		.CreateRelativeLayer = [](SmartPtr<Entity> entity) -> size_t { return GetProgram()->canvas.CreateRelativeLayer(entity); },
-		.RegisterEntity = [](SmartPtr<Entity> entity, const size_t Index) { GetProgram()->entity_manager.Register(entity, Index); },
-		.KillEntity = [](const String& Name) { GetProgram()->entity_manager.Kill(Name); },
-		.GetEntityByName = [](const String& Name) -> SmartPtr<Entity> { return GetProgram()->entity_manager.GetEntity(Name); },
-		.GetEntityByFunc = [](std::function<bool(SmartPtr<Entity>)> cond) { return GetProgram()->entity_manager.GetEntity(cond); },
-		.ExecuteEventByName = [](const String& Name) { GetProgram()->event_manager.ExecuteEvent(Name); },
-		.ExecuteEventByOrigin = [](const WorldVector& Origin) { GetProgram()->event_manager.ExecuteEvent(Origin); }
-	};
-
 	Program::Program() {
 		if (engine.Failed())
 			throw;
