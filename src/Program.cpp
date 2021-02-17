@@ -17,7 +17,8 @@ namespace karapo {
 		.CreateRelativeLayer = [](SmartPtr<Entity> entity) -> size_t { return GetProgram()->canvas.CreateRelativeLayer(entity); },
 		.RegisterEntity = [](SmartPtr<Entity> entity, const size_t Index) { GetProgram()->entity_manager.Register(entity, Index); },
 		.KillEntity = [](const String& Name) { GetProgram()->entity_manager.Kill(Name); },
-		.GetEntity = [](const String& Name) -> SmartPtr<Entity> { return GetProgram()->entity_manager.GetEntity(Name); },
+		.GetEntityByName = [](const String& Name) -> SmartPtr<Entity> { return GetProgram()->entity_manager.GetEntity(Name); },
+		.GetEntityByFunc = [](std::function<bool(SmartPtr<Entity>)> cond) { return GetProgram()->entity_manager.GetEntity(cond); },
 		.ExecuteEventByName = [](const String& Name) { GetProgram()->event_manager.ExecuteEvent(Name); },
 		.ExecuteEventByOrigin = [](const WorldVector& Origin) { GetProgram()->event_manager.ExecuteEvent(Origin); }
 	};
@@ -41,6 +42,8 @@ namespace karapo {
 		} catch (std::filesystem::filesystem_error& error) {
 			MessageBoxA(nullptr, error.what(), "ÉGÉâÅ[", MB_OK | MB_ICONERROR);
 		}
+
+		event_manager.LoadEvent(L"DLL/test");
 
 		while (UpdateMessage() == 0) {
 			engine.ClearScreen();
