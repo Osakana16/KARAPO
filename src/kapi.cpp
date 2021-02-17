@@ -22,7 +22,7 @@ namespace karapo {
 	}
 
 	bool Key::IsPressing() const noexcept {
-		return press_requested > 0;
+		return pressed_count > 0;
 	}
 
 	namespace resource {
