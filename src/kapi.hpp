@@ -171,7 +171,7 @@ namespace karapo {
 
 		// - Entityån -
 
-		std::function<void(SmartPtr<Entity>)> RegisterEntity;
+		std::function<void(SmartPtr<Entity>, const size_t)> RegisterEntity;
 		std::function<void(const String&)> KillEntity;
 		std::function<SmartPtr<Entity>(const String&)> GetEntity;
 

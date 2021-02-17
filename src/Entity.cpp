@@ -44,6 +44,10 @@ namespace karapo::entity {
 
 	// Entityの登録
 	void Manager::Register(SmartPtr<Entity> entity) noexcept {
+		Register(entity, 0u);
+	}
+
+	void Manager::Register(SmartPtr<Entity> entity, const size_t Index) noexcept {
 		DefaultChunk *candidate = nullptr;
 		for (auto& group : entities) {
 			if (!group.IsFull()) {
@@ -57,7 +61,7 @@ namespace karapo::entity {
 			candidate = &entities.back();
 		}
 		candidate->Register(entity);
-		GetProgram()->canvas.Register(entity, 0);
+		GetProgram()->canvas.Register(entity, Index);
 	}
 
 	size_t Manager::Amount() const noexcept {

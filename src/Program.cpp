@@ -15,7 +15,7 @@ namespace karapo {
 		.LoadSound = [](const String& Path) -> resource::Resource { return GetProgram()->engine.LoadSound(Path); },
 		.CreateAbsoluteLayer = []()  -> size_t { return GetProgram()->canvas.CreateAbsoluteLayer(); },
 		.CreateRelativeLayer = [](SmartPtr<Entity> entity) -> size_t { return GetProgram()->canvas.CreateRelativeLayer(entity); },
-		.RegisterEntity = [](SmartPtr<Entity> entity) { GetProgram()->entity_manager.Register(entity); },
+		.RegisterEntity = [](SmartPtr<Entity> entity, const size_t Index) { GetProgram()->entity_manager.Register(entity, Index); },
 		.KillEntity = [](const String& Name) { GetProgram()->entity_manager.Kill(Name); },
 		.GetEntity = [](const String& Name) -> SmartPtr<Entity> { return GetProgram()->entity_manager.GetEntity(Name); },
 		.ExecuteEventByName = [](const String& Name) { GetProgram()->event_manager.ExecuteEvent(Name); },

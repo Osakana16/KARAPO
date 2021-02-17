@@ -64,6 +64,6 @@ namespace karapo::entity {
 		size_t Amount() const noexcept;
 
 		// Entity‚ğŠÇ—‰º‚É’u‚­B
-		void Register(SmartPtr<Entity>) noexcept;
+		void Register(SmartPtr<Entity>) noexcept, Register(SmartPtr<Entity>, const size_t) noexcept;
 	};
 }
