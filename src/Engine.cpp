@@ -173,6 +173,7 @@ namespace karapo {
 		.GetHandler = []() -> HWND { return GetProgram()->MainHandler(); },
 		.GetWindowLength = []() -> std::pair<int, int> { return GetProgram()->WindowSize(); },
 		.DrawLine = [](int x1, int y1, int x2, int y2, Color c) { GetProgram()->engine.DrawLine(x1, y1, x2, y2, c); },
+		.DrawRect = [](const Rect RC, const Color C, const bool Fill) { GetProgram()->engine.DrawRect(RC, C, Fill); },
 		.DrawRectImage = [](const Rect RC, const resource::Image& Img) { GetProgram()->engine.DrawRect(RC, Img); },
 		.DrawRectScreen = [](const Rect RC, const karapo::TargetRender TR) { GetProgram()->engine.DrawRect(RC, TR); },
 		.IsPlayingSound = [](const resource::Resource R) -> bool { return GetProgram()->engine.IsPlayingSound(R); },

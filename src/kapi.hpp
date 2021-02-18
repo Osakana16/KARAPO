@@ -162,6 +162,7 @@ namespace karapo {
 		std::function<std::pair<int, int>()> GetWindowLength;
 
 		std::function<void(int, int, int, int, Color)> DrawLine;
+		std::function<void(const Rect, const Color, const bool)> DrawRect;
 		std::function<void(const Rect, const resource::Image&)> DrawRectImage;
 		std::function<void(const Rect, const karapo::TargetRender)> DrawRectScreen;
 		std::function<bool(const resource::Resource)> IsPlayingSound;
