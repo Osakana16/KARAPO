@@ -104,6 +104,28 @@ namespace karapo {
 		return r;
 	}
 
+	void Program::Engine::UpdateKeys() noexcept {
+		char chs[256];
+		DxLib::GetHitKeyStateAll(chs);
+
+		for (int i = 0; i < 256; i++) {
+			auto& key = keys_state[i];
+			// ƒL[‚ª‰Ÿ‚³‚ê‚Ä‚¢‚éê‡
+			if (chs[i]) 
+				key++;
+			else 
+				key = 0;
+		}
+	}
+
+	bool Program::Engine::IsPressedKey(const value::Key Any_Key) const noexcept {
+		return (keys_state[static_cast<int>(Any_Key)] <= 2);
+	}
+
+	bool Program::Engine::IsPressingKey(const value::Key Any_Key) const noexcept {
+		return (keys_state[static_cast<int>(Any_Key)] > 0);
+	}
+
 	Program::Engine::~Engine() noexcept {
 		DxLib_End();
 	}
@@ -164,6 +186,8 @@ namespace karapo {
 		.GetEntityByFunc = [](std::function<bool(SmartPtr<Entity>)> cond) { return GetProgram()->entity_manager.GetEntity(cond); },
 		.ExecuteEventByName = [](const String& Name) { GetProgram()->event_manager.ExecuteEvent(Name); },
 		.ExecuteEventByOrigin = [](const WorldVector& Origin) { GetProgram()->event_manager.ExecuteEvent(Origin); },
+		.IsPressingKey = [](const value::Key Any_Key) noexcept -> bool { return GetProgram()->engine.IsPressingKey(Any_Key); },
+		.IsPressedKey = [](const value::Key Any_Key) noexcept -> bool {return GetProgram()->engine.IsPressedKey(Any_Key); },
 		.keys = {
 			.F1 = (value::Key)KEY_INPUT_F1,
 			.F2 = (value::Key)KEY_INPUT_F2,

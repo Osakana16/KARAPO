@@ -48,6 +48,7 @@ namespace karapo {
 			std::unordered_map<String, resource::Resource> resources;
 
 			bool fullscreen = false, synchronize = false, fixed = false;
+			unsigned keys_state[256];
 		public:
 			Engine() noexcept, ~Engine() noexcept;
 
@@ -67,6 +68,9 @@ namespace karapo {
 			void ChangeTargetScreen(TargetRender);
 			TargetRender GetFrontScreen() const noexcept, GetBackScreen() const noexcept;
 			void ClearScreen(), FlipScreen();
+
+			void UpdateKeys() noexcept;
+			bool IsPressingKey(const value::Key)const noexcept, IsPressedKey(const value::Key) const noexcept;
 		};
 
 		HWND handler;

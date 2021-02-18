@@ -27,6 +27,7 @@ namespace karapo {
 		event_manager.LoadEvent(L"DLL/test");
 
 		while (UpdateMessage() == 0) {
+			engine.UpdateKeys();
 			engine.ClearScreen();
 			Frame();
 			dll_manager.Update();

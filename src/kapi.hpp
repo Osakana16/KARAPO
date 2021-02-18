@@ -89,24 +89,6 @@ namespace karapo {
 		return Length(v1 - v2);
 	}
 
-	// キー
-	class Key {
-		unsigned pressed_count = 0;
-		bool press_requested = false;
-	public:
-		const wchar_t Assigned_Key;
-		Key(const wchar_t Assigned) : Assigned_Key(Assigned) {}
-
-		// キーの状態を更新する。
-		void Update();
-		// キーを押す
-		void Press() noexcept;
-		// キーが継続的に押されているか。
-		bool IsPressing() const noexcept;
-		// キーが一定の時間内に押されたか。
-		bool IsPressed() const noexcept;
-	};
-
 	namespace value {
 		KARAPO_NEWTYPE(Key, int);
 	}
@@ -202,6 +184,10 @@ namespace karapo {
 
 		std::function<void(const String&)> ExecuteEventByName;
 		std::function<void(const WorldVector)> ExecuteEventByOrigin;
+
+		// - キー系 -
+
+		std::function<bool(const value::Key)> IsPressingKey, IsPressedKey;
 
 		struct {
 			value::Key
