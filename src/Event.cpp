@@ -178,31 +178,6 @@ namespace karapo::event {
 		};
 
 		namespace entity {
-			class Spawn final : public Command {
-				bool executed = false;
-				String name;
-				WorldVector origin;
-			public:
-				Spawn(const String& Name, const WorldVector O) {
-					name = Name;
-					origin = O;
-				}
-
-				~Spawn() noexcept override {}
-
-				void Execute() override {
-					executed = true;
-				}
-
-				bool Executed() const noexcept override {
-					return executed;
-				}
-
-				bool IsUnnecessary() const noexcept override {
-					return Executed();
-				}
-			};
-
 			// Entityの移動
 			class Teleport final : public Command {
 				String entity_name;
@@ -255,29 +230,7 @@ namespace karapo::event {
 					return Executed();
 				}
 			};
-		}		
-
-		// 別ワールドへの移動
-		class Transfer : public Command {
-			String world_name;
-			bool executed = false;
-		public:
-			Transfer(String& wname) noexcept {
-				world_name = wname;
-			}
-
-			void Execute() override {
-				executed = true;
-			}
-
-			bool Executed() const noexcept override {
-				return executed;
-			}
-
-			bool IsUnnecessary() const noexcept override {
-				return Executed();
-			}
-		};
+		}
 
 		// コマンドの別名
 		class Alias : public Command {
