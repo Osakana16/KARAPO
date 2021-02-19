@@ -8,7 +8,7 @@ namespace karapo {
 
 		constexpr auto Process = L"process";
 		constexpr auto Window = L"window";
-		constexpr auto Config_File = L"Config/program.ini";
+		constexpr auto Config_File = L"./config.ini";
 
 		wchar_t name[255]{ 0 };
 		GetPrivateProfileStringW(Window, L"name", nullptr, name, 255u, Config_File);

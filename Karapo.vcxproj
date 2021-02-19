@@ -48,6 +48,9 @@
     <ClInclude Include="src\stdafx.h" />
     <ClInclude Include="src\Util.hpp" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="config.ini" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
