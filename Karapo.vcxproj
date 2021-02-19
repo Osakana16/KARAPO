@@ -26,7 +26,6 @@
     <ClCompile Include="src\Event.cpp" />
     <ClCompile Include="src\kapi.cpp" />
     <ClCompile Include="src\Karapo.cpp" />
-    <ClCompile Include="src\Mapper.cpp" />
     <ClCompile Include="src\Phase.cpp" />
     <ClCompile Include="src\Program.cpp" />
     <ClCompile Include="src\stdafx.cpp">
@@ -45,7 +44,6 @@
     <ClInclude Include="src\Event.hpp" />
     <ClInclude Include="src\Chunk.hpp" />
     <ClInclude Include="src\kapi.hpp" />
-    <ClInclude Include="src\Mapper.hpp" />
     <ClInclude Include="src\Phase.hpp" />
     <ClInclude Include="src\stdafx.h" />
     <ClInclude Include="src\Util.hpp" />
