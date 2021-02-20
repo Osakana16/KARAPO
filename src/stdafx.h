@@ -12,6 +12,8 @@
 #include <unordered_map>
 #include <any>
 
+#include <stdexcept>
+
 #include <cstdint>
 #include <cwchar>
 #include <cuchar>

@@ -124,18 +124,21 @@ namespace karapo::entity {
 			try {
 				auto weak = refs.at(name);
 				auto shared = weak.lock();
-				shared->Delete();
-			} catch (...) {}
+				if (shared) shared->Delete();
+				else refs.erase(name);
+			} catch (std::out_of_range& e) {
+				// 発見されなければ何もしない。
+			}
 		}
 
 		// 該当する名前のEntityを取得する。
 		SmartPtr<Entity> Get(const String& Name) const noexcept {
+			SmartPtr<Entity> ent = nullptr;
 			try {
 				std::weak_ptr<Entity> weak = refs.at(Name);
-				if (!weak.expired())
-					return weak.lock();
+				ent = weak.lock();
 			} catch (...) {}
-			return nullptr;
+			return ent;
 		}
 
 		// 該当する条件のEntityを取得する。

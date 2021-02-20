@@ -122,8 +122,11 @@ namespace karapo::entity {
 		try {
 			auto weak = refs.at(name);
 			auto shared = weak.lock();
-			shared->Delete();
-		} catch (...) {}
+			if (shared) shared->Delete();
+			else refs.erase(name);
+		} catch (std::out_of_range& e) {
+			// 発見されなければ何もしない。
+		}
 	}
 
 	WorldVector Object::Origin() const noexcept {
