@@ -36,7 +36,7 @@ namespace karapo::event {
 				} else {
 					try {
 						value = GetProgram()->var_manager[VName];
-					} catch (...) {
+					} catch (std::out_of_range&) {
 						value = Any_Value;
 					}
 				}

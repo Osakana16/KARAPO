@@ -137,7 +137,7 @@ namespace karapo::entity {
 			try {
 				std::weak_ptr<Entity> weak = refs.at(Name);
 				ent = weak.lock();
-			} catch (...) {}
+			} catch (std::out_of_range&) {}
 			return ent;
 		}
 

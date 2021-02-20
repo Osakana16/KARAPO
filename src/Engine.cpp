@@ -82,7 +82,7 @@ namespace karapo {
 		resource::Resource r;
 		try {
 			r = resources.at(Path);
-		} catch (...) {
+		} catch (std::out_of_range&) {
 			r = static_cast<resource::Resource>(LoadGraph(Path.c_str()));
 			if (r != resource::Resource::Invalid) {
 				resources[Path] = r;
@@ -95,7 +95,7 @@ namespace karapo {
 		resource::Resource r;
 		try {
 			r = resources.at(Path);
-		} catch (...) {
+		} catch (std::out_of_range&) {
 			r = static_cast<resource::Resource>(LoadSoundMem(Path.c_str()));
 			if (r != resource::Resource::Invalid) {
 				resources[Path] = r;

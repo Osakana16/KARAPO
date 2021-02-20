@@ -98,7 +98,7 @@ namespace karapo::entity {
 	SmartPtr<Entity> Chunk::Get(const String& Name) const noexcept {
 		try {
 			return SmartPtr<Entity>(refs.at(Name));
-		} catch (...) {
+		} catch (std::out_of_range&) {
 			return nullptr;
 		}
 	}

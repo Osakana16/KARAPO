@@ -112,7 +112,7 @@ namespace karapo {
 		HMODULE Manager::Get(const String& Name) noexcept {
 			try {
 				return dlls.at(Name).mod;
-			} catch (...) {
+			} catch (std::out_of_range&) {
 				return nullptr;
 			}
 		}
