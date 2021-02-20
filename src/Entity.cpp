@@ -72,6 +72,60 @@ namespace karapo::entity {
 		return amount;
 	}
 
+	Chunk::Chunk() {
+		entities.clear();
+		refs.clear();
+	}
+
+	void Chunk::Update() noexcept {
+		Array<SmartPtr<Entity>*> deadmen;
+		for (auto& ent : entities) {
+			if (ent == nullptr)
+				continue;
+
+			if (!ent->CanDelete())
+				ent->Main();
+			else
+				deadmen.push_back(&ent);
+		}
+
+		for (auto& dead : deadmen) {
+			refs.erase((*dead)->Name());
+			entities.erase(std::find(entities.begin(), entities.end(), (*dead)));
+		}
+	}
+
+	SmartPtr<Entity> Chunk::Get(const String& Name) const noexcept {
+		try {
+			return SmartPtr<Entity>(refs.at(Name));
+		} catch (...) {
+			return nullptr;
+		}
+	}
+
+	SmartPtr<Entity> Chunk::Get(std::function<bool(SmartPtr<Entity>)> Condition) const noexcept {
+		for (auto& ent : entities) {
+			if (Condition(ent)) {
+				return ent;
+			}
+		}
+		return nullptr;
+	}
+
+	// 管理中の数を返す。
+	size_t Chunk::Size() const noexcept {
+		return refs.size();
+	}
+
+	// Entityを殺す。
+	void Chunk::Kill(const String& name) noexcept {
+		try {
+			auto weak = refs.at(name);
+			auto shared = weak.lock();
+			shared->Delete();
+		} catch (...) {}
+	}
+
 	WorldVector Object::Origin() const noexcept {
 		return origin;
 	}

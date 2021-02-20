@@ -49,17 +49,17 @@ namespace karapo {
 			const ScreenVector Screen_Size { p->WindowSize().first, p->WindowSize().second };
 			const auto Draw_Origin = Screen_Size / 2;
 			auto base_origin = base->Origin();
-			std::queue<SmartPtr<Entity>> dead;
+			Array<SmartPtr<Entity>> deadmen;
 			for (auto drawer : drawing) {
 				if (drawer->CanDelete()) {
-					dead.push(drawer);
+					deadmen.push_back(drawer);
 				} else {
 					drawer->Draw(base_origin, Screen);
 				}
 			}
 
-			for (; !dead.empty(); dead.pop()) {
-				drawing.erase(std::find(drawing.begin(), drawing.end(), dead.front()));
+			for (auto& dead : deadmen) {
+				drawing.erase(std::find(drawing.begin(), drawing.end(), dead));
 			}
 		}
 	};
@@ -74,17 +74,17 @@ namespace karapo {
 		void Draw() override {
 			auto p = GetProgram();
 	
-			std::queue<SmartPtr<Entity>> dead;
+			Array<SmartPtr<Entity>> deadmen;
 			for (auto drawer : drawing) {
 				if (drawer->CanDelete()) {
-					dead.push(drawer);
+					deadmen.push_back(drawer);
 				} else {
-					drawer->Draw({ 0, 0 }, Screen);
+					drawer->Draw(WorldVector{ 0.0, 0.0 }, Screen);
 				}
 			}
 
-			for (; !dead.empty(); dead.pop()) {
-				drawing.erase(std::find(drawing.begin(), drawing.end(), dead.front()));
+			for (auto& dead : deadmen) {
+				drawing.erase(std::find(drawing.begin(), drawing.end(), dead));
 			}
 		}
 	};

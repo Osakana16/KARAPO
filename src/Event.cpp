@@ -4,6 +4,7 @@
 
 #include "Engine.hpp"
 
+#include <queue>
 #include <chrono>
 #include <forward_list>
 

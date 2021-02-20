@@ -84,17 +84,17 @@ namespace karapo {
 		}
 
 		void Manager::Update() {
-			std::queue<String> detach_lists;
+			Array<String> detach_lists;
 			for (auto& dll : dlls) {
 				if (!dll.second.Update()) {
-					detach_lists.push(dll.first);
+					detach_lists.push_back(dll.first);
 				}
 			}
 
 			while (!detach_lists.empty()) {
-				auto path = detach_lists.front();
+				auto path = detach_lists.back();
 				Detach(path);
-				detach_lists.pop();
+				detach_lists.pop_back();
 			}
 		}
 
