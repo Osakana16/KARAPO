@@ -24,8 +24,6 @@ namespace karapo {
 			MessageBoxA(nullptr, error.what(), "ÉGÉâÅ[", MB_OK | MB_ICONERROR);
 		}
 
-		event_manager.LoadEvent(L"DLL/test");
-
 		while (UpdateMessage() == 0) {
 			engine.UpdateKeys();
 			engine.ClearScreen();
