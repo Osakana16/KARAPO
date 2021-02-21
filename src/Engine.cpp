@@ -185,6 +185,7 @@ namespace karapo {
 		.KillEntity = [](const String& Name) { GetProgram()->entity_manager.Kill(Name); },
 		.GetEntityByName = [](const String& Name) -> SmartPtr<Entity> { return GetProgram()->entity_manager.GetEntity(Name); },
 		.GetEntityByFunc = [](std::function<bool(SmartPtr<Entity>)> cond) { return GetProgram()->entity_manager.GetEntity(cond); },
+		.LoadEvent = [](const String& Path) { GetProgram()->event_manager.LoadEvent(Path); },
 		.ExecuteEventByName = [](const String& Name) { GetProgram()->event_manager.ExecuteEvent(Name); },
 		.ExecuteEventByOrigin = [](const WorldVector& Origin) { GetProgram()->event_manager.ExecuteEvent(Origin); },
 		.IsPressingKey = [](const value::Key Any_Key) noexcept -> bool { return GetProgram()->engine.IsPressingKey(Any_Key); },

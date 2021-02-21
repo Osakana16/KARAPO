@@ -183,6 +183,7 @@ namespace karapo {
 
 		// - Eventån -
 
+		std::function<void(const String&)> LoadEvent;
 		std::function<void(const String&)> ExecuteEventByName;
 		std::function<void(const WorldVector)> ExecuteEventByOrigin;
 
