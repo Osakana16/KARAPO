@@ -56,6 +56,11 @@ namespace karapo {
 		DxLib::DrawBox(p.left, p.top, p.right, p.bottom, GetColor(c.r, c.g, c.b), fill);
 	}
 
+	void Program::Engine::DrawSentence(const String& Mes, const ScreenVector O, const int Font_Size, const Color C) {
+		DxLib::SetFontSize(Font_Size);
+		DxLib::DrawString(O[0], O[1], Mes.c_str(), GetColor(C.r, C.g, C.b));
+	}
+
 	std::pair<resource::Image::Length, resource::Image::Length> Program::Engine::GetImageLength(const resource::Image& I)  const noexcept {
 		int lx, ly;
 		DxLib::GetGraphSize(static_cast<raw::Resource>(static_cast<resource::Resource>(I)), &lx, &ly);
@@ -176,6 +181,7 @@ namespace karapo {
 		.DrawRect = [](const Rect RC, const Color C, const bool Fill) { GetProgram()->engine.DrawRect(RC, C, Fill); },
 		.DrawRectImage = [](const Rect RC, const resource::Image& Img) { GetProgram()->engine.DrawRect(RC, Img); },
 		.DrawRectScreen = [](const Rect RC, const karapo::TargetRender TR) { GetProgram()->engine.DrawRect(RC, TR); },
+		.DrawSentence = [](const String& Mes, const ScreenVector O, const int Font_Size, const Color C) { GetProgram()->engine.DrawSentence(Mes, O, Font_Size, C); },
 		.IsPlayingSound = [](const resource::Resource R) -> bool { return GetProgram()->engine.IsPlayingSound(R); },
 		.LoadImage = [](const String& Path) -> resource::Resource { return GetProgram()->engine.LoadImage(Path); },
 		.LoadSound = [](const String& Path) -> resource::Resource { return GetProgram()->engine.LoadSound(Path); },

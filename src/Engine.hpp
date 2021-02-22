@@ -59,6 +59,7 @@ namespace karapo {
 
 			void DrawLine(int, int, int, int, Color);
 			void DrawRect(Rect, const resource::Image&) noexcept, DrawRect(Rect, const TargetRender) noexcept, DrawRect(Rect, Color, bool fill) noexcept;
+			void DrawSentence(const String&, const ScreenVector, const int, const Color = { 255, 255, 255 });
 			std::pair<int, int> GetImageLength(const resource::Image&) const noexcept;
 
 			void PlaySound(const resource::Resource, PlayType), StopSound(const resource::Resource) noexcept;
