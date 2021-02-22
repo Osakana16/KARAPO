@@ -35,7 +35,7 @@ namespace karapo {
 	}
 
 	void Program::Engine::DrawLine(int x1, int y1, int x2, int y2, Color c) {
-		DxLib::DrawLine(x1, y1, x2, y2, GetColor(c.r, c.b, c.g));
+		DxLib::DrawLine(x1, y1, x2, y2, GetColor(c.r, c.g, c.b));
 	}
 
 	void Program::Engine::DrawRect(RECT p, const resource::Image& Img) noexcept {
@@ -53,7 +53,7 @@ namespace karapo {
 	}
 
 	void Program::Engine::DrawRect(RECT p, Color c, bool fill) noexcept {
-		DxLib::DrawBox(p.left, p.top, p.right, p.bottom, GetColor(c.r, c.b, c.g), fill);
+		DxLib::DrawBox(p.left, p.top, p.right, p.bottom, GetColor(c.r, c.g, c.b), fill);
 	}
 
 	std::pair<resource::Image::Length, resource::Image::Length> Program::Engine::GetImageLength(const resource::Image& I)  const noexcept {
