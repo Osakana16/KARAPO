@@ -15,5 +15,9 @@ namespace karapo {
 			}
 			Reload();
 		}
+
+		bool ResourceType::IsValid() const noexcept {
+			return resource != Resource::Invalid;
+		}
 	}
 }

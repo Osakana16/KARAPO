@@ -41,6 +41,7 @@ namespace karapo {
 
 			ResourceType(ProgramInterface*);
 			void Load(const String&);
+			bool IsValid() const noexcept;
 		};
 
 		class Image : public ResourceType {
