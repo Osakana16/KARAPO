@@ -35,7 +35,7 @@ namespace karapo::event {
 					value = fv;
 				} else {
 					try {
-						value = GetProgram()->var_manager[VName];
+						value = GetProgram()->var_manager.Get<true>(VName);
 					} catch (std::out_of_range&) {
 						value = Any_Value;
 					}
@@ -64,7 +64,7 @@ namespace karapo::event {
 			}
 
 			void Execute() override {
-				GetProgram()->event_manager.SetCondTarget(&GetProgram()->var_manager[varname]);
+				GetProgram()->event_manager.SetCondTarget(&GetProgram()->var_manager.Get<true>(varname));
 			}
 
 			bool Executed() const noexcept override {
@@ -394,9 +394,13 @@ namespace karapo::event {
 							// スペース判定
 							if (IsSpace(c) || c == L'\0' || c == L'\n') {
 								// 貯めこんだ文字を単語として格納
-								if (!text.empty())
+								if (!text.empty()) {
 									PushWord(&context, &text);
-
+									if (c == L'\n') {
+										text = L"\n";
+										PushWord(&context, &text);
+									}
+								}
 								continue;
 							}
 
@@ -649,54 +653,90 @@ namespace karapo::event {
 				Event::Commands commands;	// 
 				GenerateFunc liketoRun;				// 生成関数を実行するための関数ポインタ。
 				bool is_string = false;
-				bool is_newvar = false;
+				bool is_variable = false;
+
+				bool CheckCommandWord(const String& text) noexcept(false) {
+					try {
+						// コマンド生成関数を取得。
+						auto gen = words.at(text);
+						if (liketoRun == nullptr) {
+							liketoRun = gen;
+							is_variable = (text == L"var" || text == L"変数");
+							return true;
+						} else {
+							// 既に生成関数が設定されている時:
+							throw std::runtime_error("");
+						}
+					} catch (std::out_of_range&) {
+						if (liketoRun == nullptr) {
+							// liketoRunがnullptrである時:
+							// 生成関数実行後に残る「'」などの不純物が入り込んだと考える事ができる。
+							// その為、メッセージは設定せず例外を投げる。
+							throw std::runtime_error("");
+						}
+					}
+					return false;
+				}
+
+				bool CheckArgs(const String& text) noexcept(false) {
+					// 生成関数で検証。
+					auto&& f = liketoRun(parameters);
+					if (f.isEnough()) {
+						// 引数が十分に積まれている時:
+						if (f.is_dynamic) {
+							// 動的コマンドはイベントのコマンドに追加。
+							commands.push_back(std::move(f.Result()));
+						} else if (f.is_static) {
+							// 静的コマンドは即実行。
+							f.Result()->Execute();
+						}
+						liketoRun = nullptr;
+						parameters.clear();
+						return true;
+					} else {
+						// 引数が十分でない時:
+						if (text == L"\'") {
+							is_string = !is_string;
+						} else {
+							if (is_string || isdigit(text[0])) {
+								// 数値または文字列を積む。
+								parameters.push_back(text);
+							} else {
+								// 変数探し
+								auto& value = GetProgram()->var_manager.Get<true>(text);
+								if (value.type() == typeid(int))
+									parameters.push_back(std::to_wstring(std::any_cast<int>(value)));
+								else if (value.type() == typeid(Dec))
+									parameters.push_back(std::to_wstring(std::any_cast<Dec>(value)));
+								else
+									parameters.push_back(std::any_cast<String>(value));
+							}
+						}
+						return false;
+					}
+				}
 
 				void Interpret(Context *context) noexcept {
-				restart:
 					auto text = context->front();
-
+					bool need_cleanup = false;
 					if (IsParsing()) {
-						if (liketoRun == nullptr) {
-							if (text != L"\'") {
-								liketoRun = words.at(text);
-								is_newvar = (text == L"var" || text == L"変数");
-							} else
-								is_string = false;
-						} else {
-							auto&& f = liketoRun(parameters);
-							if (f.isEnough()) {
-								MYGAME_ASSERT(f.is_dynamic ^ f.is_static);
+						// HACK: CheckCommandWordとCheckArgsを含め、「'」等の引数に含まれない文字に対する処理を改善する。
 
-								if (f.is_dynamic) {
-									commands.push_back(std::move(f.Result()));
-								}
+						// その単語がコマンドだったかどうか。
+						bool is_command = false;
 
-								// コマンドを即実行
-								if (f.is_static) {
-									f.Result()->Execute();
-								}
-								liketoRun = nullptr;
-								is_newvar = false;
-								parameters.clear();
-								if (!IsValidToEnd(text[0]))
-									goto restart;
-							} else {
-								if (text == L"\'") {
-									is_string = !is_string;
-								} else {
-									if (is_string || isdigit(text[0]) || is_newvar) {
-										parameters.push_back(text);
-									} else {
-										auto& value = GetProgram()->var_manager[text];
-										if (value.type() == typeid(int)) {
-											parameters.push_back(std::to_wstring(std::any_cast<int>(value)));
-										} else if (value.type() == typeid(Dec)) {
-											parameters.push_back(std::to_wstring(std::any_cast<Dec>(value)));
-										} else {
-											parameters.push_back(std::any_cast<String>(value));
-										}
-									}
-								}
+						// ここで、一行内のコマンドとその為の引数を一つずつ確認していく。
+						try {
+							is_command = CheckCommandWord(text);	// コマンド確認。
+							need_cleanup = CheckArgs(text);			// 引数確認。
+						} catch (std::runtime_error& e) {
+							// 主にCheckCommandWordからの例外をここで捕捉。
+						} catch (std::out_of_range& e) {
+							// 主にCheckArgsからの例外をここで捕捉。
+							if (is_variable) {
+								// 変数コマンドの引数だった場合は変数名として引数に積む。
+								if (!is_command)
+									parameters.push_back(text);
 							}
 						}
 					}
@@ -714,6 +754,11 @@ namespace karapo::event {
 						}
 					}
 					context->pop();
+					if (need_cleanup) {
+						while (context->front() == L"\n") {
+							context->pop();
+						}
+					}
 					Interpret(context);
 				}
 			public:
