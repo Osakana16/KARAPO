@@ -7,10 +7,22 @@ namespace karapo {
 		class Manager {
 			std::unordered_map<String, std::any> vars;
 		public:
+			Manager();
 			std::any& MakeNew(const String&);
 			void Delete(const String&) noexcept;
 
-			std::any& operator[](const String&) noexcept(false);
+			template<bool throw_except>
+			std::any& Get(const String& Var_Name) noexcept(!throw_except) {
+				if constexpr (throw_except) {
+					return vars.at(Var_Name);
+				} else {
+					try {
+						return vars.at(Var_Name);
+					} catch (std::out_of_range&) {
+						return vars.at(L"null");
+					}
+				}
+			}
 		};
 	}
 

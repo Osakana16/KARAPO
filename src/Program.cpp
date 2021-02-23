@@ -53,16 +53,16 @@ namespace karapo {
 	}
 
 	namespace variable {
+		Manager::Manager() {
+			vars[L"null"] = nullptr;
+		}
+
 		std::any& Manager::MakeNew(const String& Name) {
 			return vars[Name];
 		}
 
 		void Manager::Delete(const String& Name) noexcept {
 			vars.erase(Name);
-		}
-
-		std::any& Manager::operator[](const String& Name) noexcept(false) {
-			return vars.at(Name);
 		}
 	}
 
