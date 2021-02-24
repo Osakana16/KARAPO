@@ -654,6 +654,7 @@ namespace karapo::event {
 				GenerateFunc liketoRun;				// 生成関数を実行するための関数ポインタ。
 				bool is_string = false;
 				bool is_variable = false;
+				bool request_abort = false;
 
 				bool CheckCommandWord(const String& text) noexcept(false) {
 					try {
@@ -665,7 +666,7 @@ namespace karapo::event {
 							return true;
 						} else {
 							// 既に生成関数が設定されている時:
-							throw std::runtime_error("");
+							throw std::runtime_error("一行にコマンドが2つ以上書かれています。");
 						}
 					} catch (std::out_of_range&) {
 						if (liketoRun == nullptr) {
@@ -731,14 +732,28 @@ namespace karapo::event {
 							need_cleanup = CheckArgs(text);			// 引数確認。
 						} catch (std::runtime_error& e) {
 							// 主にCheckCommandWordからの例外をここで捕捉。
+							if (liketoRun != nullptr) {
+								MessageBoxA(nullptr, e.what(), "エラー", MB_OK | MB_ICONERROR);
+								request_abort = true;
+							}
 						} catch (std::out_of_range& e) {
 							// 主にCheckArgsからの例外をここで捕捉。
 							if (is_variable) {
 								// 変数コマンドの引数だった場合は変数名として引数に積む。
 								if (!is_command)
 									parameters.push_back(text);
+							} else {
+								if (!is_command) {
+									MessageBoxA(nullptr, "未定義の変数が使用されています。", "エラー", MB_OK | MB_ICONERROR);
+									request_abort = true;
+								}
 							}
 						}
+					}
+
+					if (request_abort) {
+						EndParsing();
+						return;
 					}
 
 					if (text.size() == 1) {
@@ -765,6 +780,10 @@ namespace karapo::event {
 				// コマンドの別名を作成する。
 				void MakeAlias(const String& S1, const String& S2) noexcept {
 					words[S1] = words.at(S2);
+				}
+
+				bool NeedAbortion() const noexcept {
+					return request_abort;
 				}
 
 				CommandParser(Context *context) noexcept {
@@ -917,19 +936,25 @@ namespace karapo::event {
 				}
 			};
 
-
 			Parser(const String& Sentence) noexcept {
 				LexicalParser lexparser(Sentence);
 				auto context = lexparser.Result();
+				bool aborted = false;
 
-				while (!context.empty()) {
+				while (!context.empty() && !aborted) {
 					InformationParser infoparser(&context);
 					auto [name, trigger, min, max] = infoparser.Result();
 					CommandParser cmdparser(&context);
+					aborted = cmdparser.NeedAbortion();
 					Event::Commands commands = std::move(cmdparser.Result());
 
 					Event event{ .commands = std::move(commands), .trigger_type = trigger, .origin{ min, max } };
 					events[name] = std::move(event);
+				}
+
+				if (aborted) {
+					MessageBoxW(nullptr, L"イベント解析を強制終了しました。", L"エラー", MB_OK | MB_ICONERROR);
+					events.clear();
 				}
 			}
 
