@@ -57,21 +57,21 @@ namespace karapo {
 			vars[L"null"] = nullptr;
 		}
 
-		std::any& Manager::MakeNew(const String& Name) {
+		std::any& Manager::MakeNew(const std::wstring& Name) {
 			return vars[Name];
 		}
 
-		void Manager::Delete(const String& Name) noexcept {
+		void Manager::Delete(const std::wstring& Name) noexcept {
 			vars.erase(Name);
 		}
 	}
 
 	namespace dll {
-		void Manager::Attach(const String& Path) {
+		void Manager::Attach(const std::wstring& Path) {
 			dlls[Path].mod = LoadLibraryW(Path.c_str());
 		}
 
-		void Manager::Load(const String& Path) {
+		void Manager::Load(const std::wstring& Path) {
 			Attach(Path);
 			auto& dll = dlls.at(Path);
 			dll.Init = reinterpret_cast<DLL::Initializer>(GetProcAddress(dll.mod, "KarapoDLLInit"));
@@ -82,7 +82,7 @@ namespace karapo {
 		}
 
 		void Manager::Update() {
-			Array<String> detach_lists;
+			std::vector<std::wstring> detach_lists;
 			for (auto& dll : dlls) {
 				if (!dll.second.Update()) {
 					detach_lists.push_back(dll.first);
@@ -96,18 +96,18 @@ namespace karapo {
 			}
 		}
 
-		void Manager::RegisterExternalCommand(std::unordered_map<String, event::GenerateFunc>* words) {
+		void Manager::RegisterExternalCommand(std::unordered_map<std::wstring, event::GenerateFunc>* words) {
 			for (auto& dll : dlls) {
 				dll.second.RegisterExternalCommand(words);
 			}
 		}
 
-		void Manager::Detach(const String& Path) {
+		void Manager::Detach(const std::wstring& Path) {
 			FreeLibrary(dlls[Path].mod);
 			dlls.erase(Path);
 		}
 
-		HMODULE Manager::Get(const String& Name) noexcept {
+		HMODULE Manager::Get(const std::wstring& Name) noexcept {
 			try {
 				return dlls.at(Name).mod;
 			} catch (std::out_of_range&) {

@@ -56,7 +56,7 @@ namespace karapo {
 		DxLib::DrawBox(p.left, p.top, p.right, p.bottom, GetColor(c.r, c.g, c.b), fill);
 	}
 
-	void Program::Engine::DrawSentence(const String& Mes, const ScreenVector O, const int Font_Size, const Color C) {
+	void Program::Engine::DrawSentence(const std::wstring& Mes, const ScreenVector O, const int Font_Size, const Color C) {
 		DxLib::SetFontSize(Font_Size);
 		DxLib::DrawString(O[0], O[1], Mes.c_str(), GetColor(C.r, C.g, C.b));
 	}
@@ -83,7 +83,7 @@ namespace karapo {
 		return !DxLib_IsInit();
 	}
 
-	resource::Resource Program::Engine::LoadImage(const String& Path) noexcept {
+	resource::Resource Program::Engine::LoadImage(const std::wstring& Path) noexcept {
 		resource::Resource r;
 		try {
 			r = resources.at(Path);
@@ -96,7 +96,7 @@ namespace karapo {
 		return r;
 	}
 
-	resource::Resource Program::Engine::LoadSound(const String& Path) noexcept {
+	resource::Resource Program::Engine::LoadSound(const std::wstring& Path) noexcept {
 		resource::Resource r;
 		try {
 			r = resources.at(Path);
@@ -181,18 +181,18 @@ namespace karapo {
 		.DrawRect = [](const Rect RC, const Color C, const bool Fill) { GetProgram()->engine.DrawRect(RC, C, Fill); },
 		.DrawRectImage = [](const Rect RC, const resource::Image& Img) { GetProgram()->engine.DrawRect(RC, Img); },
 		.DrawRectScreen = [](const Rect RC, const karapo::TargetRender TR) { GetProgram()->engine.DrawRect(RC, TR); },
-		.DrawSentence = [](const String& Mes, const ScreenVector O, const int Font_Size, const Color C) { GetProgram()->engine.DrawSentence(Mes, O, Font_Size, C); },
+		.DrawSentence = [](const std::wstring& Mes, const ScreenVector O, const int Font_Size, const Color C) { GetProgram()->engine.DrawSentence(Mes, O, Font_Size, C); },
 		.IsPlayingSound = [](const resource::Resource R) -> bool { return GetProgram()->engine.IsPlayingSound(R); },
-		.LoadImage = [](const String& Path) -> resource::Resource { return GetProgram()->engine.LoadImage(Path); },
-		.LoadSound = [](const String& Path) -> resource::Resource { return GetProgram()->engine.LoadSound(Path); },
+		.LoadImage = [](const std::wstring& Path) -> resource::Resource { return GetProgram()->engine.LoadImage(Path); },
+		.LoadSound = [](const std::wstring& Path) -> resource::Resource { return GetProgram()->engine.LoadSound(Path); },
 		.CreateAbsoluteLayer = []()  -> size_t { return GetProgram()->canvas.CreateAbsoluteLayer(); },
-		.CreateRelativeLayer = [](SmartPtr<Entity> entity) -> size_t { return GetProgram()->canvas.CreateRelativeLayer(entity); },
-		.RegisterEntity = [](SmartPtr<Entity> entity, const size_t Index) { GetProgram()->entity_manager.Register(entity, Index); },
-		.KillEntity = [](const String& Name) { GetProgram()->entity_manager.Kill(Name); },
-		.GetEntityByName = [](const String& Name) -> SmartPtr<Entity> { return GetProgram()->entity_manager.GetEntity(Name); },
-		.GetEntityByFunc = [](std::function<bool(SmartPtr<Entity>)> cond) { return GetProgram()->entity_manager.GetEntity(cond); },
-		.LoadEvent = [](const String& Path) { GetProgram()->event_manager.LoadEvent(Path); },
-		.ExecuteEventByName = [](const String& Name) { GetProgram()->event_manager.ExecuteEvent(Name); },
+		.CreateRelativeLayer = [](std::shared_ptr<Entity> entity) -> size_t { return GetProgram()->canvas.CreateRelativeLayer(entity); },
+		.RegisterEntity = [](std::shared_ptr<Entity> entity, const size_t Index) { GetProgram()->entity_manager.Register(entity, Index); },
+		.KillEntity = [](const std::wstring& Name) { GetProgram()->entity_manager.Kill(Name); },
+		.GetEntityByName = [](const std::wstring& Name) -> std::shared_ptr<Entity> { return GetProgram()->entity_manager.GetEntity(Name); },
+		.GetEntityByFunc = [](std::function<bool(std::shared_ptr<Entity>)> cond) { return GetProgram()->entity_manager.GetEntity(cond); },
+		.LoadEvent = [](const std::wstring& Path) { GetProgram()->event_manager.LoadEvent(Path); },
+		.ExecuteEventByName = [](const std::wstring& Name) { GetProgram()->event_manager.ExecuteEvent(Name); },
 		.ExecuteEventByOrigin = [](const WorldVector& Origin) { GetProgram()->event_manager.ExecuteEvent(Origin); },
 		.IsPressingKey = [](const value::Key Any_Key) noexcept -> bool { return GetProgram()->engine.IsPressingKey(Any_Key); },
 		.IsPressedKey = [](const value::Key Any_Key) noexcept -> bool {return GetProgram()->engine.IsPressedKey(Any_Key); },

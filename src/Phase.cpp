@@ -1,11 +1,11 @@
 #include "Phase.hpp"
 
 namespace karapo::phase {
-	void Phase::PullRequest(SmartPtr<Phase>& p) {
+	void Phase::PullRequest(std::shared_ptr<Phase>& p) {
 		request_phase = p;
 	}
 
-	SmartPtr<Phase> Phase::Request() const {
+	std::shared_ptr<Phase> Phase::Request() const {
 		return request_phase;
 	}
 }

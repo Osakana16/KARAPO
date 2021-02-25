@@ -34,27 +34,27 @@ namespace karapo::event {
 		public:
 			void SetTarget(std::any* tv);
 			// 条件式を評価する
-			bool Evalute(const String& Sentence) const noexcept;
+			bool Evalute(const std::wstring& Sentence) const noexcept;
 		} condition_manager;
 
 		void *cmdparser;
 
-		std::unordered_map<String, Event> events;
+		std::unordered_map<std::wstring, Event> events;
 
 		void SetCMDParser(void*);
 	public:
-		void AliasCommand(const String&, const String&);
+		void AliasCommand(const std::wstring&, const std::wstring&);
 
 		// イベントを読み込み、生成する。
-		void LoadEvent(const String Path) noexcept;
+		void LoadEvent(const std::wstring Path) noexcept;
 		// 座標からイベントを実行する。
 		void ExecuteEvent(const WorldVector) noexcept;
 		// イベント名からイベントを実行する。
-		void ExecuteEvent(const String&) noexcept;
+		void ExecuteEvent(const std::wstring&) noexcept;
 		//
 		void Update() noexcept;
 
 		void SetCondTarget(std::any*);
-		bool Evalute(const String& Sentence);
+		bool Evalute(const std::wstring& Sentence);
 	};
 }

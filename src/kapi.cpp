@@ -8,7 +8,7 @@ namespace karapo {
 			pi = p;
 		}
 
-		void ResourceType::Load(const String& P) {
+		void ResourceType::Load(const std::wstring& P) {
 			path = P;
 			if (Reload == nullptr) {
 				Reload = [&]() { resource = pi->LoadImage(Path); };

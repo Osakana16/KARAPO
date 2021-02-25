@@ -1,5 +1,5 @@
 ﻿#pragma once
-#define MYGAME_STRING(T) karapo::String(LT))
+#define MYGAME_STRING(T) karapo::std::wstring(LT))
 
 #ifndef NDEBUG
 #define MYGAME_ASSERT(X) assert(X)

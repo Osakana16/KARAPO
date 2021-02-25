@@ -23,9 +23,6 @@ namespace karapo {
 	using Rect = RECT;
 	using Point = POINT;
 
-	using Char = wchar_t;				// 文字および文字列のポインタ
-	using String = std::wstring;	// 文字列
-
 	namespace resource {
 		enum class Resource : int { Invalid = -1 };
 
@@ -33,14 +30,14 @@ namespace karapo {
 			inline operator Resource() const noexcept { return resource; }
 		protected:
 			Resource resource = Resource::Invalid;
-			String path;
+			std::wstring path;
 			ProgramInterface* pi;
 		public:
-			const String& Path = path;
+			const std::wstring& Path = path;
 			std::function<void()> Reload;
 
 			ResourceType(ProgramInterface*);
-			void Load(const String&);
+			void Load(const std::wstring&);
 			bool IsValid() const noexcept;
 		};
 
@@ -60,12 +57,6 @@ namespace karapo {
 			using Image::Image;
 		};
 	}
-
-	template<typename T>
-	using SmartPtr = std::shared_ptr<T>;
-	// 頻繁に使用するSTL系配列
-	template<typename T>
-	using Array = std::vector<T>;
 
 	struct Color {
 		int r, g, b;
@@ -104,7 +95,7 @@ namespace karapo {
 		// 自身の位置
 		virtual WorldVector Origin() const noexcept = 0;
 		// 自身の名前
-		virtual const Char* Name() const noexcept = 0;
+		virtual const wchar_t* Name() const noexcept = 0;
 
 		// 自身が削除できる状態にあるかを返す。
 		virtual bool CanDelete() const noexcept = 0;
@@ -150,7 +141,7 @@ namespace karapo {
 			bool is_dynamic = false;
 		};
 
-		using GenerateFunc = std::function<KeywordInfo(const Array<String>&)>;
+		using GenerateFunc = std::function<KeywordInfo(const std::vector<std::wstring>&)>;
 	}
 
 	enum class PlayType {
@@ -166,27 +157,27 @@ namespace karapo {
 		std::function<void(const Rect, const Color, const bool)> DrawRect;
 		std::function<void(const Rect, const resource::Image&)> DrawRectImage;
 		std::function<void(const Rect, const karapo::TargetRender)> DrawRectScreen;
-		std::function<void(const String& Mes, const ScreenVector O, const int Font_Size, const Color C)> DrawSentence;
+		std::function<void(const std::wstring& Mes, const ScreenVector O, const int Font_Size, const Color C)> DrawSentence;
 		std::function<bool(const resource::Resource)> IsPlayingSound;
-		std::function<resource::Resource(const String&)> LoadImage;
-		std::function<resource::Resource(const String&)> LoadSound;
+		std::function<resource::Resource(const std::wstring&)> LoadImage;
+		std::function<resource::Resource(const std::wstring&)> LoadSound;
 
 		// - Canvas系 -
 
 		std::function<size_t()> CreateAbsoluteLayer;
-		std::function<size_t(SmartPtr<Entity>)> CreateRelativeLayer;
+		std::function<size_t(std::shared_ptr<Entity>)> CreateRelativeLayer;
 
 		// - Entity系 -
 
-		std::function<void(SmartPtr<Entity>, const size_t)> RegisterEntity;
-		std::function<void(const String&)> KillEntity;
-		std::function<SmartPtr<Entity>(const String&)> GetEntityByName;
-		std::function<SmartPtr<Entity>(std::function<bool(SmartPtr<Entity>)>)> GetEntityByFunc;
+		std::function<void(std::shared_ptr<Entity>, const size_t)> RegisterEntity;
+		std::function<void(const std::wstring&)> KillEntity;
+		std::function<std::shared_ptr<Entity>(const std::wstring&)> GetEntityByName;
+		std::function<std::shared_ptr<Entity>(std::function<bool(std::shared_ptr<Entity>)>)> GetEntityByFunc;
 
 		// - Event系 -
 
-		std::function<void(const String&)> LoadEvent;
-		std::function<void(const String&)> ExecuteEventByName;
+		std::function<void(const std::wstring&)> LoadEvent;
+		std::function<void(const std::wstring&)> ExecuteEventByName;
 		std::function<void(const WorldVector)> ExecuteEventByOrigin;
 
 		// - キー系 -

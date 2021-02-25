@@ -17,7 +17,7 @@ namespace karapo::entity {
 		return;
 	}
 
-	SmartPtr<Entity> Manager::GetEntity(const String& Name) noexcept {
+	std::shared_ptr<Entity> Manager::GetEntity(const std::wstring& Name) noexcept {
 		for (auto& group : entities) {
 			auto result = group.Get(Name);
 			if (result != nullptr)
@@ -26,28 +26,28 @@ namespace karapo::entity {
 		return nullptr;
 	}
 
-	SmartPtr<Entity> Manager::GetEntity(std::function<bool(SmartPtr<Entity>)> Condition) noexcept {
-		std::vector<SmartPtr<Entity>> results;
+	std::shared_ptr<Entity> Manager::GetEntity(std::function<bool(std::shared_ptr<Entity>)> Condition) noexcept {
+		std::vector<std::shared_ptr<Entity>> results;
 		for (auto& group : entities) {
 			auto async = std::async(std::launch::async, [&group, Condition] { return group.Get(Condition); });
 			results.push_back(async.get());
 		}
-		auto it = std::find_if(results.begin(), results.end(), [](SmartPtr<Entity> se) { return se != nullptr; });
+		auto it = std::find_if(results.begin(), results.end(), [](std::shared_ptr<Entity> se) { return se != nullptr; });
 		return (it != results.end() ? *it : nullptr);
 	}
 
-	void Manager::Kill(const String& Name) noexcept {
+	void Manager::Kill(const std::wstring& Name) noexcept {
 		for (auto& group : entities) {
 			group.Kill(Name);
 		}
 	}
 
 	// Entityの登録
-	void Manager::Register(SmartPtr<Entity> entity) noexcept {
+	void Manager::Register(std::shared_ptr<Entity> entity) noexcept {
 		Register(entity, 0u);
 	}
 
-	void Manager::Register(SmartPtr<Entity> entity, const size_t Index) noexcept {
+	void Manager::Register(std::shared_ptr<Entity> entity, const size_t Index) noexcept {
 		DefaultChunk *candidate = nullptr;
 		for (auto& group : entities) {
 			if (!group.IsFull()) {
@@ -78,7 +78,7 @@ namespace karapo::entity {
 	}
 
 	void Chunk::Update() noexcept {
-		Array<SmartPtr<Entity>*> deadmen;
+		std::vector<std::shared_ptr<Entity>*> deadmen;
 		for (auto& ent : entities) {
 			if (ent == nullptr)
 				continue;
@@ -95,15 +95,15 @@ namespace karapo::entity {
 		}
 	}
 
-	SmartPtr<Entity> Chunk::Get(const String& Name) const noexcept {
+	std::shared_ptr<Entity> Chunk::Get(const std::wstring& Name) const noexcept {
 		try {
-			return SmartPtr<Entity>(refs.at(Name));
+			return std::shared_ptr<Entity>(refs.at(Name));
 		} catch (std::out_of_range&) {
 			return nullptr;
 		}
 	}
 
-	SmartPtr<Entity> Chunk::Get(std::function<bool(SmartPtr<Entity>)> Condition) const noexcept {
+	std::shared_ptr<Entity> Chunk::Get(std::function<bool(std::shared_ptr<Entity>)> Condition) const noexcept {
 		for (auto& ent : entities) {
 			if (Condition(ent)) {
 				return ent;
@@ -118,7 +118,7 @@ namespace karapo::entity {
 	}
 
 	// Entityを殺す。
-	void Chunk::Kill(const String& name) noexcept {
+	void Chunk::Kill(const std::wstring& name) noexcept {
 		try {
 			auto weak = refs.at(name);
 			auto shared = weak.lock();
@@ -137,7 +137,7 @@ namespace karapo::entity {
 		origin = wv;
 	}
 
-	void Image::Load(const String& Path) {
+	void Image::Load(const std::wstring& Path) {
 		image.Load(Path);
 	}
 
@@ -153,7 +153,7 @@ namespace karapo::entity {
 		can_delete = true;
 	}
 
-	const Char *Image::Name() const noexcept {
+	const wchar_t *Image::Name() const noexcept {
 		return image.Path.c_str();
 	}
 
@@ -163,7 +163,7 @@ namespace karapo::entity {
 		return 0;
 	}
 
-	const Char *Sound::Name() const noexcept {
+	const wchar_t *Sound::Name() const noexcept {
 		return sound.Path.c_str();
 	}
 
@@ -171,7 +171,7 @@ namespace karapo::entity {
 		GetProgram()->engine.PlaySound(sound, pt);
 	}
 
-	void Sound::Load(const String& Path) {
+	void Sound::Load(const std::wstring& Path) {
 		sound.Load(Path);
 	}
 

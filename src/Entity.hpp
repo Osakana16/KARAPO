@@ -19,11 +19,11 @@ namespace karapo::entity {
 	public:
 		inline Image(WorldVector WV) { origin = WV; }
 		inline int Main() override { return 0; }
-		const Char *Name() const noexcept override;
+		const wchar_t *Name() const noexcept override;
 		bool CanDelete() const noexcept override;
 		void Delete() override;
 		void Draw(WorldVector, TargetRender) override;
-		void Load(const String&);
+		void Load(const std::wstring&);
 	};
 
 	// 音Entityクラス
@@ -36,36 +36,36 @@ namespace karapo::entity {
 		int Main() override;
 		inline void Draw(WorldVector, TargetRender) override {}
 
-		const Char *Name() const noexcept override;
+		const wchar_t *Name() const noexcept override;
 		bool CanDelete() const noexcept override;
 		void Delete() override;
 		void Play(const PlayType) noexcept;
-		void Load(const String&);
+		void Load(const std::wstring&);
 	};
 
 	// Entityを一つの塊(配列)で管理するクラス
 	class Chunk {
-		std::vector<SmartPtr<Entity>> entities;
-		std::unordered_map<String, std::weak_ptr<Entity>> refs;
+		std::vector<std::shared_ptr<Entity>> entities;
+		std::unordered_map<std::wstring, std::weak_ptr<Entity>> refs;
 	public:
 		Chunk();
 		// Entityを更新する。
 		void Update() noexcept;
 		// 該当する名前のEntityを取得する。
-		SmartPtr<Entity> Get(const String& Name) const noexcept;
+		std::shared_ptr<Entity> Get(const std::wstring& Name) const noexcept;
 		// 該当する条件のEntityを取得する。
-		SmartPtr<Entity> Get(std::function<bool(SmartPtr<Entity>)> Condition) const noexcept;
+		std::shared_ptr<Entity> Get(std::function<bool(std::shared_ptr<Entity>)> Condition) const noexcept;
 		// 管理中の数を返す。
 		size_t Size() const noexcept;
 		// Entityを殺す。
-		void Kill(const String& name) noexcept;
+		void Kill(const std::wstring& name) noexcept;
 	};
 
 	// Entityを一つの塊(配列)で管理するクラス(固定長版)
 	template<uint N>
 	class FixedChunk {
-		SmartPtr<Entity> entities[N]{ nullptr };
-		std::unordered_map<String, std::weak_ptr<Entity>> refs;
+		std::shared_ptr<Entity> entities[N]{ nullptr };
+		std::unordered_map<std::wstring, std::weak_ptr<Entity>> refs;
 	public:
 		FixedChunk() noexcept {
 			refs.clear();
@@ -101,12 +101,12 @@ namespace karapo::entity {
 		}
 
 		// Entityを登録する。
-		auto Register(SmartPtr<Entity> ent) {
+		auto Register(std::shared_ptr<Entity> ent) {
 			Register(ent, ent->Name());
 		}
 
 		// Entityを登録する。
-		auto Register(SmartPtr<Entity> ent, const String& Name) {
+		auto Register(std::shared_ptr<Entity> ent, const std::wstring& Name) {
 			if (ent == nullptr)
 				return;
 
@@ -120,7 +120,7 @@ namespace karapo::entity {
 		}
 
 		// Entityを殺す。
-		auto Kill(const String& name) noexcept {
+		auto Kill(const std::wstring& name) noexcept {
 			try {
 				auto weak = refs.at(name);
 				auto shared = weak.lock();
@@ -132,8 +132,8 @@ namespace karapo::entity {
 		}
 
 		// 該当する名前のEntityを取得する。
-		SmartPtr<Entity> Get(const String& Name) const noexcept {
-			SmartPtr<Entity> ent = nullptr;
+		std::shared_ptr<Entity> Get(const std::wstring& Name) const noexcept {
+			std::shared_ptr<Entity> ent = nullptr;
 			try {
 				std::weak_ptr<Entity> weak = refs.at(Name);
 				ent = weak.lock();
@@ -142,7 +142,7 @@ namespace karapo::entity {
 		}
 
 		// 該当する条件のEntityを取得する。
-		SmartPtr<Entity> Get(std::function<bool(SmartPtr<Entity>)> Condition) const noexcept {
+		std::shared_ptr<Entity> Get(std::function<bool(std::shared_ptr<Entity>)> Condition) const noexcept {
 			for (auto& ent : entities) {
 				if (Condition(ent)) {
 					return ent;
@@ -161,17 +161,17 @@ namespace karapo::entity {
 		// Entityを更新する。
 		void Update() noexcept;
 		// 該当する名前のEntityを入手する。
-		SmartPtr<Entity> GetEntity(const String& Name) noexcept;
+		std::shared_ptr<Entity> GetEntity(const std::wstring& Name) noexcept;
 		// 関数内の条件に当てはまるEntityを入手する。
-		SmartPtr<Entity> GetEntity(std::function<bool(SmartPtr<Entity>)> Condition) noexcept;
+		std::shared_ptr<Entity> GetEntity(std::function<bool(std::shared_ptr<Entity>)> Condition) noexcept;
 
 		// 該当する名前のEntityを殺す。
-		void Kill(const String&) noexcept;
+		void Kill(const std::wstring&) noexcept;
 
 		// 管理下にあるEntityの数を返す。
 		size_t Amount() const noexcept;
 
 		// Entityを管理下に置く。
-		void Register(SmartPtr<Entity>) noexcept, Register(SmartPtr<Entity>, const size_t) noexcept;
+		void Register(std::shared_ptr<Entity>) noexcept, Register(std::shared_ptr<Entity>, const size_t) noexcept;
 	};
 }

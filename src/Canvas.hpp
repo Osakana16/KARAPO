@@ -13,18 +13,18 @@ namespace karapo {
 		const TargetRender& Screen = screen;
 	public:
 		// リソースを登録する。
-		virtual void Register(SmartPtr<Entity>) = 0;
+		virtual void Register(std::shared_ptr<Entity>) = 0;
 		virtual void Execute() = 0;
 	};
 
 	class ImageLayer : public Layer {
 	protected:
-		Array<SmartPtr<Entity>> drawing;
+		std::vector<std::shared_ptr<Entity>> drawing;
 	public:
 		ImageLayer() : Layer() {}
 		virtual void Execute() override;
-		void Register(SmartPtr<Entity>);
-		bool IsRegistered(SmartPtr<Entity>) const noexcept;
+		void Register(std::shared_ptr<Entity>);
+		bool IsRegistered(std::shared_ptr<Entity>) const noexcept;
 
 		virtual void Draw() = 0;
 	};
@@ -38,11 +38,11 @@ namespace karapo {
 		Layers layers;
 	public:
 		void Update() noexcept;
-		void Register(SmartPtr<Entity>, const int);
+		void Register(std::shared_ptr<Entity>, const int);
 		void DeleteLayer(const int) noexcept;
 
 		// レイヤーを作成し、追加する。
-		size_t CreateRelativeLayer(SmartPtr<Entity>), CreateAbsoluteLayer();
+		size_t CreateRelativeLayer(std::shared_ptr<Entity>), CreateAbsoluteLayer();
 	};
 
 	class AudioManager {

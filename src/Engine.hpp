@@ -5,14 +5,14 @@
 namespace karapo {
 	namespace variable {
 		class Manager {
-			std::unordered_map<String, std::any> vars;
+			std::unordered_map<std::wstring, std::any> vars;
 		public:
 			Manager();
-			std::any& MakeNew(const String&);
-			void Delete(const String&) noexcept;
+			std::any& MakeNew(const std::wstring&);
+			void Delete(const std::wstring&) noexcept;
 
 			template<bool throw_except>
-			std::any& Get(const String& Var_Name) noexcept(!throw_except) {
+			std::any& Get(const std::wstring& Var_Name) noexcept(!throw_except) {
 				if constexpr (throw_except) {
 					return vars.at(Var_Name);
 				} else {
@@ -31,7 +31,7 @@ namespace karapo {
 			struct DLL {
 				using Initializer = void(WINAPI*)(ProgramInterface);
 				using LoopableMain = bool(WINAPI*)();
-				using EventRegister = void(WINAPI*)(std::unordered_map<String, event::GenerateFunc>*);
+				using EventRegister = void(WINAPI*)(std::unordered_map<std::wstring, event::GenerateFunc>*);
 
 				HMODULE mod;
 				Initializer Init;
@@ -39,14 +39,14 @@ namespace karapo {
 				EventRegister RegisterExternalCommand;
 			};
 
-			std::unordered_map<String, DLL> dlls;
-			void Attach(const String&);
+			std::unordered_map<std::wstring, DLL> dlls;
+			void Attach(const std::wstring&);
 		public:
-			void Detach(const String&);
-			void Load(const String&);
+			void Detach(const std::wstring&);
+			void Load(const std::wstring&);
 			void Update();
-			void RegisterExternalCommand(std::unordered_map<String, event::GenerateFunc>*);
-			HMODULE Get(const String&) noexcept;
+			void RegisterExternalCommand(std::unordered_map<std::wstring, event::GenerateFunc>*);
+			HMODULE Get(const std::wstring&) noexcept;
 		};
 	}
 
@@ -56,8 +56,8 @@ namespace karapo {
 	class Program {
 		class Engine {
 			TargetRender rendering_screen;
-			Array<TargetRender> screens;
-			std::unordered_map<String, resource::Resource> resources;
+			std::vector<TargetRender> screens;
+			std::unordered_map<std::wstring, resource::Resource> resources;
 
 			bool fullscreen = false, synchronize = false, fixed = false;
 			unsigned keys_state[256];
@@ -67,11 +67,11 @@ namespace karapo {
 			void OnInit(Program*) noexcept;
 			bool Failed() const noexcept;
 
-			resource::Resource LoadImage(const String&) noexcept, LoadSound(const String&) noexcept;
+			resource::Resource LoadImage(const std::wstring&) noexcept, LoadSound(const std::wstring&) noexcept;
 
 			void DrawLine(int, int, int, int, Color);
 			void DrawRect(Rect, const resource::Image&) noexcept, DrawRect(Rect, const TargetRender) noexcept, DrawRect(Rect, Color, bool fill) noexcept;
-			void DrawSentence(const String&, const ScreenVector, const int, const Color = { 255, 255, 255 });
+			void DrawSentence(const std::wstring&, const ScreenVector, const int, const Color = { 255, 255, 255 });
 			std::pair<int, int> GetImageLength(const resource::Image&) const noexcept;
 
 			void PlaySound(const resource::Resource, PlayType), StopSound(const resource::Resource) noexcept;

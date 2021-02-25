@@ -17,14 +17,14 @@ namespace karapo {
 		p->engine.DrawRect(Rect{ 0, 0, 0, 0 }, Screen);
 	}
 
-	void ImageLayer::Register(SmartPtr<Entity> d) {
+	void ImageLayer::Register(std::shared_ptr<Entity> d) {
 		if (IsRegistered(d))
 			return;
 
 		drawing.push_back(d);
 	}
 
-	bool ImageLayer::IsRegistered(SmartPtr<Entity> d) const noexcept {
+	bool ImageLayer::IsRegistered(std::shared_ptr<Entity> d) const noexcept {
 		return std::find(drawing.begin(), drawing.end(), d) != drawing.end();
 	}
 
@@ -34,9 +34,9 @@ namespace karapo {
 	*/
 	class RelativeLayer : public ImageLayer {
 	private:
-		SmartPtr<Entity> base;
+		std::shared_ptr<Entity> base;
 	public:
-		inline RelativeLayer(SmartPtr<Entity> b) : ImageLayer() {
+		inline RelativeLayer(std::shared_ptr<Entity> b) : ImageLayer() {
 			base = b;
 		}
 
@@ -49,7 +49,7 @@ namespace karapo {
 			const ScreenVector Screen_Size { p->WindowSize().first, p->WindowSize().second };
 			const auto Draw_Origin = Screen_Size / 2;
 			auto base_origin = base->Origin();
-			Array<SmartPtr<Entity>> deadmen;
+			std::vector<std::shared_ptr<Entity>> deadmen;
 			for (auto drawer : drawing) {
 				if (drawer->CanDelete()) {
 					deadmen.push_back(drawer);
@@ -74,7 +74,7 @@ namespace karapo {
 		void Draw() override {
 			auto p = GetProgram();
 	
-			Array<SmartPtr<Entity>> deadmen;
+			std::vector<std::shared_ptr<Entity>> deadmen;
 			for (auto drawer : drawing) {
 				if (drawer->CanDelete()) {
 					deadmen.push_back(drawer);
@@ -97,7 +97,7 @@ namespace karapo {
 		}
 	}
 
-	void Canvas::Register(SmartPtr<Entity> d, const int Index) {
+	void Canvas::Register(std::shared_ptr<Entity> d, const int Index) {
 		layers[Index]->Register(d);
 	}
 
@@ -105,7 +105,7 @@ namespace karapo {
 		layers.erase(std::find(layers.begin(), layers.end(), layers[Index]));
 	}
 
-	size_t Canvas::CreateRelativeLayer(SmartPtr<Entity> e) {
+	size_t Canvas::CreateRelativeLayer(std::shared_ptr<Entity> e) {
 		layers.push_back(std::make_unique<RelativeLayer>(e));
 		return layers.size();
 	}
