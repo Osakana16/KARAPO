@@ -700,7 +700,7 @@ namespace karapo::event {
 						if (text == L"\'") {
 							is_string = !is_string;
 						} else {
-							if (is_string || isdigit(text[0])) {
+							if (is_string || iswdigit(text[0])) {
 								// ”’l‚Ü‚½‚Í•¶Žš—ñ‚ðÏ‚ÞB
 								parameters.push_back(text);
 							} else {
@@ -774,6 +774,7 @@ namespace karapo::event {
 						while (context->front() == L"\n") {
 							context->pop();
 						}
+						is_string = false;
 					}
 					Interpret(context);
 				}
