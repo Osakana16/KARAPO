@@ -22,7 +22,7 @@ namespace karapo::entity {
 		const wchar_t *Name() const noexcept override;
 		bool CanDelete() const noexcept override;
 		void Delete() override;
-		void Draw(WorldVector, TargetRender) override;
+		void Draw(WorldVector) override;
 		void Load(const std::wstring&);
 	};
 
@@ -34,7 +34,7 @@ namespace karapo::entity {
 		inline Sound(WorldVector WV) { origin = WV; }
 
 		int Main() override;
-		inline void Draw(WorldVector, TargetRender) override {}
+		inline void Draw(WorldVector) override {}
 
 		const wchar_t *Name() const noexcept override;
 		bool CanDelete() const noexcept override;

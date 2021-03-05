@@ -141,7 +141,7 @@ namespace karapo::entity {
 		image.Load(Path);
 	}
 
-	void Image::Draw(WorldVector, TargetRender) {
+	void Image::Draw(WorldVector) {
 		GetProgram()->engine.DrawRect(Rect({ (LONG)Origin()[0], (LONG)Origin()[1], 0, 0 }), image);
 	}
 

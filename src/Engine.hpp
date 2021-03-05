@@ -55,7 +55,6 @@ namespace karapo {
 
 	class Program {
 		class Engine {
-			TargetRender rendering_screen;
 			std::vector<TargetRender> screens;
 			std::unordered_map<std::wstring, resource::Resource> resources;
 

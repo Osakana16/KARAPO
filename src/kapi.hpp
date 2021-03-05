@@ -62,7 +62,7 @@ namespace karapo {
 		int r, g, b;
 	};
 
-	KARAPO_NEWTYPE(TargetRender, raw::TargetRender);
+	enum class TargetRender : raw::TargetRender { Invalid=-1 };
 
 	// ベクトル
 	template<typename T>
@@ -102,7 +102,7 @@ namespace karapo {
 		// 自身を削除できる状態にする。
 		virtual void Delete() = 0;
 		// 描写する。
-		virtual void Draw(WorldVector, TargetRender) = 0;
+		virtual void Draw(WorldVector) = 0;
 		// 指定した座標へテレポートする。
 		virtual void Teleport(WorldVector) = 0;
 	};

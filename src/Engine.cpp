@@ -151,9 +151,10 @@ namespace karapo {
 		return screen;
 	}
 
-	void Program::Engine::ChangeTargetScreen(TargetRender t) {
-		if (std::find(screens.begin(), screens.end(), t) != screens.end())
-			rendering_screen = t;
+	void Program::Engine::ChangeTargetScreen(TargetRender target) {
+		if (std::find(screens.begin(), screens.end(), target) != screens.end()) {
+			DxLib::SetDrawScreen(static_cast<int>(target));
+		}
 	}
 
 	void Program::Engine::ClearScreen() {
