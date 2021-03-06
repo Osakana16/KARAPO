@@ -270,6 +270,7 @@ namespace karapo::event {
 
 			void Execute() final {
 				GetProgram()->canvas.ApplyFilter(index, kind_name, potency);
+				executed = true;
 			}
 
 			bool Executed() const noexcept final {
@@ -950,8 +951,8 @@ namespace karapo::event {
 								return std::make_unique<command::Filter>(Index, params[1], Potency);
 							},
 							.isEnough = [params]() -> bool { return params.size() == 3; },
-							.is_static = true,
-							.is_dynamic = false
+							.is_static = false,
+							.is_dynamic = true
 						};
 					};
 
