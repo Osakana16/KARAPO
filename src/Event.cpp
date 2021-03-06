@@ -255,6 +255,32 @@ namespace karapo::event {
 			}
 		};
 
+		class Filter final : public Command {
+			int index, potency;
+			std::wstring kind_name;
+			bool executed = false;
+		public:
+			Filter(const int I, const std::wstring& KN, const int P) noexcept {
+				index = I;
+				kind_name = KN;
+				potency = P % 256;
+			}
+
+			~Filter() final {}
+
+			void Execute() final {
+				GetProgram()->canvas.ApplyFilter(index, kind_name, potency);
+			}
+
+			bool Executed() const noexcept final {
+				return executed;
+			}
+
+			bool IsUnnecessary() const noexcept final {
+				return Executed();
+			}
+		};
+
 		class DLL : public Command {
 		protected:
 			std::wstring dll_name;
@@ -910,6 +936,20 @@ namespace karapo::event {
 								return std::make_unique<command::Variable>(params[0], params[1]); 
 							},
 							.isEnough = [params]() -> bool { return params.size() == 2; },
+							.is_static = true,
+							.is_dynamic = false
+						};
+					};
+
+					words[L"filter"] = 
+						words[L"フィルター"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() -> CommandPtr {
+								const auto Index = std::stoi(params[0]);
+								const auto Potency = std::stoi(params[2]);
+								return std::make_unique<command::Filter>(Index, params[1], Potency);
+							},
+							.isEnough = [params]() -> bool { return params.size() == 3; },
 							.is_static = true,
 							.is_dynamic = false
 						};

@@ -5,6 +5,7 @@
 
 namespace karapo {
 	Filter::~Filter() {}
+
 	namespace filter {
 		// フィルター無し
 		class None final : public Filter {
@@ -23,6 +24,8 @@ namespace karapo {
 		public:
 			ReversedColor(const int P) noexcept : Potency(P % 256) {}
 			~ReversedColor() final {}
+
+			void Draw(const TargetRender Screen) noexcept final {}
 		};
 
 		// X軸反転フィルター
@@ -30,6 +33,8 @@ namespace karapo {
 		public:
 			XReversed() noexcept {}
 			~XReversed() final {}
+
+			void Draw(const TargetRender Screen) noexcept final {}
 		};
 
 		// Y軸反転フィルター
@@ -37,6 +42,7 @@ namespace karapo {
 		public:
 			YReversed() noexcept {}
 			~YReversed() final {}
+			void Draw(const TargetRender Screen) noexcept final {}
 		};
 
 		// モノクロフィルター
@@ -45,11 +51,33 @@ namespace karapo {
 		public:
 			Monochrome(const Color C) noexcept : Base_Color(C) {}
 			~Monochrome() override {}
+			void Draw(const TargetRender Screen) noexcept final {}
 		};
+	}
+
+	FilterMaker::FilterMaker(const int P) {
+		filters[L"none"] = []() { return std::make_unique<filter::None>(); };
+
+		filters[L"reversed_color"] = 
+			filters[L"色反転"] = [P]() { return std::make_unique<filter::ReversedColor>(P); };
+
+		filters[L"mirrorx"] = 
+			filters[L"縦反転"] = []() { return std::make_unique<filter::XReversed>(); };
+		filters[L"mirrory"] = 
+			filters[L"横反転"] = []() { return std::make_unique<filter::YReversed>(); };
+		filters[L"monochrome"] = filters[L"モノクロ"] = []() { return std::make_unique<filter::Monochrome>(Color{ 0, 0, 0 }); };
+	}
+
+	std::unique_ptr<Filter> FilterMaker::Generate(const std::wstring& Filter_Name) {
+		return filters.at(Filter_Name)();
 	}
 
 	Layer::Layer() {
 		screen = GetProgram()->engine.MakeScreen();
+	}
+
+	void Layer::SetFilter(std::unique_ptr<Filter> new_filter) {
+		filter = std::move(new_filter);
 	}
 
 	void ImageLayer::Execute() {
@@ -82,7 +110,7 @@ namespace karapo {
 	public:
 		inline RelativeLayer(std::shared_ptr<Entity> b) : ImageLayer() {
 			base = b;
-			filter = std::make_unique<filter::None>();
+			SetFilter(std::make_unique<filter::None>());
 		}
 
 		/**
@@ -118,7 +146,7 @@ namespace karapo {
 	class AbsoluteLayer : public ImageLayer {
 	public:
 		inline AbsoluteLayer() : ImageLayer() {
-			filter = std::make_unique<filter::None>();
+			SetFilter(std::make_unique<filter::None>());
 		}
 
 		void Draw() override {
@@ -155,6 +183,11 @@ namespace karapo {
 
 	void Canvas::DeleteLayer(const int Index) noexcept {
 		layers.erase(std::find(layers.begin(), layers.end(), layers[Index]));
+	}
+
+	void Canvas::ApplyFilter(const int Index, const std::wstring& Filter_Name, const int Potency) {
+		FilterMaker filter_maker(Potency);
+		layers[Index]->SetFilter(filter_maker.Generate(Filter_Name));
 	}
 
 	size_t Canvas::CreateRelativeLayer(std::shared_ptr<Entity> e) {

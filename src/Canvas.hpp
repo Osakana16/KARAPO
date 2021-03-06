@@ -10,6 +10,13 @@ namespace karapo {
 		virtual void Draw(const TargetRender) noexcept = 0;
 	};
 
+	class FilterMaker final {
+		std::unordered_map<std::wstring, std::function<std::unique_ptr<Filter> ()>> filters;
+	public:
+		FilterMaker(const int);
+		std::unique_ptr<Filter> Generate(const std::wstring&);
+	};
+
 	// レイヤー
 	class Layer {
 		TargetRender screen;
@@ -21,6 +28,7 @@ namespace karapo {
 		// リソースを登録する。
 		virtual void Register(std::shared_ptr<Entity>) = 0;
 		virtual void Execute() = 0;
+		void SetFilter(std::unique_ptr<Filter>);
 	};
 
 	class ImageLayer : public Layer {
@@ -46,6 +54,8 @@ namespace karapo {
 		void Update() noexcept;
 		void Register(std::shared_ptr<Entity>, const int);
 		void DeleteLayer(const int) noexcept;
+
+		void ApplyFilter(const int, const std::wstring&, const int);
 
 		// レイヤーを作成し、追加する。
 		size_t CreateRelativeLayer(std::shared_ptr<Entity>), CreateAbsoluteLayer();
