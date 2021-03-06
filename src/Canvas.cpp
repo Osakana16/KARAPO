@@ -51,7 +51,10 @@ namespace karapo {
 		public:
 			YReversed() noexcept {}
 			~YReversed() final {}
-			void Draw(const TargetRender Screen) noexcept final {}
+			void Draw(const TargetRender Screen) noexcept final {
+				const auto [W, H] = GetProgram()->WindowSize();
+				GetProgram()->engine.DrawRect(Rect{ W, 0, 0, H }, Screen);
+			}
 		};
 
 		// モノクロフィルター
