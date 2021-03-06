@@ -40,7 +40,10 @@ namespace karapo {
 			XReversed() noexcept {}
 			~XReversed() final {}
 
-			void Draw(const TargetRender Screen) noexcept final {}
+			void Draw(const TargetRender Screen) noexcept final {
+				const auto [W, H] = GetProgram()->WindowSize();
+				GetProgram()->engine.DrawRect(Rect{ 0, H, W, 0 }, Screen);
+			}
 		};
 
 		// Y軸反転フィルター
