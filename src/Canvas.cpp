@@ -25,7 +25,13 @@ namespace karapo {
 			ReversedColor(const int P) noexcept : Potency(P % 256) {}
 			~ReversedColor() final {}
 
-			void Draw(const TargetRender Screen) noexcept final {}
+			void Draw(const TargetRender Screen) noexcept final {
+				auto [w, h] = GetProgram()->WindowSize();
+				GetProgram()->engine.DrawRect(Rect{ 0, 0, w, h }, Screen);
+				GetProgram()->engine.SetBlend(BlendMode::Reverse, Potency);
+				GetProgram()->engine.DrawRect(Rect{ 0, 0, w, h }, Screen);
+				GetProgram()->engine.SetBlend(BlendMode::None, Potency);
+			}
 		};
 
 		// X軸反転フィルター
