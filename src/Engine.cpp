@@ -34,6 +34,19 @@ namespace karapo {
 		program->handler = GetMainWindowHandle();
 	}
 
+	void Program::Engine::SetBlend(const BlendMode Mode, const int potency) {
+		constexpr int Modes[] = {
+			DX_BLENDMODE_NOBLEND,
+			DX_BLENDMODE_ADD,
+			DX_BLENDMODE_SUB,
+			DX_BLENDMODE_MUL,
+			DX_BLENDMODE_XOR,
+			DX_BLENDMODE_INVSRC
+		};
+
+		DxLib::SetDrawBlendMode(Modes[static_cast<int>(Mode)], potency % 256);
+	}
+
 	void Program::Engine::DrawLine(int x1, int y1, int x2, int y2, Color c) {
 		DxLib::DrawLine(x1, y1, x2, y2, GetColor(c.r, c.g, c.b));
 	}

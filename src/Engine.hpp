@@ -53,6 +53,16 @@ namespace karapo {
 #undef LoadImage
 #undef PlaySound
 
+	enum class BlendMode {
+		None,
+		Alpha,
+		Add,
+		Sub,
+		Mul,
+		Xor,
+		Reverse
+	};
+
 	class Program {
 		class Engine {
 			std::vector<TargetRender> screens;
@@ -68,6 +78,7 @@ namespace karapo {
 
 			resource::Resource LoadImage(const std::wstring&) noexcept, LoadSound(const std::wstring&) noexcept;
 
+			void SetBlend(const BlendMode, const int);
 			void DrawLine(int, int, int, int, Color);
 			void DrawRect(Rect, const resource::Image&) noexcept, DrawRect(Rect, const TargetRender) noexcept, DrawRect(Rect, Color, bool fill) noexcept;
 			void DrawSentence(const std::wstring&, const ScreenVector, const int, const Color = { 255, 255, 255 });

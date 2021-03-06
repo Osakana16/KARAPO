@@ -4,6 +4,12 @@
 #pragma once
 
 namespace karapo {
+	class Filter {
+	public:
+		virtual ~Filter() = 0;
+		virtual void Draw(const TargetRender) noexcept = 0;
+	};
+
 	// ƒŒƒCƒ„[
 	// ‰æ‘œ•`Ê’S“–
 	class Layer {

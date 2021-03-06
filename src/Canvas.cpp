@@ -4,6 +4,50 @@
 #include <thread>
 
 namespace karapo {
+	Filter::~Filter() {}
+	namespace filter {
+		// フィルター無し
+		class None final : public Filter {
+		public:
+			~None() final {}
+
+			void Draw(const TargetRender Screen) noexcept final {
+				auto [w, h] = GetProgram()->WindowSize();
+				GetProgram()->engine.DrawRect(Rect{ 0, 0, w, h }, Screen);
+			}
+		};
+
+		// 色反転フィルター
+		class ReversedColor final : public Filter {
+			const int Potency;
+		public:
+			ReversedColor(const int P) noexcept : Potency(P % 256) {}
+			~ReversedColor() final {}
+		};
+
+		// X軸反転フィルター
+		class XReversed final : public Filter {
+		public:
+			XReversed() noexcept {}
+			~XReversed() final {}
+		};
+
+		// Y軸反転フィルター
+		class YReversed final : public Filter {
+		public:
+			YReversed() noexcept {}
+			~YReversed() final {}
+		};
+
+		// モノクロフィルター
+		class Monochrome : public Filter {
+			const Color Base_Color;
+		public:
+			Monochrome(const Color C) noexcept : Base_Color(C) {}
+			~Monochrome() override {}
+		};
+	}
+
 	Layer::Layer() {
 		screen = GetProgram()->engine.MakeScreen();
 	}
