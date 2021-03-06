@@ -55,7 +55,6 @@ namespace karapo {
 
 	enum class BlendMode {
 		None,
-		Alpha,
 		Add,
 		Sub,
 		Mul,

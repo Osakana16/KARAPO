@@ -11,12 +11,12 @@ namespace karapo {
 	};
 
 	// ƒŒƒCƒ„[
-	// ‰æ‘œ•`Ê’S“–
 	class Layer {
 		TargetRender screen;
 	protected:
 		Layer();
 		const TargetRender& Screen = screen;
+		std::unique_ptr<Filter> filter;
 	public:
 		// ƒŠƒ\[ƒX‚ğ“o˜^‚·‚éB
 		virtual void Register(std::shared_ptr<Entity>) = 0;

@@ -82,6 +82,7 @@ namespace karapo {
 	public:
 		inline RelativeLayer(std::shared_ptr<Entity> b) : ImageLayer() {
 			base = b;
+			filter = std::make_unique<filter::None>();
 		}
 
 		/**
@@ -94,7 +95,7 @@ namespace karapo {
 			const auto Draw_Origin = Screen_Size / 2;
 			auto base_origin = base->Origin();
 			std::vector<std::shared_ptr<Entity>> deadmen;
-			p->engine.DrawRect(Rect{ 0, 0, Screen_Size[0], Screen_Size[1] }, Screen);
+			filter->Draw(Screen);
 			p->engine.ChangeTargetScreen(Screen);
 			p->engine.ClearScreen();
 			for (auto drawer : drawing) {
@@ -116,13 +117,14 @@ namespace karapo {
 	*/
 	class AbsoluteLayer : public ImageLayer {
 	public:
-		inline AbsoluteLayer() : ImageLayer() {}
+		inline AbsoluteLayer() : ImageLayer() {
+			filter = std::make_unique<filter::None>();
+		}
 
 		void Draw() override {
 			auto p = GetProgram();
-			const ScreenVector Screen_Size{ p->WindowSize().first, p->WindowSize().second };
 			std::vector<std::shared_ptr<Entity>> deadmen;
-			p->engine.DrawRect(Rect{ 0, 0, Screen_Size[0], Screen_Size[1] }, Screen);
+			filter->Draw(Screen);
 			p->engine.ChangeTargetScreen(Screen);
 			p->engine.ClearScreen();
 			for (auto drawer : drawing) {
