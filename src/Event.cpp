@@ -702,31 +702,42 @@ namespace karapo::event {
 				bool is_variable = false;
 				bool request_abort = false;
 
-				bool CheckCommandWord(const std::wstring& text) noexcept(false) {
-					try {
-						// コマンド生成関数を取得。
-						auto gen = words.at(text);
-						if (liketoRun == nullptr) {
-							liketoRun = gen;
-							is_variable = (text == L"var" || text == L"変数");
-							return true;
-						} else {
-							// 既に生成関数が設定されている時:
-							throw std::runtime_error("一行にコマンドが2つ以上書かれています。");
-						}
-					} catch (std::out_of_range&) {
-						if (liketoRun == nullptr) {
-							// liketoRunがnullptrである時:
-							// 生成関数実行後に残る「'」などの不純物が入り込んだと考える事ができる。
-							// その為、メッセージは設定せず例外を投げる。
-							throw std::runtime_error("");
-						}
+				void CheckCommandWord(const std::wstring& text) noexcept(false) {
+					// コマンド生成関数を取得。
+					auto gen = words.at(text);
+					if (liketoRun == nullptr) {
+						liketoRun = gen;
+						is_variable = (text == L"var" || text == L"変数");
+					} else {
+						// 既に生成関数が設定されている時:
+						throw std::runtime_error("一行にコマンドが2つ以上書かれています。");
 					}
-					return false;
 				}
 
-				bool CheckArgs(const std::wstring& text) noexcept(false) {
-					// 生成関数で検証。
+				void CheckArgs(const std::wstring& text) noexcept(false) {
+					// 引数の型をチェックする。
+
+					// 引数の情報。
+					const auto Index = text.find(L':');
+					const auto Type = (Index == text.npos ? L"" : text.substr(Index));
+
+					// 引数が(変数ではない)定数値かどうか。
+					const bool Is_Const = !Type.empty();
+					if (Is_Const) {
+						parameters.push_back(text);
+					} else {
+						// 変数探し
+						auto& value = GetProgram()->var_manager.Get<true>(text);
+						if (value.type() == typeid(int))
+							parameters.push_back(std::to_wstring(std::any_cast<int>(value)) + L":number");
+						else if (value.type() == typeid(Dec))
+							parameters.push_back(std::to_wstring(std::any_cast<Dec>(value)) + L":number");
+						else
+							parameters.push_back(std::any_cast<std::wstring>(value) + L":string");
+					}
+				}
+
+				bool CompileCommand() {
 					auto&& f = liketoRun(parameters);
 					if (f.isEnough()) {
 						// 引数が十分に積まれている時:
@@ -740,63 +751,48 @@ namespace karapo::event {
 						liketoRun = nullptr;
 						parameters.clear();
 						return true;
-					} else {
-						// 引数が十分でない時:
-						// 引数の型をチェックする。
-
-						// 引数の情報。
-						const auto Index = text.find(L':');
-						const auto Type = (Index == text.npos ? L"" : text.substr(Index));
-
-						// 引数が(変数ではない)定数値かどうか。
-						const bool Is_Const = !Type.empty();
-						if (Is_Const) {
-							parameters.push_back(text);
-						} else {
-							// 変数探し
-							auto& value = GetProgram()->var_manager.Get<true>(text);
-							if (value.type() == typeid(int))
-								parameters.push_back(std::to_wstring(std::any_cast<int>(value)) + L":number");
-							else if (value.type() == typeid(Dec))
-								parameters.push_back(std::to_wstring(std::any_cast<Dec>(value)) + L":number");
-							else
-								parameters.push_back(std::any_cast<std::wstring>(value) + L":string");
-						}
-						return false;
 					}
+					return false;
 				}
 
 				void Interpret(Context *context) noexcept {
 					auto text = context->front();
-					bool need_cleanup = false;
+					bool compiled = false;
 					if (IsParsing()) {
 						// HACK: CheckCommandWordとCheckArgsを含め、「'」等の引数に含まれない文字に対する処理を改善する。
 
-						// その単語がコマンドだったかどうか。
 						bool is_command = false;
 
 						// ここで、一行内のコマンドとその為の引数を一つずつ確認していく。
+						// コマンド確認
 						try {
-							is_command = CheckCommandWord(text);	// コマンド確認。
-							need_cleanup = CheckArgs(text);			// 引数確認。
+							CheckCommandWord(text);
+							is_command = true;
 						} catch (std::runtime_error& e) {
 							// 主にCheckCommandWordからの例外をここで捕捉。
 							if (liketoRun != nullptr) {
 								MessageBoxA(nullptr, e.what(), "エラー", MB_OK | MB_ICONERROR);
 								request_abort = true;
 							}
-						} catch (std::out_of_range& e) {
-							// 主にCheckArgsからの例外をここで捕捉。
-							if (is_variable) {
-								// 変数コマンドの引数だった場合は変数名として引数に積む。
-								if (!is_command)
+						} catch (std::out_of_range& e) {}
+
+						if (!is_command && !request_abort) {
+							try {
+								CheckArgs(text);			// 引数確認。
+							} catch (std::out_of_range& e) {
+								// 主にCheckArgsからの例外をここで捕捉。
+								if (is_variable) {
+									// 変数コマンドの引数だった場合は変数名として引数に積む。
 									parameters.push_back(text);
-							} else {
-								if (!is_command) {
+								} else {
 									MessageBoxA(nullptr, "未定義の変数が使用されています。", "エラー", MB_OK | MB_ICONERROR);
 									request_abort = true;
 								}
 							}
+						}
+
+						if (!request_abort) {
+							compiled = CompileCommand();
 						}
 					}
 
@@ -818,7 +814,7 @@ namespace karapo::event {
 						}
 					}
 					context->pop();
-					if (need_cleanup) {
+					if (compiled) {
 						while (context->front() == L"\n") {
 							context->pop();
 						}
