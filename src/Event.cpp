@@ -478,6 +478,30 @@ namespace karapo::event {
 				}
 			};
 
+			class TypeDeterminer final {
+				Context compiled{};
+			public:
+				TypeDeterminer(Context& context) {
+					while (!context.empty()) {
+						auto&& word = std::move(context.front());
+						if (iswdigit(word[0])) {
+							word += L":number";
+						} else if (word[0] == L'\'') {
+							word += L":string";
+							for (size_t pos = word.find(L'\''); pos != std::wstring::npos; pos = word.find(L'\'')) {
+								word.erase(pos, 1);
+							}
+						}
+						compiled.push(std::move(word));
+						context.pop();
+					}
+				}
+
+				auto Result() noexcept {
+					return std::move(compiled);
+				}
+			};
+
 			// SCからECまでの範囲の文章を解析する解析器。
 			// それ以外には、解析中かどうかを表現するための関数群を持つ。
 			template<wchar_t SC, wchar_t EC>
@@ -977,6 +1001,8 @@ namespace karapo::event {
 			Parser(const std::wstring& Sentence) noexcept {
 				LexicalParser lexparser(Sentence);
 				auto context = lexparser.Result();
+				TypeDeterminer type_determiner(context);
+				context = type_determiner.Result();
 				bool aborted = false;
 
 				while (!context.empty() && !aborted) {
