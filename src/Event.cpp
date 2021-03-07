@@ -436,7 +436,7 @@ namespace karapo::event {
 							switch (c) {
 								case L'\'':
 									is_string = true;
-									[[fallthrough]];
+									break;
 								case L'~':
 								case L']':
 								case L'[':
@@ -464,12 +464,7 @@ namespace karapo::event {
 							switch (c) {
 								case L'\'':
 									is_string = false;
-									// ’™‚ß‚±‚ñ‚¾•¶š‚ğ’PŒê‚Æ‚µ‚ÄŠi”[
-									if (!text.empty()) {
-										PushWord(&context, &text);
-									}
-									// ‹L†‚ğ‘ã“ü
-									text = c;
+									text += c;
 									PushWord(&context, &text);
 									continue;
 							}
