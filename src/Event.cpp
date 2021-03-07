@@ -699,7 +699,6 @@ namespace karapo::event {
 				std::vector<std::wstring> parameters;	// 引数
 				Event::Commands commands;	// 
 				GenerateFunc liketoRun;				// 生成関数を実行するための関数ポインタ。
-				bool is_string = false;
 				bool is_variable = false;
 				bool request_abort = false;
 
@@ -743,22 +742,25 @@ namespace karapo::event {
 						return true;
 					} else {
 						// 引数が十分でない時:
-						if (text == L"\'") {
-							is_string = !is_string;
+						// 引数の型をチェックする。
+
+						// 引数の情報。
+						const auto Index = text.find(L':');
+						const auto Type = (Index == text.npos ? L"" : text.substr(Index));
+
+						// 引数が(変数ではない)定数値かどうか。
+						const bool Is_Const = !Type.empty();
+						if (Is_Const) {
+							parameters.push_back(text);
 						} else {
-							if (is_string || iswdigit(text[0])) {
-								// 数値または文字列を積む。
-								parameters.push_back(text);
-							} else {
-								// 変数探し
-								auto& value = GetProgram()->var_manager.Get<true>(text);
-								if (value.type() == typeid(int))
-									parameters.push_back(std::to_wstring(std::any_cast<int>(value)));
-								else if (value.type() == typeid(Dec))
-									parameters.push_back(std::to_wstring(std::any_cast<Dec>(value)));
-								else
-									parameters.push_back(std::any_cast<std::wstring>(value));
-							}
+							// 変数探し
+							auto& value = GetProgram()->var_manager.Get<true>(text);
+							if (value.type() == typeid(int))
+								parameters.push_back(std::to_wstring(std::any_cast<int>(value)) + L":number");
+							else if (value.type() == typeid(Dec))
+								parameters.push_back(std::to_wstring(std::any_cast<Dec>(value)) + L":number");
+							else
+								parameters.push_back(std::any_cast<std::wstring>(value) + L":string");
 						}
 						return false;
 					}
@@ -820,7 +822,6 @@ namespace karapo::event {
 						while (context->front() == L"\n") {
 							context->pop();
 						}
-						is_string = false;
 					}
 					Interpret(context);
 				}
