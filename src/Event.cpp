@@ -8,6 +8,28 @@
 #include <chrono>
 #include <forward_list>
 
+namespace {
+	std::pair<std::wstring, std::wstring> GetParamInfo(const std::wstring& Param) {
+		// 引数の情報。
+		const auto Index = Param.find(L':');
+		const auto Var = (Index == Param.npos ? Param : Param.substr(0, Index));
+		const auto Type = (Index == Param.npos ? L"" : Param.substr(Index + 1));
+		return { Var, Type };
+	}
+
+	bool IsStringType(const std::wstring& Param_Type) noexcept {
+		return Param_Type == L"string";
+	}
+
+	bool IsNumberType(const std::wstring& Param_Type) noexcept {
+		return Param_Type == L"number";
+	}
+
+	bool IsNoType(const std::wstring& Param_Type) noexcept {
+		return Param_Type.empty();
+	}
+}
+
 namespace karapo::event {
 	namespace command {
 		// Entity操作系コマンド
@@ -740,13 +762,16 @@ namespace karapo::event {
 				bool CompileCommand() {
 					auto&& f = liketoRun(parameters);
 					if (f.isEnough()) {
-						// 引数が十分に積まれている時:
-						if (f.is_dynamic) {
-							// 動的コマンドはイベントのコマンドに追加。
-							commands.push_back(std::move(f.Result()));
-						} else if (f.is_static) {
-							// 静的コマンドは即実行。
-							f.Result()->Execute();
+						auto&& result = f.Result();
+						if (result != nullptr) {
+							// 引数が十分に積まれている時:
+							if (f.is_dynamic) {
+								// 動的コマンドはイベントのコマンドに追加。
+								commands.push_back(std::move(result));
+							} else if (f.is_static) {
+								// 静的コマンドは即実行。
+								result->Execute();
+							}
 						}
 						liketoRun = nullptr;
 						parameters.clear();
@@ -843,7 +868,10 @@ namespace karapo::event {
 						words[L"BGM"] = [](const std::vector<std::wstring>& params) -> KeywordInfo
 					{
 						return {
-							.Result = [&]() noexcept -> CommandPtr { return std::make_unique<command::Music>(params[0]); },
+							.Result = [&]() noexcept -> CommandPtr { 
+								const auto [Var, Type] = GetParamInfo(params[0]);
+								return (IsStringType(Type) ? std::make_unique<command::Music>(Var) : nullptr);
+							},
 							.isEnough = [params]() -> bool { return params.size() == 1; },
 							.is_static = false,
 							.is_dynamic = true
@@ -856,7 +884,16 @@ namespace karapo::event {
 					{
 						printf("There is a sound!\n");
 						return {
-							.Result = [&]() noexcept -> CommandPtr { return std::make_unique<command::Sound>(params[0], WorldVector{ ToDec<Dec>(params[1].c_str(), nullptr), ToDec<Dec>(params[2].c_str(), nullptr) }); },
+							.Result = [&]() noexcept -> CommandPtr {
+								const auto [File_Path, Path_Type] = GetParamInfo(params[0]);
+								const auto [Vec_X, X_Type] = GetParamInfo(params[1]);
+								const auto [Vec_Y, Y_Type] = GetParamInfo(params[2]);
+								if (IsStringType(Path_Type) && IsNumberType(X_Type) && IsNumberType(Y_Type)) {
+									return std::make_unique<command::Sound>(File_Path, WorldVector{ ToDec<Dec>(Vec_X.c_str(), nullptr), ToDec<Dec>(Vec_Y.c_str(), nullptr) });
+								} else {
+									return nullptr;
+								}
+							},
 							.isEnough = [params]() -> bool { return params.size() == 1; },
 							.is_static = false,
 							.is_dynamic = true
@@ -868,7 +905,16 @@ namespace karapo::event {
 						words[L"絵"] = [](const std::vector<std::wstring>& params) -> KeywordInfo
 					{
 						return {
-							.Result = [&]() noexcept -> CommandPtr { return std::make_unique<command::Image>(params[0], WorldVector{ ToDec<Dec>(params[1].c_str(), nullptr), ToDec<Dec>(params[2].c_str(), nullptr) }); },
+							.Result = [&]() noexcept -> CommandPtr {
+								const auto [File_Path, Path_Type] = GetParamInfo(params[0]);
+								const auto [Vec_X, X_Type] = GetParamInfo(params[1]);
+								const auto [Vec_Y, Y_Type] = GetParamInfo(params[2]);
+								if (IsStringType(Path_Type) && IsNumberType(X_Type) && IsNumberType(Y_Type)) {
+									return std::make_unique<command::Image>(File_Path, WorldVector{ ToDec<Dec>(Vec_X.c_str(), nullptr), ToDec<Dec>(Vec_Y.c_str(), nullptr) });
+								} else {
+									return nullptr;
+								}
+							},
 							.isEnough = [params]() -> bool { return params.size() == 3; },
 							.is_static = false,
 							.is_dynamic = true
@@ -879,11 +925,17 @@ namespace karapo::event {
 						words[L"瞬間移動"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
 						return {
 							.Result = [&]() noexcept -> CommandPtr {
-								return std::make_unique<command::entity::Teleport>(
-									params[0],
-									WorldVector{ ToDec<Dec>(params[1].c_str(), nullptr), ToDec<Dec>(params[2].c_str(),
-									nullptr)
+								const auto [Target, Target_Type] = GetParamInfo(params[0]);
+								const auto [X, X_Type] = GetParamInfo(params[1]);
+								const auto [Y, Y_Type] = GetParamInfo(params[2]);
+								if (IsStringType(Target_Type) && IsNumberType(X_Type) && IsNumberType(Y_Type)) {
+									return std::make_unique<command::entity::Teleport>(
+										Target,
+										WorldVector{ ToDec<Dec>(X.c_str(), nullptr), ToDec<Dec>(Y.c_str(), nullptr)
 									});
+								} else {
+									return nullptr;
+								}
 							},
 							.isEnough = [params]() -> bool { return params.size() == 3; },
 							.is_static = false,
@@ -894,7 +946,10 @@ namespace karapo::event {
 					words[L"kill"] = 
 						words[L"殺害"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
 						return {
-							.Result = [&]() noexcept -> CommandPtr { return std::make_unique<command::entity::Kill>(params[0]); },
+							.Result = [&]() noexcept -> CommandPtr {
+								const auto [Var, Type] = GetParamInfo(params[0]);
+								return (IsStringType(Type) ? std::make_unique<command::entity::Kill>(Var) : nullptr);
+							},
 							.isEnough = [params]() -> bool { return params.size() == 1; },
 							.is_static = false,
 							.is_dynamic = true
@@ -904,7 +959,14 @@ namespace karapo::event {
 					words[L"alias"] =
 						words[L"別名"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
 						return {
-							.Result = [&]() -> CommandPtr { return std::make_unique<command::Alias>(params[0], params[1]); },
+							.Result = [&]() -> CommandPtr { 
+								const auto [Base, Base_Type] = GetParamInfo(params[0]);
+								const auto [New_One, New_Type] = GetParamInfo(params[1]);
+								if (IsNoType(Base_Type) && IsNoType(New_Type))
+									return std::make_unique<command::Alias>(Base, New_One);
+								else
+									return nullptr;
+							},
 							.isEnough = [params]() -> bool { return params.size() == 2; },
 							.is_static = true,
 							.is_dynamic = false
@@ -916,7 +978,8 @@ namespace karapo::event {
 						words[L"接続"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
 						return {
 							.Result = [&]() -> CommandPtr {
-								return std::make_unique<command::Attach>(params[0]);
+								const auto [Var, Type] = GetParamInfo(params[0]);
+								return (IsStringType(Type) ?std::make_unique<command::Attach>(Var) : nullptr);
 							},
 							.isEnough = [params]() -> bool { return params.size() == 1; },
 							.is_static = true,
@@ -929,7 +992,8 @@ namespace karapo::event {
 						words[L"切断"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
 						return {
 							.Result = [&]() -> CommandPtr {
-								return std::make_unique<command::Detach>(params[0]);
+								const auto [Var, Type] = GetParamInfo(params[0]);
+								return (IsStringType(Type) ? std::make_unique<command::Detach>(Var) : nullptr);
 							},
 							.isEnough = [params]() -> bool { return params.size() == 1; },
 							.is_static = true,
@@ -950,7 +1014,12 @@ namespace karapo::event {
 						words[L"変数"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
 						return {
 							.Result = [&]() -> CommandPtr {
-								return std::make_unique<command::Variable>(params[0], params[1]); 
+								const auto [Var, Var_Type] = GetParamInfo(params[0]);
+								const auto [Value, Value_Type] = GetParamInfo(params[1]);
+								if (Var_Type == L"")
+									return std::make_unique<command::Variable>(Var, Value);
+								else
+									return nullptr;
 							},
 							.isEnough = [params]() -> bool { return params.size() == 2; },
 							.is_static = true,
