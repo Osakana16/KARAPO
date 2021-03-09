@@ -786,38 +786,40 @@ namespace karapo::event {
 					if (IsParsing()) {
 						// HACK: CheckCommandWordとCheckArgsを含め、「'」等の引数に含まれない文字に対する処理を改善する。
 
-						bool is_command = false;
+						if (!IsValidToEnd(text[0])) {
+							bool is_command = false;
 
-						// ここで、一行内のコマンドとその為の引数を一つずつ確認していく。
-						// コマンド確認
-						try {
-							CheckCommandWord(text);
-							is_command = true;
-						} catch (std::runtime_error& e) {
-							// 主にCheckCommandWordからの例外をここで捕捉。
-							if (liketoRun != nullptr) {
-								MessageBoxA(nullptr, e.what(), "エラー", MB_OK | MB_ICONERROR);
-								request_abort = true;
-							}
-						} catch (std::out_of_range& e) {}
-
-						if (!is_command && !request_abort) {
+							// ここで、一行内のコマンドとその為の引数を一つずつ確認していく。
+							// コマンド確認
 							try {
-								CheckArgs(text);			// 引数確認。
-							} catch (std::out_of_range& e) {
-								// 主にCheckArgsからの例外をここで捕捉。
-								if (is_variable) {
-									// 変数コマンドの引数だった場合は変数名として引数に積む。
-									parameters.push_back(text);
-								} else {
-									MessageBoxA(nullptr, "未定義の変数が使用されています。", "エラー", MB_OK | MB_ICONERROR);
+								CheckCommandWord(text);
+								is_command = true;
+							} catch (std::runtime_error& e) {
+								// 主にCheckCommandWordからの例外をここで捕捉。
+								if (liketoRun != nullptr) {
+									MessageBoxA(nullptr, e.what(), "エラー", MB_OK | MB_ICONERROR);
 									request_abort = true;
 								}
-							}
-						}
+							} catch (std::out_of_range& e) {}
 
-						if (!request_abort) {
-							compiled = CompileCommand();
+							if (!is_command && !request_abort) {
+								try {
+									CheckArgs(text);			// 引数確認。
+								} catch (std::out_of_range& e) {
+									// 主にCheckArgsからの例外をここで捕捉。
+									if (is_variable) {
+										// 変数コマンドの引数だった場合は変数名として引数に積む。
+										parameters.push_back(text);
+									} else {
+										MessageBoxA(nullptr, "未定義の変数が使用されています。", "エラー", MB_OK | MB_ICONERROR);
+										request_abort = true;
+									}
+								}
+							}
+
+							if (!request_abort) {
+								compiled = CompileCommand();
+							}
 						}
 					}
 
