@@ -8,29 +8,29 @@
 #include <chrono>
 #include <forward_list>
 
-namespace {
-	std::pair<std::wstring, std::wstring> GetParamInfo(const std::wstring& Param) {
-		// 引数の情報。
-		const auto Index = Param.find(L':');
-		const auto Var = (Index == Param.npos ? Param : Param.substr(0, Index));
-		const auto Type = (Index == Param.npos ? L"" : Param.substr(Index + 1));
-		return { Var, Type };
-	}
-
-	bool IsStringType(const std::wstring& Param_Type) noexcept {
-		return Param_Type == L"string";
-	}
-
-	bool IsNumberType(const std::wstring& Param_Type) noexcept {
-		return Param_Type == L"number";
-	}
-
-	bool IsNoType(const std::wstring& Param_Type) noexcept {
-		return Param_Type.empty();
-	}
-}
-
 namespace karapo::event {
+	namespace {
+		std::pair<std::wstring, std::wstring> GetParamInfo(const std::wstring& Param) {
+			// 引数の情報。
+			const auto Index = Param.find(L':');
+			const auto Var = (Index == Param.npos ? Param : Param.substr(0, Index));
+			const auto Type = (Index == Param.npos ? L"" : Param.substr(Index + 1));
+			return { Var, Type };
+		}
+
+		bool IsStringType(const std::wstring& Param_Type) noexcept {
+			return Param_Type == innertype::String;
+		}
+
+		bool IsNumberType(const std::wstring& Param_Type) noexcept {
+			return Param_Type == innertype::Number;
+		}
+
+		bool IsNoType(const std::wstring& Param_Type) noexcept {
+			return Param_Type == innertype::None;
+		}
+	}
+
 	namespace command {
 		// Entity操作系コマンド
 		class EntityCommand : public Command {
@@ -507,9 +507,9 @@ namespace karapo::event {
 					while (!context.empty()) {
 						auto&& word = std::move(context.front());
 						if (iswdigit(word[0])) {
-							word += L":number";
+							word += std::wstring(L":") + innertype::Number;
 						} else if (word[0] == L'\'') {
-							word += L":string";
+							word += std::wstring(L":") + innertype::String;
 							for (size_t pos = word.find(L'\''); pos != std::wstring::npos; pos = word.find(L'\'')) {
 								word.erase(pos, 1);
 							}
@@ -751,11 +751,11 @@ namespace karapo::event {
 						// 変数探し
 						auto& value = GetProgram()->var_manager.Get<true>(text);
 						if (value.type() == typeid(int))
-							parameters.push_back(std::to_wstring(std::any_cast<int>(value)) + L":number");
+							parameters.push_back(std::to_wstring(std::any_cast<int>(value)) + std::wstring(L":") + innertype::Number);
 						else if (value.type() == typeid(Dec))
-							parameters.push_back(std::to_wstring(std::any_cast<Dec>(value)) + L":number");
+							parameters.push_back(std::to_wstring(std::any_cast<Dec>(value)) + std::wstring(L":") + innertype::Number);
 						else
-							parameters.push_back(std::any_cast<std::wstring>(value) + L":string");
+							parameters.push_back(std::any_cast<std::wstring>(value) + std::wstring(L":") + innertype::String);
 					}
 				}
 
