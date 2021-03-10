@@ -1044,8 +1044,16 @@ namespace karapo::event {
 					};
 
 					words[L"case"] =
-						words[L"ğŒ"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						words[L"ğŒ"] = [&](const std::vector<std::wstring>& params) -> KeywordInfo {
 						return {
+							.Result = [&]() -> CommandPtr { 
+								const auto [Var, Type] = GetParamInfo(params[0]);
+								if (IsNoType(Type))
+									return std::make_unique<command::Case>(Var);
+								else
+									return nullptr;
+							},
+							.isEnough = [params]() -> bool { return params.size() == 1; },
 							.is_static = true,
 							.is_dynamic = false
 						};
@@ -1054,6 +1062,14 @@ namespace karapo::event {
 					words[L"of"] =
 						words[L"•ªŠò"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
 						return {
+							.Result = [&]() -> CommandPtr {
+								const auto [Var, Type] = GetParamInfo(params[0]);
+								if (IsNoType(Type))
+									return std::make_unique<command::Of>(Var);
+								else
+									return nullptr;
+							},
+							.isEnough = [params]() -> bool { return params.size() == 1; },
 							.is_static = true,
 							.is_dynamic = false
 						};
