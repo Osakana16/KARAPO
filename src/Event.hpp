@@ -42,6 +42,7 @@ namespace karapo::event {
 			void SetTarget(std::any* tv);
 			// ğŒ®‚ğ•]‰¿‚·‚é
 			bool Evalute(const std::wstring& Sentence) const noexcept;
+			void Free();
 		} condition_manager;
 
 		void *cmdparser;
@@ -63,5 +64,6 @@ namespace karapo::event {
 
 		void SetCondTarget(std::any*);
 		bool Evalute(const std::wstring& Sentence);
+		void FreeCase();
 	};
 }

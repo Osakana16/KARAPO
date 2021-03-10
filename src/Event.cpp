@@ -78,6 +78,7 @@ namespace karapo::event {
 			}
 		};
 
+		// ðŒ‘ÎÛÝ’è
 		class Case : public Command {
 			std::wstring varname;
 			bool executed = false;
@@ -99,6 +100,7 @@ namespace karapo::event {
 			}
 		};
 
+		// ðŒŽ®
 		class Of : public Command {
 			std::wstring condition_sentence;
 			bool executed = false;
@@ -116,6 +118,31 @@ namespace karapo::event {
 			}
 
 			bool IsUnnecessary() const noexcept override {
+				return Executed();
+			}
+		};
+
+		// ðŒI—¹
+		class EndCase final : public Command {
+			std::wstring condition_sentence;
+			bool executed = false;
+		public:
+			EndCase(const std::wstring& Condition_Sentence) noexcept {
+				condition_sentence = Condition_Sentence;
+			}
+
+			~EndCase() final {}
+
+			void Execute() final {
+				GetProgram()->event_manager.FreeCase();
+				executed = true;
+			}
+
+			bool Executed() const noexcept final {
+				return executed;
+			}
+
+			bool IsUnnecessary() const noexcept final {
 				return Executed();
 			}
 		};
@@ -1146,6 +1173,11 @@ namespace karapo::event {
 		}
 	}
 
+	void Manager::ConditionManager::Free() {
+		target_variable = nullptr;
+		results.clear();
+	}
+
 	void Manager::LoadEvent(const std::wstring path) noexcept {
 		EventGenerator generator(path);
 		events = std::move(generator.Result());
@@ -1203,6 +1235,10 @@ namespace karapo::event {
 
 	bool Manager::Evalute(const std::wstring& Sentence) {
 		return condition_manager.Evalute(Sentence);
+	}
+
+	void Manager::FreeCase() {
+		condition_manager.Free();
 	}
 
 	void command::Alias::Execute() {
