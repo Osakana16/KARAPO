@@ -89,6 +89,7 @@ namespace karapo::event {
 
 			void Execute() override {
 				GetProgram()->event_manager.SetCondTarget(&GetProgram()->var_manager.Get<true>(varname));
+				executed = true;
 			}
 
 			bool Executed() const noexcept override {
@@ -111,6 +112,7 @@ namespace karapo::event {
 
 			void Execute() override {
 				GetProgram()->event_manager.Evalute(condition_sentence);
+				executed = true;
 			}
 
 			bool Executed() const noexcept override {
