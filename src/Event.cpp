@@ -1073,7 +1073,7 @@ namespace karapo::event {
 						return {
 							.Result = [&]() -> CommandPtr { 
 								const auto [Var, Type] = GetParamInfo(params[0]);
-								if (IsNoType(Type))
+								if (!IsNoType(Type))
 									return std::make_unique<command::Case>(Var);
 								else
 									return nullptr;
@@ -1089,7 +1089,7 @@ namespace karapo::event {
 						return {
 							.Result = [&]() -> CommandPtr {
 								const auto [Var, Type] = GetParamInfo(params[0]);
-								if (IsNoType(Type))
+								if (!IsNoType(Type))
 									return std::make_unique<command::Of>(Var);
 								else
 									return nullptr;
