@@ -126,13 +126,9 @@ namespace karapo::event {
 
 		// ğŒI—¹
 		class EndCase final : public Command {
-			std::wstring condition_sentence;
 			bool executed = false;
 		public:
-			EndCase(const std::wstring& Condition_Sentence) noexcept {
-				condition_sentence = Condition_Sentence;
-			}
-
+			EndCase() noexcept {}
 			~EndCase() final {}
 
 			void Execute() final {
@@ -1099,6 +1095,18 @@ namespace karapo::event {
 									return nullptr;
 							},
 							.isEnough = [params]() -> bool { return params.size() == 1; },
+							.is_static = true,
+							.is_dynamic = false
+						};
+					};
+
+					words[L"endcase"] =
+						words[L"•ªŠòI—¹"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() -> CommandPtr {
+								return std::make_unique<command::EndCase>();
+							},
+							.isEnough = [params]() -> bool { return params.size() == 0; },
 							.is_static = true,
 							.is_dynamic = false
 						};
