@@ -37,12 +37,13 @@ namespace karapo::event {
 
 		class ConditionManager final {
 			std::any* target_variable;
-			std::vector<bool> results;
+			bool can_execute = true;
 		public:
 			void SetTarget(std::any* tv);
 			// ğŒ®‚ğ•]‰¿‚·‚é
-			bool Evalute(const std::wstring& Sentence) const noexcept;
+			void Evalute(const std::wstring& Sentence) noexcept;
 			void Free();
+			const bool& Can_Execute = can_execute;
 		} condition_manager;
 
 		void *cmdparser;
@@ -63,7 +64,7 @@ namespace karapo::event {
 		void Update() noexcept;
 
 		void SetCondTarget(std::any*);
-		bool Evalute(const std::wstring& Sentence);
+		void Evalute(const std::wstring& Sentence);
 		void FreeCase();
 	};
 }

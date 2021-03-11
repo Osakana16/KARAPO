@@ -407,7 +407,7 @@ namespace karapo::event {
 			if (cmd == nullptr)
 				return nullptr;
 
-			if (!cmd->IsUnnecessary()) {
+			if (!cmd->IsUnnecessary() && GetProgram()->event_manager.condition_manager.Can_Execute) {
 				cmd->Execute();
 				return std::move(cmd);
 			} else {
@@ -1162,20 +1162,21 @@ namespace karapo::event {
 	}
 
 	// ðŒŽ®‚ð•]‰¿‚·‚é
-	bool Manager::ConditionManager::Evalute(const std::wstring& Sentence) const noexcept {
+	void Manager::ConditionManager::Evalute(const std::wstring& Sentence) noexcept {
+		can_execute = true;
 		auto& type = target_variable->type();
 		if (type == typeid(int)) {
-			return std::any_cast<int>(*target_variable) == ToInt(Sentence.c_str(), nullptr);
+			can_execute = std::any_cast<int>(*target_variable) == ToInt(Sentence.c_str(), nullptr);
 		} else if (type == typeid(Dec)) {
-			return std::any_cast<Dec>(*target_variable) == ToDec<Dec>(Sentence.c_str(), nullptr);
+			can_execute = std::any_cast<Dec>(*target_variable) == ToDec<Dec>(Sentence.c_str(), nullptr);
 		} else {
-			return std::any_cast<std::wstring>(*target_variable) == Sentence;
+			can_execute = std::any_cast<std::wstring>(*target_variable) == Sentence;
 		}
 	}
 
 	void Manager::ConditionManager::Free() {
 		target_variable = nullptr;
-		results.clear();
+		can_execute = true;
 	}
 
 	void Manager::LoadEvent(const std::wstring path) noexcept {
@@ -1233,8 +1234,8 @@ namespace karapo::event {
 		condition_manager.SetTarget(tv);
 	}
 
-	bool Manager::Evalute(const std::wstring& Sentence) {
-		return condition_manager.Evalute(Sentence);
+	void Manager::Evalute(const std::wstring& Sentence) {
+		condition_manager.Evalute(Sentence);
 	}
 
 	void Manager::FreeCase() {
