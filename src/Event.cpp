@@ -80,15 +80,20 @@ namespace karapo::event {
 
 		// èåèëŒè€ê›íË
 		class Case : public Command {
-			std::wstring varname;
+			std::any value;
 			bool executed = false;
 		public:
-			Case(const std::wstring& Name) noexcept {
-				varname = Name;
+			Case(const std::wstring& Param) noexcept {
+				const auto [Value, Type] = GetParamInfo(Param);
+				if (IsStringType(Type)) {
+					value = Value;
+				} else if (IsNumberType(Value)) {
+					value = std::stoi(Value);
+				}
 			}
 
 			void Execute() override {
-				GetProgram()->event_manager.SetCondTarget(&GetProgram()->var_manager.Get<true>(varname));
+				GetProgram()->event_manager.SetCondTarget(value);
 				executed = true;
 			}
 
@@ -1072,11 +1077,7 @@ namespace karapo::event {
 						words[L"èåè"] = [&](const std::vector<std::wstring>& params) -> KeywordInfo {
 						return {
 							.Result = [&]() -> CommandPtr { 
-								const auto [Var, Type] = GetParamInfo(params[0]);
-								if (!IsNoType(Type))
-									return std::make_unique<command::Case>(Var);
-								else
-									return nullptr;
+								return std::make_unique<command::Case>(params[0]);
 							},
 							.isEnough = [params]() -> bool { return params.size() == 1; },
 							.is_static = true,
@@ -1167,25 +1168,25 @@ namespace karapo::event {
 	};
 
 	// 
-	void Manager::ConditionManager::SetTarget(std::any* tv) {
-		target_variable = tv;
+	void Manager::ConditionManager::SetTarget(std::any& tv) {
+		target_value = tv;
 	}
 
 	// èåèéÆÇï]âøÇ∑ÇÈ
 	void Manager::ConditionManager::Evalute(const std::wstring& Sentence) noexcept {
 		can_execute = true;
-		auto& type = target_variable->type();
+		auto& type = target_value.type();
 		if (type == typeid(int)) {
-			can_execute = std::any_cast<int>(*target_variable) == ToInt(Sentence.c_str(), nullptr);
+			can_execute = std::any_cast<int>(target_value) == ToInt(Sentence.c_str(), nullptr);
 		} else if (type == typeid(Dec)) {
-			can_execute = std::any_cast<Dec>(*target_variable) == ToDec<Dec>(Sentence.c_str(), nullptr);
+			can_execute = std::any_cast<Dec>(target_value) == ToDec<Dec>(Sentence.c_str(), nullptr);
 		} else {
-			can_execute = std::any_cast<std::wstring>(*target_variable) == Sentence;
+			can_execute = std::any_cast<std::wstring>(target_value) == Sentence;
 		}
 	}
 
 	void Manager::ConditionManager::Free() {
-		target_variable = nullptr;
+		target_value.reset();
 		can_execute = true;
 	}
 
@@ -1240,7 +1241,7 @@ namespace karapo::event {
 		static_cast<EventGenerator::Parser::CommandParser*>(cmdparser)->MakeAlias(O, N);
 	}
 
-	void Manager::SetCondTarget(std::any* tv) {
+	void Manager::SetCondTarget(std::any tv) {
 		condition_manager.SetTarget(tv);
 	}
 

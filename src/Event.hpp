@@ -36,10 +36,10 @@ namespace karapo::event {
 		class VariableManager;
 
 		class ConditionManager final {
-			std::any* target_variable;
+			std::any target_value;
 			bool can_execute = true;
 		public:
-			void SetTarget(std::any* tv);
+			void SetTarget(std::any& tv);
 			// ğŒ®‚ğ•]‰¿‚·‚é
 			void Evalute(const std::wstring& Sentence) noexcept;
 			void Free();
@@ -63,7 +63,7 @@ namespace karapo::event {
 		//
 		void Update() noexcept;
 
-		void SetCondTarget(std::any*);
+		void SetCondTarget(std::any);
 		void Evalute(const std::wstring& Sentence);
 		void FreeCase();
 	};
