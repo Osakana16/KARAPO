@@ -41,11 +41,28 @@ namespace karapo::event {
 			}
 		};
 
+		// 普通のコマンド
+		// executed変数により、実行云々の情報を管理する。
+		class StandardCommand : public Command {
+			bool executed = false;	// 実行したか否か。
+		public:
+			void Execute() override {
+				executed = true;
+			}
+
+			bool Executed() const noexcept override {
+				return executed;
+			}
+
+			bool IsUnnecessary() const noexcept override {
+				return Executed();
+			}
+		};
+
 		// 変数
-		class Variable : public Command {
+		class Variable : public StandardCommand {
 			std::wstring varname;
 			std::any value;
-			bool executed = false;
 		public:
 			Variable(const std::wstring& VName, const std::wstring& Any_Value) noexcept {
 				varname = VName;
@@ -67,21 +84,13 @@ namespace karapo::event {
 
 			void Execute() override {
 				GetProgram()->var_manager.MakeNew(varname) = value;
-			}
-
-			bool Executed() const noexcept override {
-				return executed;
-			}
-
-			bool IsUnnecessary() const noexcept override {
-				return Executed();
+				StandardCommand::Execute();
 			}
 		};
 
 		// 条件対象設定
-		class Case : public Command {
+		class Case : public StandardCommand {
 			std::any value;
-			bool executed = false;
 		public:
 			Case(const std::wstring& Param) noexcept {
 				const auto [Value, Type] = GetParamInfo(Param);
@@ -94,22 +103,13 @@ namespace karapo::event {
 
 			void Execute() override {
 				GetProgram()->event_manager.SetCondTarget(value);
-				executed = true;
-			}
-
-			bool Executed() const noexcept override {
-				return executed;
-			}
-
-			bool IsUnnecessary() const noexcept override {
-				return Executed();
+				StandardCommand::Execute();
 			}
 		};
 
 		// 条件式
-		class Of : public Command {
+		class Of : public StandardCommand {
 			std::wstring condition_sentence;
-			bool executed = false;
 		public:
 			Of(const std::wstring& Condition_Sentence) noexcept {
 				condition_sentence = Condition_Sentence;
@@ -117,44 +117,26 @@ namespace karapo::event {
 
 			void Execute() override {
 				GetProgram()->event_manager.Evalute(condition_sentence);
-				executed = true;
-			}
-
-			bool Executed() const noexcept override {
-				return executed;
-			}
-
-			bool IsUnnecessary() const noexcept override {
-				return Executed();
+				StandardCommand::Execute();
 			}
 		};
 
 		// 条件終了
-		class EndCase final : public Command {
-			bool executed = false;
+		class EndCase final : public StandardCommand {
 		public:
 			EndCase() noexcept {}
 			~EndCase() final {}
 
 			void Execute() final {
 				GetProgram()->event_manager.FreeCase();
-				executed = true;
-			}
-
-			bool Executed() const noexcept final {
-				return executed;
-			}
-
-			bool IsUnnecessary() const noexcept final {
-				return Executed();
+				StandardCommand::Execute();
 			}
 		};
 
 		// 画像を読み込み、表示させる。
-		class Image : public Command {
+		class Image : public StandardCommand {
 			std::shared_ptr<karapo::entity::Image> image;
 			const std::wstring Path;
-			bool executed = false;
 		public:
 			Image(const std::wstring& P, const WorldVector WV) : Path(P) {
 				image = std::make_shared<karapo::entity::Image>(WV);
@@ -165,23 +147,14 @@ namespace karapo::event {
 			void Execute() override {
 				image->Load(Path.c_str());
 				GetProgram()->entity_manager.Register(image);
-				executed = true;
-			}
-
-			bool Executed() const noexcept override {
-				return executed;
-			}
-
-			bool IsUnnecessary() const noexcept override {
-				return Executed();
+				StandardCommand::Execute();
 			}
 		};
 
 		// BGM
-		class Music final : public Command {
+		class Music final : public StandardCommand {
 			std::shared_ptr<karapo::entity::Sound> music;
 			const std::wstring Path;
-			bool executed = false;
 		public:
 			Music(const std::wstring& P) : Path(P) {
 				music = std::make_shared<karapo::entity::Sound>(WorldVector{ 0, 0 });
@@ -190,25 +163,16 @@ namespace karapo::event {
 			~Music() override {}
 
 			void Execute() override {
-				executed = true;
 				music->Load(Path);
 				GetProgram()->entity_manager.Register(music);
-			}
-
-			bool Executed() const noexcept override {
-				return executed;
-			}
-
-			bool IsUnnecessary() const noexcept override {
-				return Executed();
+				StandardCommand::Execute();
 			}
 		};
 
 		// 効果音
-		class Sound final : public Command {
+		class Sound final : public StandardCommand {
 			std::shared_ptr<karapo::entity::Sound> sound;
 			const std::wstring Path;
-			bool executed = false;
 		public:
 			Sound(const std::wstring& P, const WorldVector& WV) : Path(P) {
 				sound = std::make_shared<karapo::entity::Sound>(WV);
@@ -219,24 +183,15 @@ namespace karapo::event {
 			void Execute() override {
 				sound->Load(Path);
 				GetProgram()->entity_manager.Register(sound);
-				executed = true;
-			}
-
-			bool Executed() const noexcept override {
-				return executed;
-			}
-
-			bool IsUnnecessary() const noexcept override {
-				return Executed();
+				StandardCommand::Execute();
 			}
 		};
 
 		namespace entity {
 			// Entityの移動
-			class Teleport final : public Command {
+			class Teleport final : public StandardCommand {
 				std::wstring entity_name;
 				WorldVector move;
-				bool executed;
 			public:
 				Teleport(const std::wstring& ename, const WorldVector& MV) noexcept {
 					entity_name = ename;
@@ -248,22 +203,13 @@ namespace karapo::event {
 				void Execute() override {
 					auto ent = GetProgram()->entity_manager.GetEntity(entity_name);
 					ent->Teleport(move);
-					executed = true;
-				}
-
-				bool Executed() const noexcept override {
-					return executed;
-				}
-
-				bool IsUnnecessary() const noexcept override {
-					return Executed();
+					StandardCommand::Execute();
 				}
 			};
 
 			// Entityの削除。
-			class Kill final : public Command {
+			class Kill final : public StandardCommand {
 				std::wstring entity_name;
-				bool executed = false;
 			public:
 				Kill(const std::wstring& ename) noexcept {
 					entity_name = ename;
@@ -273,23 +219,14 @@ namespace karapo::event {
 
 				void Execute() override {
 					GetProgram()->entity_manager.Kill(entity_name);
-					executed = true;
-				}
-
-				bool Executed() const noexcept override {
-					return executed;
-				}
-
-				bool IsUnnecessary() const noexcept override {
-					return Executed();
+					StandardCommand::Execute();
 				}
 			};
 		}
 
 		// コマンドの別名
-		class Alias : public Command {
+		class Alias : public StandardCommand {
 			std::wstring newone, original;
-			bool executed = false;
 		public:
 			Alias(std::wstring s1, std::wstring s2) noexcept {
 				original = s1;
@@ -297,20 +234,11 @@ namespace karapo::event {
 			}
 
 			void Execute() override;
-
-			bool Executed() const noexcept override {
-				return executed;
-			}
-
-			bool IsUnnecessary() const noexcept override {
-				return Executed();
-			}
 		};
 
-		class Filter final : public Command {
+		class Filter final : public StandardCommand {
 			int index, potency;
 			std::wstring kind_name;
-			bool executed = false;
 		public:
 			Filter(const int I, const std::wstring& KN, const int P) noexcept {
 				index = I;
@@ -322,61 +250,45 @@ namespace karapo::event {
 
 			void Execute() final {
 				GetProgram()->canvas.ApplyFilter(index, kind_name, potency);
-				executed = true;
-			}
-
-			bool Executed() const noexcept final {
-				return executed;
-			}
-
-			bool IsUnnecessary() const noexcept final {
-				return Executed();
+				StandardCommand::Execute();
 			}
 		};
 
-		class DLL : public Command {
+		class DLLCommand : public StandardCommand {
 		protected:
 			std::wstring dll_name;
-			bool executed;
 		public:
-			DLL(const std::wstring& dname) noexcept {
+			DLLCommand(const std::wstring& dname) noexcept {
 				dll_name = dname;
 			}
 
-			~DLL() override {}
-
-			bool Executed() const noexcept final {
-				return executed;
-			}
-
-			bool IsUnnecessary() const noexcept final {
-				return Executed();
-			}
+			~DLLCommand() override {}
 		};
 
 		// DLLアタッチ
-		class Attach final : public DLL {
+		class Attach final : public DLLCommand {
 		public:
-			inline Attach(const std::wstring& dname) : DLL(dname) {}
+			inline Attach(const std::wstring& dname) : DLLCommand(dname) {}
 			
 			void Execute() final {
 				GetProgram()->dll_manager.Load(dll_name);
+				StandardCommand::Execute();
 			}
 		};
 
-		class Detach final : public DLL {
+		class Detach final : public DLLCommand {
 		public:
-			inline Detach(const std::wstring& dname) : DLL(dname) {}
+			inline Detach(const std::wstring& dname) : DLLCommand(dname) {}
 
 			void Execute() final {
 				GetProgram()->dll_manager.Detach(dll_name);
+				StandardCommand::Execute();
 			}
 		};
 
 		// イベント呼出
-		class Call : public Command {
+		class Call : public StandardCommand {
 			std::wstring event_name;
-			bool executed = false;
 		public:
 			Call(std::wstring& ename) noexcept {
 				event_name = ename;
@@ -384,21 +296,12 @@ namespace karapo::event {
 
 			void Execute() override {
 				GetProgram()->event_manager.ExecuteEvent(event_name);
-				executed = true;
-
-			}
-
-			bool Executed() const noexcept override {
-				return executed;
-			}
-
-			bool IsUnnecessary() const noexcept override {
-				return Executed();
+				StandardCommand::Execute();
 			}
 		};
 
 		namespace hidden {
-			class EndOf final : public Command {
+			class EndOf final : public StandardCommand {
 				bool executed = false;
 			public:
 				EndOf() noexcept {}
@@ -406,15 +309,7 @@ namespace karapo::event {
 
 				void Execute() final {
 					GetProgram()->event_manager.FreeOf();
-					executed = true;
-				}
-
-				bool Executed() const noexcept final {
-					return executed;
-				}
-
-				bool IsUnnecessary() const noexcept final {
-					return Executed();
+					StandardCommand::Execute();
 				}
 
 				bool IgnoreCondition() const noexcept final {
@@ -1305,6 +1200,6 @@ namespace karapo::event {
 
 	void command::Alias::Execute() {
 		GetProgram()->event_manager.AliasCommand(original, newone);
-		executed = true;
+		StandardCommand::Execute();
 	}
 }
