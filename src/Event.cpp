@@ -1080,8 +1080,8 @@ namespace karapo::event {
 								return std::make_unique<command::Case>(params[0]);
 							},
 							.isEnough = [params]() -> bool { return params.size() == 1; },
-							.is_static = true,
-							.is_dynamic = false
+							.is_static = false,
+							.is_dynamic = true
 						};
 					};
 
@@ -1096,8 +1096,8 @@ namespace karapo::event {
 									return nullptr;
 							},
 							.isEnough = [params]() -> bool { return params.size() == 1; },
-							.is_static = true,
-							.is_dynamic = false
+							.is_static = false,
+							.is_dynamic = true
 						};
 					};
 
