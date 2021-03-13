@@ -416,6 +416,10 @@ namespace karapo::event {
 				bool IsUnnecessary() const noexcept final {
 					return Executed();
 				}
+
+				bool IgnoreCondition() const noexcept final {
+					return true;
+				}
 			};
 		}
 	}
@@ -432,7 +436,7 @@ namespace karapo::event {
 			if (cmd == nullptr)
 				return nullptr;
 
-			if (!cmd->IsUnnecessary() && GetProgram()->event_manager.condition_manager.Can_Execute) {
+			if (!cmd->IsUnnecessary() && (cmd->IgnoreCondition() || GetProgram()->event_manager.condition_manager.Can_Execute)) {
 				cmd->Execute();
 				return std::move(cmd);
 			} else {
