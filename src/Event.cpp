@@ -818,6 +818,11 @@ namespace karapo::event {
 						if (result != nullptr) {
 							// 引数が十分に積まれている時:
 							if (f.is_dynamic) {
+								if (generating_command_name == L"of") {
+									auto endof = words.at(L"__endof")({}).Result();
+									commands.push_back(std::move(endof));
+								}
+
 								// 動的コマンドはイベントのコマンドに追加。
 								commands.push_back(std::move(result));
 
