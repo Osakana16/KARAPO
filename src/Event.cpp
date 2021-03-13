@@ -773,7 +773,7 @@ namespace karapo::event {
 				std::vector<std::wstring> parameters;	// 引数
 				Event::Commands commands;	// 
 				GenerateFunc liketoRun;				// 生成関数を実行するための関数ポインタ。
-				bool is_variable = false;
+				std::wstring generating_command_name = L"";
 				bool request_abort = false;
 
 				void CheckCommandWord(const std::wstring& text) noexcept(false) {
@@ -781,7 +781,7 @@ namespace karapo::event {
 					auto gen = words.at(text);
 					if (liketoRun == nullptr) {
 						liketoRun = gen;
-						is_variable = (text == L"var" || text == L"変数");
+						generating_command_name = text;
 					} else {
 						// 既に生成関数が設定されている時:
 						throw std::runtime_error("一行にコマンドが2つ以上書かれています。");
@@ -820,6 +820,7 @@ namespace karapo::event {
 							if (f.is_dynamic) {
 								// 動的コマンドはイベントのコマンドに追加。
 								commands.push_back(std::move(result));
+
 							} else if (f.is_static) {
 								// 静的コマンドは即実行。
 								result->Execute();
@@ -858,8 +859,9 @@ namespace karapo::event {
 								try {
 									CheckArgs(text);			// 引数確認。
 								} catch (std::out_of_range& e) {
+									const bool Is_Variable = (generating_command_name == L"var" || generating_command_name == L"変数");
 									// 主にCheckArgsからの例外をここで捕捉。
-									if (is_variable) {
+									if (Is_Variable) {
 										// 変数コマンドの引数だった場合は変数名として引数に積む。
 										parameters.push_back(text);
 									} else {
