@@ -42,7 +42,7 @@ namespace karapo::event {
 			void SetTarget(std::any& tv);
 			// ğŒ®‚ğ•]‰¿‚·‚é
 			void Evalute(const std::wstring& Sentence) noexcept;
-			void Free();
+			void FreeCase(), FreeOf();
 			const bool& Can_Execute = can_execute;
 		} condition_manager;
 
@@ -65,6 +65,6 @@ namespace karapo::event {
 
 		void SetCondTarget(std::any);
 		void Evalute(const std::wstring& Sentence);
-		void FreeCase();
+		void FreeCase(), FreeOf();
 	};
 }

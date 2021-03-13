@@ -396,6 +396,28 @@ namespace karapo::event {
 				return Executed();
 			}
 		};
+
+		namespace hidden {
+			class EndOf final : public Command {
+				bool executed = false;
+			public:
+				EndOf() noexcept {}
+				~EndOf() noexcept final {}
+
+				void Execute() final {
+					GetProgram()->event_manager.FreeOf();
+					executed = true;
+				}
+
+				bool Executed() const noexcept final {
+					return executed;
+				}
+
+				bool IsUnnecessary() const noexcept final {
+					return Executed();
+				}
+			};
+		}
 	}
 
 	// イベントのコマンド実行クラス
@@ -1101,6 +1123,15 @@ namespace karapo::event {
 						};
 					};
 
+					words[L"__endof"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() -> CommandPtr { return std::make_unique<command::hidden::EndOf>(); },
+							.isEnough = [params]() -> bool { return params.size() == 0; },
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
 					words[L"endcase"] =
 						words[L"分岐終了"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
 						return {
@@ -1185,8 +1216,12 @@ namespace karapo::event {
 		}
 	}
 
-	void Manager::ConditionManager::Free() {
+	void Manager::ConditionManager::FreeCase() {
 		target_value.reset();
+		FreeOf();
+	}
+
+	void Manager::ConditionManager::FreeOf() {
 		can_execute = true;
 	}
 
@@ -1250,7 +1285,11 @@ namespace karapo::event {
 	}
 
 	void Manager::FreeCase() {
-		condition_manager.Free();
+		condition_manager.FreeCase();
+	}
+
+	void Manager::FreeOf() {
+		condition_manager.FreeOf();
 	}
 
 	void command::Alias::Execute() {
