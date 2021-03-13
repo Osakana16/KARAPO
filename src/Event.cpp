@@ -82,6 +82,8 @@ namespace karapo::event {
 				}
 			}
 
+			~Variable() noexcept final {}
+
 			void Execute() override {
 				GetProgram()->var_manager.MakeNew(varname) = value;
 				StandardCommand::Execute();
@@ -101,6 +103,8 @@ namespace karapo::event {
 				}
 			}
 
+			~Case() noexcept final {}
+
 			void Execute() override {
 				GetProgram()->event_manager.SetCondTarget(value);
 				StandardCommand::Execute();
@@ -114,6 +118,8 @@ namespace karapo::event {
 			Of(const std::wstring& Condition_Sentence) noexcept {
 				condition_sentence = Condition_Sentence;
 			}
+
+			~Of() noexcept final {}
 
 			void Execute() override {
 				GetProgram()->event_manager.Evalute(condition_sentence);
@@ -233,6 +239,8 @@ namespace karapo::event {
 				newone = s2;
 			}
 
+			~Alias() noexcept final {}
+
 			void Execute() override;
 		};
 
@@ -293,6 +301,8 @@ namespace karapo::event {
 			Call(std::wstring& ename) noexcept {
 				event_name = ename;
 			}
+
+			~Call() noexcept final {}
 
 			void Execute() override {
 				GetProgram()->event_manager.ExecuteEvent(event_name);
