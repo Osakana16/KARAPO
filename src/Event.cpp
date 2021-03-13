@@ -49,12 +49,12 @@ namespace karapo::event {
 		public:
 			Variable(const std::wstring& VName, const std::wstring& Any_Value) noexcept {
 				varname = VName;
-				auto [iv, ir] = ToInt<int>(VName.c_str());
-				auto [fv, fr] = ToDec<Dec>(VName.c_str());
+				auto [iv, ir] = ToInt<int>(Any_Value.c_str());
+				auto [fv, fr] = ToDec<Dec>(Any_Value.c_str());
 
-				if (ir == nullptr) {
+				if (wcslen(ir) <= 0) {
 					value = iv;
-				} else if (fr == nullptr) {
+				} else if (wcslen(fr) <= 0) {
 					value = fv;
 				} else {
 					try {
@@ -87,7 +87,7 @@ namespace karapo::event {
 				const auto [Value, Type] = GetParamInfo(Param);
 				if (IsStringType(Type)) {
 					value = Value;
-				} else if (IsNumberType(Value)) {
+				} else if (IsNumberType(Type)) {
 					value = std::stoi(Value);
 				}
 			}
