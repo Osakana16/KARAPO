@@ -305,7 +305,7 @@ namespace karapo::event {
 			~Call() noexcept final {}
 
 			void Execute() override {
-				GetProgram()->event_manager.ExecuteEvent(event_name);
+				GetProgram()->event_manager.Call(event_name);
 				StandardCommand::Execute();
 			}
 		};
@@ -838,7 +838,7 @@ namespace karapo::event {
 						words[L"BGM"] = [](const std::vector<std::wstring>& params) -> KeywordInfo
 					{
 						return {
-							.Result = [&]() noexcept -> CommandPtr { 
+							.Result = [&]() noexcept -> CommandPtr {
 								const auto [Var, Type] = GetParamInfo(params[0]);
 								return (IsStringType(Type) ? std::make_unique<command::Music>(Var) : nullptr);
 							},
@@ -1151,7 +1151,7 @@ namespace karapo::event {
 		for (auto& e : events) {
 			auto& event = e.second;
 			if (event.trigger_type == TriggerType::Load) {
-				ExecuteEvent(e.first);
+				Call(e.first);
 				if (event.commands.empty()) {
 					dead.push(e.first);
 				}
@@ -1170,16 +1170,24 @@ namespace karapo::event {
 			if (event.origin[0][0] < origin[0] && origin[0] < event.origin[1][0] &&
 				event.origin[0][1] < origin[1] && origin[1] < event.origin[1][1])
 			{
-				ExecuteEvent(e.first);
+				Call(e.first);
 				break;
 			}
 		}
 	}
 
-	void Manager::ExecuteEvent(const std::wstring& EName) noexcept {
+	void Manager::Call(const std::wstring& EName) noexcept {
 		CommandExecuter cmd_executer(std::move(events.at(EName).commands));
 		cmd_executer.Execute();
-		auto& event = events.at(EName);
+		Event event;
+		try {
+			auto&& e = events.at(EName);
+			event = std::move(e);
+		} catch (std::out_of_range& e) {
+			std::wstring message = L"イベント名「" + EName + L"」が見つからなかったので実行できません。";
+			MessageBoxW(nullptr, message.c_str(), L"イベントエラー", MB_OK | MB_ICONERROR);
+			return;
+		}
 		event.commands = std::move(cmd_executer.Result());
 		event.commands.clear();
 	}

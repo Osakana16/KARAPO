@@ -206,7 +206,7 @@ namespace karapo {
 		.GetEntityByName = [](const std::wstring& Name) -> std::shared_ptr<Entity> { return GetProgram()->entity_manager.GetEntity(Name); },
 		.GetEntityByFunc = [](std::function<bool(std::shared_ptr<Entity>)> cond) { return GetProgram()->entity_manager.GetEntity(cond); },
 		.LoadEvent = [](const std::wstring& Path) { GetProgram()->event_manager.LoadEvent(Path); },
-		.ExecuteEventByName = [](const std::wstring& Name) { GetProgram()->event_manager.ExecuteEvent(Name); },
+		.ExecuteEventByName = [](const std::wstring& Name) { GetProgram()->event_manager.Call(Name); },
 		.ExecuteEventByOrigin = [](const WorldVector& Origin) { GetProgram()->event_manager.ExecuteEvent(Origin); },
 		.IsPressingKey = [](const value::Key Any_Key) noexcept -> bool { return GetProgram()->engine.IsPressingKey(Any_Key); },
 		.IsPressedKey = [](const value::Key Any_Key) noexcept -> bool {return GetProgram()->engine.IsPressedKey(Any_Key); },
