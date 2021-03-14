@@ -298,7 +298,7 @@ namespace karapo::event {
 		class Call : public StandardCommand {
 			std::wstring event_name;
 		public:
-			Call(std::wstring& ename) noexcept {
+			Call(const std::wstring& ename) noexcept {
 				event_name = ename;
 			}
 
@@ -974,6 +974,13 @@ namespace karapo::event {
 					words[L"call"] = 
 						words[L"åƒèo"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
 						return {
+							.Result = [&]() -> CommandPtr {
+								const auto [Event_Name, Name_Type] = GetParamInfo(params[0]);
+								if (IsStringType(Name_Type))
+									return std::make_unique<command::Call>(Event_Name);
+								else
+									return nullptr;
+							},
 							.isEnough = [params]() -> bool { return params.size() == 1; },
 							.is_static = false,
 							.is_dynamic = true
