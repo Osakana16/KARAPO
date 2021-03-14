@@ -1196,7 +1196,7 @@ namespace karapo::event {
 			return;
 		}
 		event.commands = std::move(cmd_executer.Result());
-		event.commands.clear();
+		event.trigger_type = TriggerType::None;
 	}
 
 	void Manager::SetCMDParser(void* a) {
