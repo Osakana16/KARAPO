@@ -22,7 +22,7 @@
 #undef min
 #undef max
 
-#include "kapi.hpp"
+#include "api/karapo.hpp"
 #include "Util.hpp"
 #include "Entity.hpp"
 #include "Event.hpp"

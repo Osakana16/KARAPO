@@ -4,6 +4,9 @@
     <Filter Include="src">
       <UniqueIdentifier>{21944219-f730-4884-ad45-d39b6cb23a80}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\api">
+      <UniqueIdentifier>{f1e3d399-c7c1-4c2d-930a-e14260e9bb10}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Animation.cpp">
@@ -21,9 +24,6 @@
     <ClCompile Include="src\Event.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="src\Karapo.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="src\Phase.cpp">
       <Filter>src</Filter>
     </ClCompile>
@@ -36,8 +36,8 @@
     <ClCompile Include="src\util.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="src\kapi.cpp">
-      <Filter>src</Filter>
+    <ClCompile Include="src\api\karapo.cpp">
+      <Filter>src\api</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -65,8 +65,8 @@
     <ClInclude Include="src\Entity.hpp">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="src\kapi.hpp">
-      <Filter>src</Filter>
+    <ClInclude Include="src\api\karapo.hpp">
+      <Filter>src\api</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
