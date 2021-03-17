@@ -3,21 +3,12 @@
 #include <chrono>
 
 namespace karapo {
-	class Singleton {
-		Singleton(const Singleton&) = delete;
-		Singleton(Singleton&&) = delete;
-		Singleton& operator=(const Singleton&) = delete;
-		Singleton& operator=(Singleton&&) = delete;
-	protected:
-		Singleton() = default;
-		~Singleton() = default;
-	};
-
 	namespace variable {
-		class Manager {
+		class Manager final : private Singleton {
 			std::unordered_map<std::wstring, std::any> vars;
-		public:
 			Manager();
+			~Manager() = default;
+		public:
 			std::any& MakeNew(const std::wstring&);
 			void Delete(const std::wstring&) noexcept;
 
@@ -33,11 +24,16 @@ namespace karapo {
 					}
 				}
 			}
+
+			static Manager& Instance() noexcept {
+				static Manager manager;
+				return manager;
+			}
 		};
 	}
 
 	namespace dll {
-		class Manager {
+		class Manager final : private Singleton {
 			struct DLL {
 				using Initializer = void(WINAPI*)(ProgramInterface);
 				using LoopableMain = bool(WINAPI*)();
@@ -50,6 +46,9 @@ namespace karapo {
 			};
 
 			std::unordered_map<std::wstring, DLL> dlls;
+
+			Manager() = default;
+			~Manager() = default;
 			void Attach(const std::wstring&);
 		public:
 			void Detach(const std::wstring&);
@@ -57,6 +56,11 @@ namespace karapo {
 			void Update();
 			void RegisterExternalCommand(std::unordered_map<std::wstring, event::GenerateFunc>*);
 			HMODULE Get(const std::wstring&) noexcept;
+
+			static Manager& Instance() noexcept {
+				static Manager manager;
+				return manager;
+			}
 		};
 	}
 
@@ -73,15 +77,14 @@ namespace karapo {
 	};
 
 	class Program final : private Singleton {
-		class Engine {
+		class Engine final : private Singleton {
 			std::vector<TargetRender> screens;
 			std::unordered_map<std::wstring, resource::Resource> resources;
 
 			bool fullscreen = false, synchronize = false, fixed = false;
 			unsigned keys_state[256];
-		public:
 			Engine() noexcept, ~Engine() noexcept;
-
+		public:
 			void OnInit(Program*) noexcept;
 			bool Failed() const noexcept;
 
@@ -103,6 +106,11 @@ namespace karapo {
 
 			void UpdateKeys() noexcept;
 			bool IsPressingKey(const value::Key)const noexcept, IsPressedKey(const value::Key) const noexcept;
+			
+			static Engine& Instance() noexcept {
+				static Engine engine;
+				return engine;
+			}
 		};
 
 		HWND handler;
@@ -116,6 +124,7 @@ namespace karapo {
 			static Program instance;
 			return instance;
 		}
+
 		int Main();
 		void OnInit();
 		HWND MainHandler() const noexcept;
@@ -123,11 +132,11 @@ namespace karapo {
 
 		std::chrono::system_clock::time_point GetTime();
 
-		Engine engine;
-		Canvas canvas;
-		event::Manager event_manager;
-		entity::Manager entity_manager;
-		dll::Manager dll_manager;
-		variable::Manager var_manager;
+		Engine& engine = Engine::Instance();
+		Canvas& canvas = Canvas::Instance();
+		event::Manager& event_manager = event::Manager::Instance();
+		entity::Manager& entity_manager = entity::Manager::Instance();
+		dll::Manager& dll_manager = dll::Manager::Instance();
+		variable::Manager& var_manager = variable::Manager::Instance();
 	};
 }

@@ -44,7 +44,7 @@ namespace karapo {
 	};
 
 	// キャンバス
-	class Canvas {
+	class Canvas final : private Singleton {
 		// レイヤーのポインタ
 		using LayerPtr = std::unique_ptr<ImageLayer>;
 		// レイヤー
@@ -59,6 +59,10 @@ namespace karapo {
 
 		// レイヤーを作成し、追加する。
 		size_t CreateRelativeLayer(std::shared_ptr<Entity>), CreateAbsoluteLayer();
+		static Canvas& Instance() noexcept {
+			static Canvas canvas;
+			return canvas;
+		}
 	};
 
 	class AudioManager {

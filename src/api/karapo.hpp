@@ -11,6 +11,16 @@
 #define KARAPO_NEWTYPE(newone,base_interger_type) enum class newone : base_interger_type{}
 
 namespace karapo {
+	class Singleton {
+		Singleton(const Singleton&) = delete;
+		Singleton(Singleton&&) = delete;
+		Singleton& operator=(const Singleton&) = delete;
+		Singleton& operator=(Singleton&&) = delete;
+	protected:
+		Singleton() = default;
+		~Singleton() = default;
+	};
+
 	struct ProgramInterface;
 
 	namespace raw {

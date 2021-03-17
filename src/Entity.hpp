@@ -155,8 +155,11 @@ namespace karapo::entity {
 	using DefaultChunk = FixedChunk<1000>;
 
 	// Entityを管理するクラス。
-	class Manager {
+	class Manager final : private Singleton {
 		std::vector<DefaultChunk> entities;
+
+		Manager() = default;
+		~Manager() = default;
 	public:
 		// Entityを更新する。
 		void Update() noexcept;
@@ -173,5 +176,10 @@ namespace karapo::entity {
 
 		// Entityを管理下に置く。
 		void Register(std::shared_ptr<Entity>) noexcept, Register(std::shared_ptr<Entity>, const size_t) noexcept;
+
+		static Manager& Instance() noexcept {
+			static Manager manager;
+			return manager;
+		}
 	};
 }
