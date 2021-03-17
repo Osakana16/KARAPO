@@ -13,8 +13,8 @@ namespace karapo {
 			~None() final {}
 
 			void Draw(const TargetRender Screen) noexcept final {
-				auto [w, h] = GetProgram()->WindowSize();
-				GetProgram()->engine.DrawRect(Rect{ 0, 0, w, h }, Screen);
+				auto [w, h] = Program::Instance().WindowSize();
+				Program::Instance().engine.DrawRect(Rect{ 0, 0, w, h }, Screen);
 			}
 		};
 
@@ -26,11 +26,11 @@ namespace karapo {
 			~ReversedColor() final {}
 
 			void Draw(const TargetRender Screen) noexcept final {
-				auto [w, h] = GetProgram()->WindowSize();
-				GetProgram()->engine.DrawRect(Rect{ 0, 0, w, h }, Screen);
-				GetProgram()->engine.SetBlend(BlendMode::Reverse, Potency);
-				GetProgram()->engine.DrawRect(Rect{ 0, 0, w, h }, Screen);
-				GetProgram()->engine.SetBlend(BlendMode::None, Potency);
+				auto [w, h] = Program::Instance().WindowSize();
+				Program::Instance().engine.DrawRect(Rect{ 0, 0, w, h }, Screen);
+				Program::Instance().engine.SetBlend(BlendMode::Reverse, Potency);
+				Program::Instance().engine.DrawRect(Rect{ 0, 0, w, h }, Screen);
+				Program::Instance().engine.SetBlend(BlendMode::None, Potency);
 			}
 		};
 
@@ -41,8 +41,8 @@ namespace karapo {
 			~XReversed() final {}
 
 			void Draw(const TargetRender Screen) noexcept final {
-				const auto [W, H] = GetProgram()->WindowSize();
-				GetProgram()->engine.DrawRect(Rect{ 0, H, W, 0 }, Screen);
+				const auto [W, H] = Program::Instance().WindowSize();
+				Program::Instance().engine.DrawRect(Rect{ 0, H, W, 0 }, Screen);
 			}
 		};
 
@@ -52,8 +52,8 @@ namespace karapo {
 			YReversed() noexcept {}
 			~YReversed() final {}
 			void Draw(const TargetRender Screen) noexcept final {
-				const auto [W, H] = GetProgram()->WindowSize();
-				GetProgram()->engine.DrawRect(Rect{ W, 0, 0, H }, Screen);
+				const auto [W, H] = Program::Instance().WindowSize();
+				Program::Instance().engine.DrawRect(Rect{ W, 0, 0, H }, Screen);
 			}
 		};
 
@@ -85,7 +85,7 @@ namespace karapo {
 	}
 
 	Layer::Layer() {
-		screen = GetProgram()->engine.MakeScreen();
+		screen = Program::Instance().engine.MakeScreen();
 	}
 
 	void Layer::SetFilter(std::unique_ptr<Filter> new_filter) {
@@ -93,12 +93,12 @@ namespace karapo {
 	}
 
 	void ImageLayer::Execute() {
-		auto p = GetProgram();
+		auto& p = Program::Instance();
 
-		p->engine.ClearScreen();
+		p.engine.ClearScreen();
 		Draw();
-		p->engine.ChangeTargetScreen(p->engine.GetBackScreen());
-		p->engine.DrawRect(Rect{ 0, 0, 0, 0 }, Screen);
+		p.engine.ChangeTargetScreen(p.engine.GetBackScreen());
+		p.engine.DrawRect(Rect{ 0, 0, 0, 0 }, Screen);
 	}
 
 	void ImageLayer::Register(std::shared_ptr<Entity> d) {
@@ -130,14 +130,14 @@ namespace karapo {
 		* (0,0) <= base_origin <= (W, H)‚ð–ž‚½‚·‚æ‚¤‚É‰æ–Ê•`ŽÊ‚ðs‚¤B
 		*/
 		void Draw() override {
-			auto p = GetProgram();
-			const ScreenVector Screen_Size { p->WindowSize().first, p->WindowSize().second };
+			auto& p = Program::Instance();
+			const ScreenVector Screen_Size { p.WindowSize().first, p.WindowSize().second };
 			const auto Draw_Origin = Screen_Size / 2;
 			auto base_origin = base->Origin();
 			std::vector<std::shared_ptr<Entity>> deadmen;
 			filter->Draw(Screen);
-			p->engine.ChangeTargetScreen(Screen);
-			p->engine.ClearScreen();
+			p.engine.ChangeTargetScreen(Screen);
+			p.engine.ClearScreen();
 			for (auto drawer : drawing) {
 				if (drawer->CanDelete()) {
 					deadmen.push_back(drawer);
@@ -145,7 +145,7 @@ namespace karapo {
 					drawer->Draw(base_origin);
 				}
 			}
-			p->engine.ChangeTargetScreen(p->engine.GetBackScreen());
+			p.engine.ChangeTargetScreen(p.engine.GetBackScreen());
 			for (auto& dead : deadmen) {
 				drawing.erase(std::find(drawing.begin(), drawing.end(), dead));
 			}
@@ -162,11 +162,11 @@ namespace karapo {
 		}
 
 		void Draw() override {
-			auto p = GetProgram();
+			auto& p = Program::Instance();
 			std::vector<std::shared_ptr<Entity>> deadmen;
 			filter->Draw(Screen);
-			p->engine.ChangeTargetScreen(Screen);
-			p->engine.ClearScreen();
+			p.engine.ChangeTargetScreen(Screen);
+			p.engine.ClearScreen();
 			for (auto drawer : drawing) {
 				if (drawer->CanDelete()) {
 					deadmen.push_back(drawer);
@@ -174,7 +174,7 @@ namespace karapo {
 					drawer->Draw(WorldVector{ 0.0, 0.0 });
 				}
 			}
-			p->engine.ChangeTargetScreen(p->engine.GetBackScreen());
+			p.engine.ChangeTargetScreen(p.engine.GetBackScreen());
 			for (auto& dead : deadmen) {
 				drawing.erase(std::find(drawing.begin(), drawing.end(), dead));
 			}

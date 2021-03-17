@@ -157,7 +157,7 @@ namespace karapo {
 	}
 
 	TargetRender Program::Engine::MakeScreen() {
-		auto raw_screen = DxLib::MakeScreen(GetProgram()->WindowSize().first, GetProgram()->WindowSize().second);
+		auto raw_screen = DxLib::MakeScreen(Program::Instance().WindowSize().first, Program::Instance().WindowSize().second);
 		auto screen = static_cast<TargetRender>(raw_screen);
 		if (raw_screen > -1)
 			screens.push_back(screen);
@@ -189,27 +189,27 @@ namespace karapo {
 	}
 
 	ProgramInterface Default_ProgramInterface = {
-		.GetHandler = []() -> HWND { return GetProgram()->MainHandler(); },
-		.GetWindowLength = []() -> std::pair<int, int> { return GetProgram()->WindowSize(); },
-		.DrawLine = [](int x1, int y1, int x2, int y2, Color c) { GetProgram()->engine.DrawLine(x1, y1, x2, y2, c); },
-		.DrawRect = [](const Rect RC, const Color C, const bool Fill) { GetProgram()->engine.DrawRect(RC, C, Fill); },
-		.DrawRectImage = [](const Rect RC, const resource::Image& Img) { GetProgram()->engine.DrawRect(RC, Img); },
-		.DrawRectScreen = [](const Rect RC, const karapo::TargetRender TR) { GetProgram()->engine.DrawRect(RC, TR); },
-		.DrawSentence = [](const std::wstring& Mes, const ScreenVector O, const int Font_Size, const Color C) { GetProgram()->engine.DrawSentence(Mes, O, Font_Size, C); },
-		.IsPlayingSound = [](const resource::Resource R) -> bool { return GetProgram()->engine.IsPlayingSound(R); },
-		.LoadImage = [](const std::wstring& Path) -> resource::Resource { return GetProgram()->engine.LoadImage(Path); },
-		.LoadSound = [](const std::wstring& Path) -> resource::Resource { return GetProgram()->engine.LoadSound(Path); },
-		.CreateAbsoluteLayer = []()  -> size_t { return GetProgram()->canvas.CreateAbsoluteLayer(); },
-		.CreateRelativeLayer = [](std::shared_ptr<Entity> entity) -> size_t { return GetProgram()->canvas.CreateRelativeLayer(entity); },
-		.RegisterEntity = [](std::shared_ptr<Entity> entity, const size_t Index) { GetProgram()->entity_manager.Register(entity, Index); },
-		.KillEntity = [](const std::wstring& Name) { GetProgram()->entity_manager.Kill(Name); },
-		.GetEntityByName = [](const std::wstring& Name) -> std::shared_ptr<Entity> { return GetProgram()->entity_manager.GetEntity(Name); },
-		.GetEntityByFunc = [](std::function<bool(std::shared_ptr<Entity>)> cond) { return GetProgram()->entity_manager.GetEntity(cond); },
-		.LoadEvent = [](const std::wstring& Path) { GetProgram()->event_manager.LoadEvent(Path); },
-		.ExecuteEventByName = [](const std::wstring& Name) { GetProgram()->event_manager.Call(Name); },
-		.ExecuteEventByOrigin = [](const WorldVector& Origin) { GetProgram()->event_manager.ExecuteEvent(Origin); },
-		.IsPressingKey = [](const value::Key Any_Key) noexcept -> bool { return GetProgram()->engine.IsPressingKey(Any_Key); },
-		.IsPressedKey = [](const value::Key Any_Key) noexcept -> bool {return GetProgram()->engine.IsPressedKey(Any_Key); },
+		.GetHandler = []() -> HWND { return Program::Instance().MainHandler(); },
+		.GetWindowLength = []() -> std::pair<int, int> { return Program::Instance().WindowSize(); },
+		.DrawLine = [](int x1, int y1, int x2, int y2, Color c) { Program::Instance().engine.DrawLine(x1, y1, x2, y2, c); },
+		.DrawRect = [](const Rect RC, const Color C, const bool Fill) { Program::Instance().engine.DrawRect(RC, C, Fill); },
+		.DrawRectImage = [](const Rect RC, const resource::Image& Img) { Program::Instance().engine.DrawRect(RC, Img); },
+		.DrawRectScreen = [](const Rect RC, const karapo::TargetRender TR) { Program::Instance().engine.DrawRect(RC, TR); },
+		.DrawSentence = [](const std::wstring& Mes, const ScreenVector O, const int Font_Size, const Color C) { Program::Instance().engine.DrawSentence(Mes, O, Font_Size, C); },
+		.IsPlayingSound = [](const resource::Resource R) -> bool { return Program::Instance().engine.IsPlayingSound(R); },
+		.LoadImage = [](const std::wstring& Path) -> resource::Resource { return Program::Instance().engine.LoadImage(Path); },
+		.LoadSound = [](const std::wstring& Path) -> resource::Resource { return Program::Instance().engine.LoadSound(Path); },
+		.CreateAbsoluteLayer = []()  -> size_t { return Program::Instance().canvas.CreateAbsoluteLayer(); },
+		.CreateRelativeLayer = [](std::shared_ptr<Entity> entity) -> size_t { return Program::Instance().canvas.CreateRelativeLayer(entity); },
+		.RegisterEntity = [](std::shared_ptr<Entity> entity, const size_t Index) { Program::Instance().entity_manager.Register(entity, Index); },
+		.KillEntity = [](const std::wstring& Name) { Program::Instance().entity_manager.Kill(Name); },
+		.GetEntityByName = [](const std::wstring& Name) -> std::shared_ptr<Entity> { return Program::Instance().entity_manager.GetEntity(Name); },
+		.GetEntityByFunc = [](std::function<bool(std::shared_ptr<Entity>)> cond) { return Program::Instance().entity_manager.GetEntity(cond); },
+		.LoadEvent = [](const std::wstring& Path) { Program::Instance().event_manager.LoadEvent(Path); },
+		.ExecuteEventByName = [](const std::wstring& Name) { Program::Instance().event_manager.Call(Name); },
+		.ExecuteEventByOrigin = [](const WorldVector& Origin) { Program::Instance().event_manager.ExecuteEvent(Origin); },
+		.IsPressingKey = [](const value::Key Any_Key) noexcept -> bool { return Program::Instance().engine.IsPressingKey(Any_Key); },
+		.IsPressedKey = [](const value::Key Any_Key) noexcept -> bool {return Program::Instance().engine.IsPressedKey(Any_Key); },
 		.keys = {
 			.F1 = (value::Key)KEY_INPUT_F1,
 			.F2 = (value::Key)KEY_INPUT_F2,

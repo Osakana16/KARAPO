@@ -37,7 +37,7 @@ namespace karapo::event {
 			std::wstring entity_name;
 		protected:
 			std::shared_ptr<karapo::Entity> GetEntity() const noexcept {
-				return GetProgram()->entity_manager.GetEntity(entity_name.c_str());
+				return Program::Instance().entity_manager.GetEntity(entity_name.c_str());
 			}
 		};
 
@@ -75,7 +75,7 @@ namespace karapo::event {
 					value = fv;
 				} else {
 					try {
-						value = GetProgram()->var_manager.Get<true>(VName);
+						value = Program::Instance().var_manager.Get<true>(VName);
 					} catch (std::out_of_range&) {
 						value = Any_Value;
 					}
@@ -85,7 +85,7 @@ namespace karapo::event {
 			~Variable() noexcept final {}
 
 			void Execute() override {
-				GetProgram()->var_manager.MakeNew(varname) = value;
+				Program::Instance().var_manager.MakeNew(varname) = value;
 				StandardCommand::Execute();
 			}
 		};
@@ -106,7 +106,7 @@ namespace karapo::event {
 			~Case() noexcept final {}
 
 			void Execute() override {
-				GetProgram()->event_manager.SetCondTarget(value);
+				Program::Instance().event_manager.SetCondTarget(value);
 				StandardCommand::Execute();
 			}
 		};
@@ -122,7 +122,7 @@ namespace karapo::event {
 			~Of() noexcept final {}
 
 			void Execute() override {
-				GetProgram()->event_manager.Evalute(condition_sentence);
+				Program::Instance().event_manager.Evalute(condition_sentence);
 				StandardCommand::Execute();
 			}
 		};
@@ -134,7 +134,7 @@ namespace karapo::event {
 			~EndCase() final {}
 
 			void Execute() final {
-				GetProgram()->event_manager.FreeCase();
+				Program::Instance().event_manager.FreeCase();
 				StandardCommand::Execute();
 			}
 		};
@@ -152,7 +152,7 @@ namespace karapo::event {
 
 			void Execute() override {
 				image->Load(Path.c_str());
-				GetProgram()->entity_manager.Register(image);
+				Program::Instance().entity_manager.Register(image);
 				StandardCommand::Execute();
 			}
 		};
@@ -170,7 +170,7 @@ namespace karapo::event {
 
 			void Execute() override {
 				music->Load(Path);
-				GetProgram()->entity_manager.Register(music);
+				Program::Instance().entity_manager.Register(music);
 				StandardCommand::Execute();
 			}
 		};
@@ -188,7 +188,7 @@ namespace karapo::event {
 
 			void Execute() override {
 				sound->Load(Path);
-				GetProgram()->entity_manager.Register(sound);
+				Program::Instance().entity_manager.Register(sound);
 				StandardCommand::Execute();
 			}
 		};
@@ -207,7 +207,7 @@ namespace karapo::event {
 				~Teleport() override {}
 
 				void Execute() override {
-					auto ent = GetProgram()->entity_manager.GetEntity(entity_name);
+					auto ent = Program::Instance().entity_manager.GetEntity(entity_name);
 					ent->Teleport(move);
 					StandardCommand::Execute();
 				}
@@ -224,7 +224,7 @@ namespace karapo::event {
 				~Kill() override {}
 
 				void Execute() override {
-					GetProgram()->entity_manager.Kill(entity_name);
+					Program::Instance().entity_manager.Kill(entity_name);
 					StandardCommand::Execute();
 				}
 			};
@@ -257,7 +257,7 @@ namespace karapo::event {
 			~Filter() final {}
 
 			void Execute() final {
-				GetProgram()->canvas.ApplyFilter(index, kind_name, potency);
+				Program::Instance().canvas.ApplyFilter(index, kind_name, potency);
 				StandardCommand::Execute();
 			}
 		};
@@ -279,7 +279,7 @@ namespace karapo::event {
 			inline Attach(const std::wstring& dname) : DLLCommand(dname) {}
 			
 			void Execute() final {
-				GetProgram()->dll_manager.Load(dll_name);
+				Program::Instance().dll_manager.Load(dll_name);
 				StandardCommand::Execute();
 			}
 		};
@@ -289,7 +289,7 @@ namespace karapo::event {
 			inline Detach(const std::wstring& dname) : DLLCommand(dname) {}
 
 			void Execute() final {
-				GetProgram()->dll_manager.Detach(dll_name);
+				Program::Instance().dll_manager.Detach(dll_name);
 				StandardCommand::Execute();
 			}
 		};
@@ -305,7 +305,7 @@ namespace karapo::event {
 			~Call() noexcept final {}
 
 			void Execute() override {
-				GetProgram()->event_manager.Call(event_name);
+				Program::Instance().event_manager.Call(event_name);
 				StandardCommand::Execute();
 			}
 		};
@@ -318,7 +318,7 @@ namespace karapo::event {
 				~EndOf() noexcept final {}
 
 				void Execute() final {
-					GetProgram()->event_manager.FreeOf();
+					Program::Instance().event_manager.FreeOf();
 					StandardCommand::Execute();
 				}
 
@@ -341,7 +341,7 @@ namespace karapo::event {
 			if (cmd == nullptr)
 				return nullptr;
 
-			if (!cmd->IsUnnecessary() && (cmd->IgnoreCondition() || GetProgram()->event_manager.condition_manager.Can_Execute)) {
+			if (!cmd->IsUnnecessary() && (cmd->IgnoreCondition() || Program::Instance().event_manager.condition_manager.Can_Execute)) {
 				cmd->Execute();
 				return std::move(cmd);
 			} else {
@@ -710,7 +710,7 @@ namespace karapo::event {
 						parameters.push_back(text);
 					} else {
 						// •Ï”’T‚µ
-						auto& value = GetProgram()->var_manager.Get<true>(text);
+						auto& value = Program::Instance().var_manager.Get<true>(text);
 						if (value.type() == typeid(int))
 							parameters.push_back(std::to_wstring(std::any_cast<int>(value)) + std::wstring(L":") + innertype::Number);
 						else if (value.type() == typeid(Dec))
@@ -827,11 +827,11 @@ namespace karapo::event {
 				}
 
 				CommandParser(Context *context) noexcept {
-					GetProgram()->event_manager.SetCMDParser(this);
+					Program::Instance().event_manager.SetCMDParser(this);
 
 					// ƒqƒbƒg‚³‚¹‚é’PŒê‚ð“o˜^‚·‚éB
 	
-					GetProgram()->dll_manager.RegisterExternalCommand(&words);
+					Program::Instance().dll_manager.RegisterExternalCommand(&words);
 
 					words[L"music"] =
 						words[L"‰¹Šy"] =
@@ -1224,7 +1224,7 @@ namespace karapo::event {
 	}
 
 	void command::Alias::Execute() {
-		GetProgram()->event_manager.AliasCommand(original, newone);
+		Program::Instance().event_manager.AliasCommand(original, newone);
 		StandardCommand::Execute();
 	}
 }

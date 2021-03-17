@@ -3,6 +3,16 @@
 #include <chrono>
 
 namespace karapo {
+	class Singleton {
+		Singleton(const Singleton&) = delete;
+		Singleton(Singleton&&) = delete;
+		Singleton& operator=(const Singleton&) = delete;
+		Singleton& operator=(Singleton&&) = delete;
+	protected:
+		Singleton() = default;
+		~Singleton() = default;
+	};
+
 	namespace variable {
 		class Manager {
 			std::unordered_map<std::wstring, std::any> vars;
@@ -62,7 +72,7 @@ namespace karapo {
 		Reverse
 	};
 
-	class Program {
+	class Program final : private Singleton {
 		class Engine {
 			std::vector<TargetRender> screens;
 			std::unordered_map<std::wstring, resource::Resource> resources;
@@ -99,9 +109,15 @@ namespace karapo {
 
 		int UpdateMessage();
 		inline void Frame();
+		Program() = default;
+		~Program() = default;
 	public:
-		Program();
+		static inline Program& Instance() noexcept {
+			static Program instance;
+			return instance;
+		}
 		int Main();
+		void OnInit();
 		HWND MainHandler() const noexcept;
 		std::pair<int, int> WindowSize() const noexcept;
 
@@ -114,6 +130,4 @@ namespace karapo {
 		dll::Manager dll_manager;
 		variable::Manager var_manager;
 	};
-
-	karapo::Program* GetProgram();
 }

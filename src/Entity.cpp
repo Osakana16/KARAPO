@@ -61,7 +61,7 @@ namespace karapo::entity {
 			candidate = &entities.back();
 		}
 		candidate->Register(entity);
-		GetProgram()->canvas.Register(entity, Index);
+		Program::Instance().canvas.Register(entity, Index);
 	}
 
 	size_t Manager::Amount() const noexcept {
@@ -142,7 +142,7 @@ namespace karapo::entity {
 	}
 
 	void Image::Draw(WorldVector) {
-		GetProgram()->engine.DrawRect(Rect({ (LONG)Origin()[0], (LONG)Origin()[1], 0, 0 }), image);
+		Program::Instance().engine.DrawRect(Rect({ (LONG)Origin()[0], (LONG)Origin()[1], 0, 0 }), image);
 	}
 
 	bool Image::CanDelete() const noexcept {
@@ -168,7 +168,7 @@ namespace karapo::entity {
 	}
 
 	void Sound::Play(const PlayType pt) noexcept {
-		GetProgram()->engine.PlaySound(sound, pt);
+		Program::Instance().engine.PlaySound(sound, pt);
 	}
 
 	void Sound::Load(const std::wstring& Path) {
@@ -176,7 +176,7 @@ namespace karapo::entity {
 	}
 
 	bool Sound::CanDelete() const noexcept {
-		return can_delete || GetProgram()->engine.IsPlayingSound(sound);
+		return can_delete || Program::Instance().engine.IsPlayingSound(sound);
 	}
 
 	void Sound::Delete() {

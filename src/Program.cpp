@@ -4,7 +4,7 @@
 #include <filesystem>
 
 namespace karapo {
-	Program::Program() {
+	void Program::OnInit() {
 		if (engine.Failed())
 			throw;
 
@@ -117,14 +117,7 @@ namespace karapo {
 	}
 }
 
-static auto program = karapo::Program();
-
-namespace karapo {
-	Program* GetProgram() {
-		return &program;
-	}
-}
-
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
-	return program.Main();
+	karapo::Program::Instance().OnInit();
+	return karapo::Program::Instance().Main();
 }
