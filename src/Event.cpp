@@ -413,6 +413,9 @@ namespace karapo::event {
 									}
 								}
 								continue;
+							} else if (c == L'\r') {
+								// 復帰コードは無視。
+								continue;
 							}
 
 							// 演算子判定
@@ -1104,16 +1107,60 @@ namespace karapo::event {
 		};
 
 		EventGenerator(const std::wstring& Path) noexcept {
-			FILE *fp = nullptr;
-			if (_wfopen_s(&fp, (Path + L".ges").c_str(), L"r,ccs=UNICODE") == 0) {
-				std::wstring sentence = L"";
-				for (wchar_t c; (c = fgetwc(fp)) != WEOF;)
-					sentence += c;
-
-				Parser parser(sentence);
-				events = std::move(parser.Result());
-				fclose(fp);
+			CharCode cc;
+			char* plain_text;
+			ReadWTextFile((Path + L".ges").c_str(), &plain_text, &cc);
+			std::wstring sentence;
+			switch (cc) {
+				case CharCode::CP932:
+				{
+					std::string str = plain_text;
+					wchar_t *converted = new wchar_t[str.size()];
+					CP932ToWide(converted, str.c_str(), str.size());
+					sentence = converted;
+					delete[] plain_text;
+					delete[] converted;
+					break;
+				}
+				case CharCode::UTF8:
+				{
+					std::u8string str = reinterpret_cast<char8_t*>(plain_text);
+					wchar_t *converted = new wchar_t[str.size()];
+					UTF8ToWide(converted, str.c_str(), str.size());
+					sentence = converted;
+					delete[] plain_text;
+					delete[] converted;
+					break;
+				}
+				case CharCode::UTF16BE:
+					Reverse16Endian(reinterpret_cast<char16_t*>(plain_text));
+					[[fallthrough]];
+				case CharCode::UTF16LE:
+				{
+					std::u16string str = reinterpret_cast<char16_t*>(plain_text);
+					wchar_t *converted = new wchar_t[str.size()];
+					UTF16ToWide(converted, str.c_str(), str.size());
+					sentence = converted;
+					delete[] plain_text;
+					delete[] converted;
+					break;
+				}
+				case CharCode::UTF32BE:
+					Reverse32Endian(reinterpret_cast<char32_t*>(plain_text));
+					[[fallthrough]];
+				case CharCode::UTF32LE:
+				{
+					std::u32string str = reinterpret_cast<char32_t*>(plain_text);
+					wchar_t *converted = new wchar_t[str.size()];
+					UTF32ToWide(converted, str.c_str(), str.size());
+					sentence = converted;
+					delete[] plain_text;
+					delete[] converted;
+					break;
+				}
 			}
+			Parser parser(sentence);
+			events = std::move(parser.Result());
 		}
 
 		[[nodiscard]] auto Result() noexcept {
