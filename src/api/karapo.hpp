@@ -2,6 +2,8 @@
 #undef PlaySound
 #undef LoadImage
 
+#include "kio.hpp"
+
 #include <memory>
 #include <valarray>
 #include <string>

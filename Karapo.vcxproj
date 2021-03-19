@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClCompile Include="src\Animation.cpp" />
     <ClCompile Include="src\api\karapo.cpp" />
+    <ClCompile Include="src\api\kio.cpp" />
     <ClCompile Include="src\Canvas.cpp" />
     <ClCompile Include="src\Engine.cpp" />
     <ClCompile Include="src\Entity.cpp" />
@@ -38,6 +39,7 @@
   <ItemGroup>
     <ClInclude Include="src\Animation.hpp" />
     <ClInclude Include="src\api\karapo.hpp" />
+    <ClInclude Include="src\api\kio.hpp" />
     <ClInclude Include="src\Canvas.hpp" />
     <ClInclude Include="src\Engine.hpp" />
     <ClInclude Include="src\Entity.hpp" />
@@ -116,7 +118,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <SDLCheck>true</SDLCheck>
+      <SDLCheck>false</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>false</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
@@ -154,7 +156,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <SDLCheck>true</SDLCheck>
+      <SDLCheck>false</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>false</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
