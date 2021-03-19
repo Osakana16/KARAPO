@@ -16,3 +16,4 @@ size_t UTF8ToWide(wchar_t* replaced_text, const char8_t* Source_Text, const size
 size_t UTF16ToWide(wchar_t* replaced_text, const char16_t* Source_Text, const size_t Source_Length);
 size_t UTF32ToWide(wchar_t* replaced_text, const char32_t* Source_Text, const size_t Source_Length);
 size_t WideToCP932(char* replaced_text, const wchar_t* Source_Text, const size_t Source_Length);
+void Reverse16Endian(char16_t*), Reverse32Endian(char32_t*);

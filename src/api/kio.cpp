@@ -43,9 +43,9 @@ namespace {
 			const Bom<uint32_t, 4> UTF32le_Bom = { .byte = { 0xFE, 0xFF, 0x00, 0x00 } };
 			const Bom<uint32_t, 4> UTF32be_Bom = { .byte = { 0x00, 0x00, 0xFF, 0xFE } };
 
-			Bom<uint32_t, 3> u8_checker;
-			Bom<uint16_t, 2> u16_checker;
-			Bom<uint32_t, 4> u32_checker;
+			Bom<uint32_t, 3> u8_checker{ .value=0 };
+			Bom<uint16_t, 2> u16_checker{ .value = 0 };
+			Bom<uint32_t, 4> u32_checker{ .value = 0 };
 
 			for (int i = 0; i < 3; i++) {
 				u8_checker.byte[i] = chbyte.c8[i];
@@ -221,4 +221,22 @@ size_t UTF32ToWide(wchar_t* replaced_text, const char32_t* Source_Text, const si
 size_t WideToCP932(char* replaced_text, const wchar_t* Source_Text, const size_t Source_Length) {
 	setlocale(LC_CTYPE, "ja_JP");
 	return wcstombs(replaced_text, Source_Text, Source_Length);
+}
+
+void Reverse16Endian(char16_t* target_text) {
+	char16_t* tt = target_text;
+	while (tt[0] != u'\0') {
+		char8_t* t8 = reinterpret_cast<char8_t*>(tt);
+		std::swap(t8[0], t8[1]);
+		tt++;
+	}
+}
+
+void Reverse32Endian(char32_t* target_text) {
+	char32_t* tt = target_text;
+	while (tt[0] != U'\0') {
+		char16_t* t16 = reinterpret_cast<char16_t*>(tt);
+		std::swap(t16[0], t16[1]);
+		tt++;
+	}
 }
