@@ -4,6 +4,7 @@
 
 #include "kio.hpp"
 
+#include <any>
 #include <memory>
 #include <valarray>
 #include <string>
@@ -194,6 +195,7 @@ namespace karapo {
 		std::function<void(const std::wstring&)> LoadEvent;
 		std::function<void(const std::wstring&)> ExecuteEventByName;
 		std::function<void(const WorldVector)> ExecuteEventByOrigin;
+		std::function<std::any&(const std::wstring&)> MakeVar, GetVar;
 
 		// - ÉLÅ[ån -
 

@@ -208,6 +208,8 @@ namespace karapo {
 		.LoadEvent = [](const std::wstring& Path) { Program::Instance().event_manager.LoadEvent(Path); },
 		.ExecuteEventByName = [](const std::wstring& Name) { Program::Instance().event_manager.Call(Name); },
 		.ExecuteEventByOrigin = [](const WorldVector& Origin) { Program::Instance().event_manager.ExecuteEvent(Origin); },
+		.MakeVar = [](const std::wstring& Var_Name) -> std::any& { return Program::Instance().var_manager.MakeNew(Var_Name); },
+		.GetVar = [](const std::wstring& Var_Name) -> std::any& { return Program::Instance().var_manager.Get<false>(Var_Name); },
 		.IsPressingKey = [](const value::Key Any_Key) noexcept -> bool { return Program::Instance().engine.IsPressingKey(Any_Key); },
 		.IsPressedKey = [](const value::Key Any_Key) noexcept -> bool {return Program::Instance().engine.IsPressedKey(Any_Key); },
 		.keys = {
