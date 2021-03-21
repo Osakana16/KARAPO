@@ -24,6 +24,8 @@ namespace karapo {
 			MessageBoxA(nullptr, error.what(), "ÉGÉâÅ[", MB_OK | MB_ICONERROR);
 		}
 
+		dll_manager.LoadedInit();
+
 		while (UpdateMessage() == 0) {
 			engine.UpdateKeys();
 			engine.ClearScreen();
@@ -77,8 +79,12 @@ namespace karapo {
 			dll.Init = reinterpret_cast<DLL::Initializer>(GetProcAddress(dll.mod, "KarapoDLLInit"));
 			dll.Update = reinterpret_cast<DLL::LoopableMain>(GetProcAddress(dll.mod, "KarapoUpdate"));
 			dll.RegisterExternalCommand = reinterpret_cast<DLL::EventRegister>(GetProcAddress(dll.mod, "RegisterCommand"));
-			
-			dll.Init(Default_ProgramInterface);
+		}
+
+		void Manager::LoadedInit() {
+			for (auto& dll : dlls) {
+				dll.second.Init(Default_ProgramInterface);
+			}
 		}
 
 		void Manager::Update() {

@@ -53,6 +53,7 @@ namespace karapo {
 		public:
 			void Detach(const std::wstring&);
 			void Load(const std::wstring&);
+			void LoadedInit();
 			void Update();
 			void RegisterExternalCommand(std::unordered_map<std::wstring, event::GenerateFunc>*);
 			HMODULE Get(const std::wstring&) noexcept;
