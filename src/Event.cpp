@@ -376,9 +376,8 @@ namespace karapo::event {
 
 	// イベント生成クラス
 	// イベントファイルの解析、コマンドの生成、イベントの設定・生成を行う。
-	class Manager::EventGenerator final {
+	class EventGenerator final : private Singleton {
 		std::unordered_map<std::wstring, Event> events;
-	public:
 		// 解析クラス
 		class Parser final {
 			using Context = std::queue<std::wstring, std::list<std::wstring>>;
@@ -509,9 +508,9 @@ namespace karapo::event {
 				}
 
 				// 解析停止を宣言する。
-				void EndParsing() noexcept { 
+				void EndParsing() noexcept {
 					MYGAME_ASSERT(parsing);
-					parsing = false; 
+					parsing = false;
 				}
 			private:
 				bool parsing = false;
@@ -830,10 +829,10 @@ namespace karapo::event {
 				}
 
 				CommandParser(Context *context) noexcept {
-					Program::Instance().event_manager.SetCMDParser(this);
-
+					EventGenerator::Instance().cmdparser = this;
+					
 					// ヒットさせる単語を登録する。
-	
+
 					Program::Instance().dll_manager.RegisterExternalCommand(&words);
 
 					words[L"music"] =
@@ -874,7 +873,7 @@ namespace karapo::event {
 					};
 
 					words[L"image"] =
-						words[L"画像"] = 
+						words[L"画像"] =
 						words[L"絵"] = [](const std::vector<std::wstring>& params) -> KeywordInfo
 					{
 						return {
@@ -894,7 +893,7 @@ namespace karapo::event {
 						};
 					};
 
-					words[L"teleport"] = 
+					words[L"teleport"] =
 						words[L"瞬間移動"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
 						return {
 							.Result = [&]() noexcept -> CommandPtr {
@@ -916,7 +915,7 @@ namespace karapo::event {
 						};
 					};
 
-					words[L"kill"] = 
+					words[L"kill"] =
 						words[L"殺害"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
 						return {
 							.Result = [&]() noexcept -> CommandPtr {
@@ -932,7 +931,7 @@ namespace karapo::event {
 					words[L"alias"] =
 						words[L"別名"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
 						return {
-							.Result = [&]() -> CommandPtr { 
+							.Result = [&]() -> CommandPtr {
 								const auto [Base, Base_Type] = GetParamInfo(params[0]);
 								const auto [New_One, New_Type] = GetParamInfo(params[1]);
 								if (IsNoType(Base_Type) && IsNoType(New_Type))
@@ -947,12 +946,12 @@ namespace karapo::event {
 					};
 
 					// DLLアタッチ
-					words[L"attach"] = 
+					words[L"attach"] =
 						words[L"接続"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
 						return {
 							.Result = [&]() -> CommandPtr {
 								const auto [Var, Type] = GetParamInfo(params[0]);
-								return (IsStringType(Type) ?std::make_unique<command::Attach>(Var) : nullptr);
+								return (IsStringType(Type) ? std::make_unique<command::Attach>(Var) : nullptr);
 							},
 							.isEnough = [params]() -> bool { return params.size() == 1; },
 							.is_static = true,
@@ -974,7 +973,7 @@ namespace karapo::event {
 						};
 					};
 
-					words[L"call"] = 
+					words[L"call"] =
 						words[L"呼出"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
 						return {
 							.Result = [&]() -> CommandPtr {
@@ -990,7 +989,7 @@ namespace karapo::event {
 						};
 					};
 
-					words[L"var"] = 
+					words[L"var"] =
 						words[L"変数"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
 						return {
 							.Result = [&]() -> CommandPtr {
@@ -1007,7 +1006,7 @@ namespace karapo::event {
 						};
 					};
 
-					words[L"filter"] = 
+					words[L"filter"] =
 						words[L"フィルター"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
 						return {
 							.Result = [&]() -> CommandPtr {
@@ -1024,7 +1023,7 @@ namespace karapo::event {
 					words[L"case"] =
 						words[L"条件"] = [&](const std::vector<std::wstring>& params) -> KeywordInfo {
 						return {
-							.Result = [&]() -> CommandPtr { 
+							.Result = [&]() -> CommandPtr {
 								return std::make_unique<command::Case>(params[0]);
 							},
 							.isEnough = [params]() -> bool { return params.size() == 1; },
@@ -1106,7 +1105,14 @@ namespace karapo::event {
 			}
 		};
 
-		EventGenerator(const std::wstring& Path) noexcept {
+		Parser::CommandParser *cmdparser = nullptr;
+	public:
+		static EventGenerator& Instance() noexcept {
+			static EventGenerator evg;
+			return evg;
+		}
+
+		void Generate(const std::wstring& Path) noexcept {
 			CharCode cc;
 			char* plain_text;
 			ReadWTextFile((Path + L".ges").c_str(), &plain_text, &cc);
@@ -1162,6 +1168,10 @@ namespace karapo::event {
 			Parser parser(sentence);
 			events = std::move(parser.Result());
 		}
+	
+		void MakeAliasCommand(const std::wstring& O, const std::wstring& N) {
+			cmdparser->MakeAlias(O, N);
+		}
 
 		[[nodiscard]] auto Result() noexcept {
 			return std::move(events);
@@ -1196,8 +1206,8 @@ namespace karapo::event {
 	}
 
 	void Manager::LoadEvent(const std::wstring path) noexcept {
-		EventGenerator generator(path);
-		events = std::move(generator.Result());
+		EventGenerator::Instance().Generate(path);
+		events = std::move(EventGenerator::Instance().Result());
 	}
 
 	void Manager::Update() noexcept {
@@ -1244,14 +1254,6 @@ namespace karapo::event {
 		}
 		event.commands = std::move(cmd_executer.Result());
 		event.trigger_type = TriggerType::None;
-	}
-
-	void Manager::SetCMDParser(void* a) {
-		cmdparser = a;
-	}
-
-	void Manager::AliasCommand(const std::wstring& O, const std::wstring& N) {
-		static_cast<EventGenerator::Parser::CommandParser*>(cmdparser)->MakeAlias(O, N);
 	}
 
 	void Manager::SetCondTarget(std::any tv) {
@@ -1310,7 +1312,7 @@ namespace karapo::event {
 	}
 
 	void command::Alias::Execute() {
-		Program::Instance().event_manager.AliasCommand(original, newone);
+		EventGenerator::Instance().MakeAliasCommand(original, newone);
 		StandardCommand::Execute();
 	}
 }

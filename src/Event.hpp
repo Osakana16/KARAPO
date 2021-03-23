@@ -31,10 +31,8 @@ namespace karapo::event {
 	// イベント管理クラス
 	// ワールド毎のイベント内容管理、文章解析、コマンド実行等を行う。
 	class Manager final : private Singleton {
-		class EventGenerator;
 		class CommandExecuter;
-		class VariableManager;
-
+	
 		class ConditionManager final {
 			std::any target_value;
 			bool can_execute = true;
@@ -46,18 +44,11 @@ namespace karapo::event {
 			const bool& Can_Execute = can_execute;
 		} condition_manager;
 
-		void *cmdparser;
-
 		std::unordered_map<std::wstring, Event> events;
-
-		void SetCMDParser(void*);
-		void AddEvent();
 
 		Manager() = default;
 		~Manager() = default;
 	public:
-		void AliasCommand(const std::wstring&, const std::wstring&);
-
 		// イベントを読み込み、生成する。
 		void LoadEvent(const std::wstring Path) noexcept;
 		// 座標からイベントを実行する。
