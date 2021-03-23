@@ -51,6 +51,7 @@ namespace karapo::event {
 		std::unordered_map<std::wstring, Event> events;
 
 		void SetCMDParser(void*);
+		void AddEvent();
 
 		Manager() = default;
 		~Manager() = default;
@@ -66,6 +67,10 @@ namespace karapo::event {
 		//
 		void Update() noexcept;
 
+		Event* GetEvent(const std::wstring&) noexcept;
+
+		void MakeEmptyEvent(const std::wstring&);
+
 		void SetCondTarget(std::any);
 		void Evalute(const std::wstring& Sentence);
 		void FreeCase(), FreeOf();
@@ -74,5 +79,26 @@ namespace karapo::event {
 			static Manager manager;
 			return manager;
 		}
+	};
+
+	// イベント編集クラス
+	class EventEditor final {
+		Event* targeting = nullptr;
+	public:
+		// 現在、編集中のイベントを持つか否か。
+		bool IsEditing() const noexcept;
+		// 現在、該当する名前のイベントを編集中か否か。
+		bool IsEditing(const std::wstring&) const noexcept;
+
+		// 新しい空のイベントを作成、編集対象にする。
+		void MakeNewEvent(const std::wstring&);
+		// 指定した名前のイベントを編集対象として設定する。
+		void SetTarget(const std::wstring&);
+		// イベント発生の種類を設定する。
+		void ChangeTriggerType(const TriggerType);
+		// イベント発生の範囲を設定する。
+		void ChangeRange(const WorldVector&, const WorldVector&);
+		// コマンドを追加する。
+		void AddCommand(const std::wstring&, const int);
 	};
 }

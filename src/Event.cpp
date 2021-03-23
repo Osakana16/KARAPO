@@ -1270,6 +1270,45 @@ namespace karapo::event {
 		condition_manager.FreeOf();
 	}
 
+	void Manager::MakeEmptyEvent(const std::wstring& Event_Name) {
+		events[Event_Name] = Event();
+	}
+
+	Event* Manager::GetEvent(const std::wstring& Event_Name) noexcept {
+		auto e = events.find(Event_Name);
+		return (e != events.end() ? &e->second : nullptr);
+	}
+
+	bool EventEditor::IsEditing() const noexcept {
+		return (targeting != nullptr);
+	}
+
+	bool EventEditor::IsEditing(const std::wstring& Event_Name) const noexcept {
+		return (IsEditing() && Program::Instance().event_manager.GetEvent(Event_Name) == targeting);
+	}
+
+	void EventEditor::MakeNewEvent(const std::wstring& Event_Name) {
+		Program::Instance().event_manager.MakeEmptyEvent(Event_Name);
+		SetTarget(Event_Name);
+	}
+
+	void EventEditor::AddCommand(const std::wstring&, const int) {
+
+	}
+
+	void EventEditor::SetTarget(const std::wstring& Event_Name) {
+		targeting = Program::Instance().event_manager.GetEvent(Event_Name);
+	}
+
+	void EventEditor::ChangeRange(const WorldVector& Min, const WorldVector& Max) {
+		targeting->origin[0] = Min;
+		targeting->origin[1] = Max;
+	}
+
+	void EventEditor::ChangeTriggerType(const TriggerType TT) {
+		targeting->trigger_type = TT;
+	}
+
 	void command::Alias::Execute() {
 		Program::Instance().event_manager.AliasCommand(original, newone);
 		StandardCommand::Execute();
