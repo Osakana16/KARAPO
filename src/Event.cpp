@@ -9,6 +9,8 @@
 #include <forward_list>
 
 namespace karapo::event {
+	using Context = std::queue<std::wstring, std::list<std::wstring>>;
+
 	namespace {
 		std::pair<std::wstring, std::wstring> GetParamInfo(const std::wstring& Param) {
 			// 引数の情報。
@@ -380,8 +382,6 @@ namespace karapo::event {
 		std::unordered_map<std::wstring, Event> events;
 		// 解析クラス
 		class Parser final {
-			using Context = std::queue<std::wstring, std::list<std::wstring>>;
-
 			// 一文字ずつの解析器。
 			// 空白を基準とする単語単位の解析結果をcontextとして排出。
 			class LexicalParser final {
@@ -1076,19 +1076,43 @@ namespace karapo::event {
 				}
 			};
 
-			Parser(const std::wstring& Sentence) noexcept {
+			// 字句解析し、その結果を返す。
+			Context ParseLexical(const std::wstring& Sentence) const noexcept {
 				LexicalParser lexparser(Sentence);
-				auto context = lexparser.Result();
+				return lexparser.Result();
+			}
+
+			// 型を決定し、その結果を返す。
+			Context DetermineType(Context context) const noexcept {
 				TypeDeterminer type_determiner(context);
-				context = type_determiner.Result();
+				return type_determiner.Result();
+			}
+
+			// 字句解析と型決定を行い、その結果を返す。
+			Context ParseBasic(const std::wstring& Sentence) const noexcept {
+				return DetermineType(ParseLexical(Sentence));
+			}
+
+			// イベント情報を解析し、その結果を返す。
+			auto ParseInformation(Context* context) const noexcept {
+				InformationParser infoparser(context);
+				return infoparser.Result();
+			}
+
+			// コマンドを解析し、その結果を返す。
+			Event::Commands ParseCommand(Context* context, bool* const abort) const noexcept {
+				CommandParser cmdparser(context);
+				if (abort != nullptr) *abort = cmdparser.NeedAbortion();
+				return std::move(cmdparser.Result());
+			}
+
+			Parser(const std::wstring& Sentence) noexcept {
+				auto context = ParseBasic(Sentence);
 				bool aborted = false;
 
 				while (!context.empty() && !aborted) {
-					InformationParser infoparser(&context);
-					auto [name, trigger, min, max] = infoparser.Result();
-					CommandParser cmdparser(&context);
-					aborted = cmdparser.NeedAbortion();
-					Event::Commands commands = std::move(cmdparser.Result());
+					auto [name, trigger, min, max] = ParseInformation(&context);
+					Event::Commands commands = ParseCommand(&context, &aborted);
 
 					Event event{ .commands = std::move(commands), .trigger_type = trigger, .origin{ min, max } };
 					events[name] = std::move(event);
