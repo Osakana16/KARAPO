@@ -86,7 +86,7 @@ namespace karapo::event {
 		// 指定した名前のイベントを編集対象として設定する。
 		void SetTarget(const std::wstring&);
 		// イベント発生の種類を設定する。
-		void ChangeTriggerType(const TriggerType);
+		void ChangeTriggerType(const std::wstring&);
 		// イベント発生の範囲を設定する。
 		void ChangeRange(const WorldVector&, const WorldVector&);
 		// コマンドを追加する。

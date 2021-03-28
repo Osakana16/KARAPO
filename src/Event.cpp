@@ -1342,8 +1342,15 @@ namespace karapo::event {
 		targeting->origin[1] = Max;
 	}
 
-	void EventEditor::ChangeTriggerType(const TriggerType TT) {
-		targeting->trigger_type = TT;
+	void EventEditor::ChangeTriggerType(const std::wstring& TSentence) {
+		if (TSentence == L"l")
+			targeting->trigger_type = TriggerType::Load;
+		else if (TSentence == L"n")
+			targeting->trigger_type = TriggerType::None;
+		else if (TSentence == L"b")
+			targeting->trigger_type = TriggerType::Button;
+		else if (TSentence == L"t")
+			targeting->trigger_type = TriggerType::Trigger;
 	}
 
 	void command::Alias::Execute() {
