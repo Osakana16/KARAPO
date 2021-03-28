@@ -379,7 +379,7 @@ namespace karapo::event {
 	// イベント生成クラス
 	// イベントファイルの解析、コマンドの生成、イベントの設定・生成を行う。
 	class EventGenerator final : private Singleton {
-		std::unordered_map<std::wstring, Event> events;
+	public:
 		// 解析クラス
 		class Parser final {
 			// 一文字ずつの解析器。
@@ -1106,6 +1106,8 @@ namespace karapo::event {
 				return std::move(cmdparser.Result());
 			}
 
+			Parser() = default;
+
 			Parser(const std::wstring& Sentence) noexcept {
 				auto context = ParseBasic(Sentence);
 				bool aborted = false;
@@ -1129,8 +1131,6 @@ namespace karapo::event {
 			}
 		};
 
-		Parser::CommandParser *cmdparser = nullptr;
-	public:
 		static EventGenerator& Instance() noexcept {
 			static EventGenerator evg;
 			return evg;
@@ -1200,6 +1200,9 @@ namespace karapo::event {
 		[[nodiscard]] auto Result() noexcept {
 			return std::move(events);
 		}
+	private:
+		Parser::CommandParser *cmdparser = nullptr;
+		std::unordered_map<std::wstring, Event> events;
 	};
 
 	// 
@@ -1319,7 +1322,7 @@ namespace karapo::event {
 	}
 
 	void EventEditor::AddCommand(const std::wstring&, const int) {
-
+		EventGenerator::Parser parser;
 	}
 
 	void EventEditor::SetTarget(const std::wstring& Event_Name) {
