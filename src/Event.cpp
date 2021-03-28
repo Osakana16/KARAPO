@@ -1321,8 +1321,16 @@ namespace karapo::event {
 		SetTarget(Event_Name);
 	}
 
-	void EventEditor::AddCommand(const std::wstring&, const int) {
+	void EventEditor::AddCommand(const std::wstring& Command_Sentence, const int Index) {
 		EventGenerator::Parser parser;
+		auto context = parser.ParseBasic(Command_Sentence);
+		auto commands = parser.ParseCommand(&context, nullptr);
+		for (auto& cmd : commands) {
+			if (Index < 0)
+				targeting->commands.insert(targeting->commands.end() + Index + 1, std::move(cmd));
+			else
+				targeting->commands.insert(targeting->commands.begin() + Index, std::move(cmd));
+		}
 	}
 
 	void EventEditor::SetTarget(const std::wstring& Event_Name) {
