@@ -1325,11 +1325,16 @@ namespace karapo::event {
 		EventGenerator::Parser parser;
 		auto context = parser.ParseBasic(Command_Sentence);
 		auto commands = parser.ParseCommand(&context, nullptr);
+
 		for (auto& cmd : commands) {
-			if (Index < 0)
+			if (Index < 0 && !targeting->commands.empty())
 				targeting->commands.insert(targeting->commands.end() + Index + 1, std::move(cmd));
-			else
-				targeting->commands.insert(targeting->commands.begin() + Index, std::move(cmd));
+			else {
+				if (targeting->commands.empty())
+					targeting->commands.insert(targeting->commands.begin(), std::move(cmd));
+				else
+					targeting->commands.insert(targeting->commands.begin() + Index, std::move(cmd));
+			}
 		}
 	}
 
