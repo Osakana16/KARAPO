@@ -75,7 +75,7 @@ namespace karapo {
 		int r, g, b;
 	};
 
-	enum class TargetRender : raw::TargetRender { Invalid=-1 };
+	enum class TargetRender : raw::TargetRender { Invalid = -1 };
 
 	// ベクトル
 	template<typename T>
@@ -157,6 +157,8 @@ namespace karapo {
 			bool is_dynamic = false;
 		};
 
+		class EventEditor;
+
 		using GenerateFunc = std::function<KeywordInfo(const std::vector<std::wstring>&)>;
 	}
 
@@ -196,6 +198,15 @@ namespace karapo {
 		std::function<void(const std::wstring&)> ExecuteEventByName;
 		std::function<void(const WorldVector)> ExecuteEventByOrigin;
 		std::function<std::any&(const std::wstring&)> MakeVar, GetVar;
+
+		std::function<event::EventEditor*()> GetEventEditor;
+		std::function<void(event::EventEditor*, const std::wstring&)>
+			MakeNewEvent, SetTargetEvent, ChangeEventTriggerType;
+		std::function<void(event::EventEditor*, const std::wstring&, const int)>
+			AddCommand;
+		std::function<void(event::EventEditor*, const WorldVector, const WorldVector)>
+			ChangeEventRange;
+		std::function<void(event::EventEditor*)> FreeEventEditor;
 
 		// - キー系 -
 

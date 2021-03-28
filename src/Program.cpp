@@ -50,6 +50,17 @@ namespace karapo {
 		frame_start_time = GetTime();
 	}
 
+	event::EventEditor* Program::MakeEventEditor() {
+		editors.push_back({});
+		return &editors.back();
+	}
+
+	void Program::FreeEventEditor(event::EventEditor* editor) {
+		auto it = std::find_if(editors.begin(), editors.end(), [editor](event::EventEditor ee) { return &ee == editor; });
+		if (it != editors.end())
+			editors.erase(it);
+	}
+
 	std::chrono::system_clock::time_point Program::GetTime() {
 		return std::chrono::system_clock::now();
 	}

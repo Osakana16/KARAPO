@@ -120,11 +120,15 @@ namespace karapo {
 		inline void Frame();
 		Program() = default;
 		~Program() = default;
+		std::vector<event::EventEditor> editors;
 	public:
 		static inline Program& Instance() noexcept {
 			static Program instance;
 			return instance;
 		}
+
+		event::EventEditor* MakeEventEditor();
+		void FreeEventEditor(event::EventEditor*);
 
 		int Main();
 		void OnInit();

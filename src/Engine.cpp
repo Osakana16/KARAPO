@@ -210,6 +210,13 @@ namespace karapo {
 		.ExecuteEventByOrigin = [](const WorldVector& Origin) { Program::Instance().event_manager.ExecuteEvent(Origin); },
 		.MakeVar = [](const std::wstring& Var_Name) -> std::any& { return Program::Instance().var_manager.MakeNew(Var_Name); },
 		.GetVar = [](const std::wstring& Var_Name) -> std::any& { return Program::Instance().var_manager.Get<false>(Var_Name); },
+		.GetEventEditor = []() { return Program::Instance().MakeEventEditor(); },
+		.MakeNewEvent = [](event::EventEditor* editor, const std::wstring& Event_Name) { editor->MakeNewEvent(Event_Name); },
+		.SetTargetEvent = [](event::EventEditor* editor, const std::wstring& Event_Name) { editor->SetTarget(Event_Name); },
+		.ChangeEventTriggerType = [](event::EventEditor* editor, const std::wstring& TT) { editor->ChangeTriggerType(TT); },
+		.AddCommand = [](event::EventEditor* editor, const std::wstring& Sentence, const int Index) { editor->AddCommand(Sentence, Index); },
+		.ChangeEventRange = [](event::EventEditor* editor, const WorldVector Min, const WorldVector Max) { editor->ChangeRange(Min, Max); },
+		.FreeEventEditor = [](event::EventEditor* editor) { Program::Instance().FreeEventEditor(editor); },
 		.IsPressingKey = [](const value::Key Any_Key) noexcept -> bool { return Program::Instance().engine.IsPressingKey(Any_Key); },
 		.IsPressedKey = [](const value::Key Any_Key) noexcept -> bool {return Program::Instance().engine.IsPressedKey(Any_Key); },
 		.keys = {
