@@ -406,10 +406,6 @@ namespace karapo::event {
 								// ’™‚ß‚±‚ñ‚¾•¶Žš‚ð’PŒê‚Æ‚µ‚ÄŠi”[
 								if (!text.empty()) {
 									PushWord(&context, &text);
-									if (c == L'\n') {
-										text = L"\n";
-										PushWord(&context, &text);
-									}
 								}
 								continue;
 							} else if (c == L'\r') {
