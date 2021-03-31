@@ -1268,17 +1268,16 @@ namespace karapo::event {
 		event_name += std::wstring(EName) + L"\n";
 		CommandExecuter cmd_executer(std::move(events.at(EName).commands));
 		cmd_executer.Execute();
-		Event event;
+		Event *event;
 		try {
-			auto&& e = events.at(EName);
-			event = std::move(e);
+			event = &events.at(EName);
 		} catch (std::out_of_range& e) {
 			std::wstring message = L"イベント名「" + EName + L"」が見つからなかったので実行できません。";
 			MessageBoxW(nullptr, message.c_str(), L"イベントエラー", MB_OK | MB_ICONERROR);
 			return;
 		}
-		event.commands = std::move(cmd_executer.Result());
-		event.trigger_type = TriggerType::None;
+		event->commands = std::move(cmd_executer.Result());
+		event->trigger_type = TriggerType::None;
 		event_name.erase(event_name.find(EName + L"\n"));
 	}
 
