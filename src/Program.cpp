@@ -68,14 +68,22 @@ namespace karapo {
 	namespace variable {
 		Manager::Manager() {
 			vars[L"null"] = nullptr;
+			vars[Managing_Var_Name] = std::wstring(L"");		// ŠÇ—’†‚Ì•Ï”‚Ì–¼‘O
+			vars[Managing_Entity_Name] = std::wstring(L"");	// ŠÇ—’†‚ÌEntity‚Ì–¼‘O
+			vars[Executing_Event_Name] = std::wstring(L"");
 		}
 
 		std::any& Manager::MakeNew(const std::wstring& Name) {
+			std::any_cast<std::wstring>(vars[Managing_Var_Name]) += Name + L"\n";
 			return vars[Name];
 		}
 
 		void Manager::Delete(const std::wstring& Name) noexcept {
-			vars.erase(Name);
+			const auto Pos = std::any_cast<std::wstring>(vars[Managing_Var_Name]).find(Name);
+			if (Pos != std::wstring::npos) {
+				std::any_cast<std::wstring>(vars[Managing_Var_Name]).erase(Pos, Name.size());
+				vars.erase(Name);
+			}
 		}
 	}
 

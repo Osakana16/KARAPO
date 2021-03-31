@@ -1264,6 +1264,8 @@ namespace karapo::event {
 	}
 
 	void Manager::Call(const std::wstring& EName) noexcept {
+		auto&& event_name = std::any_cast<std::wstring>(Program::Instance().var_manager.Get<false>(variable::Executing_Event_Name));
+		event_name += std::wstring(EName) + L"\n";
 		CommandExecuter cmd_executer(std::move(events.at(EName).commands));
 		cmd_executer.Execute();
 		Event event;
@@ -1277,6 +1279,7 @@ namespace karapo::event {
 		}
 		event.commands = std::move(cmd_executer.Result());
 		event.trigger_type = TriggerType::None;
+		event_name.erase(event_name.find(EName + L"\n"));
 	}
 
 	void Manager::SetCondTarget(std::any tv) {
