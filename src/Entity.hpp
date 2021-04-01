@@ -20,6 +20,7 @@ namespace karapo::entity {
 		inline Image(WorldVector WV) { origin = WV; }
 		inline int Main() override { return 0; }
 		const wchar_t *Name() const noexcept override;
+		const wchar_t *KindName() const noexcept override;
 		bool CanDelete() const noexcept override;
 		void Delete() override;
 		void Draw(WorldVector) override;
@@ -37,6 +38,7 @@ namespace karapo::entity {
 		inline void Draw(WorldVector) override {}
 
 		const wchar_t *Name() const noexcept override;
+		const wchar_t *KindName() const noexcept override;
 		bool CanDelete() const noexcept override;
 		void Delete() override;
 		void Play(const PlayType) noexcept;

@@ -109,6 +109,8 @@ namespace karapo {
 		virtual WorldVector Origin() const noexcept = 0;
 		// 自身の名前
 		virtual const wchar_t* Name() const noexcept = 0;
+		// 種類名
+		virtual const wchar_t* KindName() const noexcept = 0;
 
 		// 自身が削除できる状態にあるかを返す。
 		virtual bool CanDelete() const noexcept = 0;

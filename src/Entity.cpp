@@ -158,6 +158,10 @@ namespace karapo::entity {
 		return image.Path.c_str();
 	}
 
+	const wchar_t *Image::KindName() const noexcept {
+		return L"画像";
+	}
+
 	int Sound::Main() {
 		Play(PlayType::Normal);
 		Delete();
@@ -166,6 +170,10 @@ namespace karapo::entity {
 
 	const wchar_t *Sound::Name() const noexcept {
 		return sound.Path.c_str();
+	}
+
+	const wchar_t *Sound::KindName() const noexcept {
+		return L"効果音";
 	}
 
 	void Sound::Play(const PlayType pt) noexcept {
