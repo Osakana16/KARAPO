@@ -62,7 +62,8 @@ namespace karapo::entity {
 		}
 		candidate->Register(entity);
 		Program::Instance().canvas.Register(entity, Index);
-		std::any_cast<std::wstring>(Program::Instance().var_manager.Get<false>(variable::Managing_Entity_Name)) += std::wstring(entity->Name()) + L"\n";
+		std::any_cast<std::wstring>(Program::Instance().var_manager.Get<false>(variable::Managing_Entity_Name)) 
+			+= std::wstring(entity->Name()) + L"=" + std::wstring(entity->KindName()) + L"\n";
 	}
 
 	size_t Manager::Amount() const noexcept {
