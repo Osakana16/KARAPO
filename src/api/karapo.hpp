@@ -152,11 +152,17 @@ namespace karapo {
 
 		// コマンドの情報
 		struct KeywordInfo final {
+			enum class ParamResult {
+				Lack,		// 引数不足
+				Medium,		// 引数十分
+				Maximum,	// 引数十分(これ以上、引数必要なし)
+				Excess		// 引数余分
+			};
 			// 生成したコマンドを返す。
 			std::function<CommandPtr()> Result = []() -> CommandPtr { return nullptr; };
 
 			// 引数の数が十分であるか否かを返す。
-			std::function<bool()> isEnough = []() -> bool { return false; };
+			std::function<ParamResult()> checkParamState = []() -> ParamResult { return ParamResult::Lack; };
 
 			// コマンドが解析中に実行されるか否かどうか。
 			bool is_static = false;
