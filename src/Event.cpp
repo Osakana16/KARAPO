@@ -720,27 +720,37 @@ namespace karapo::event {
 
 				bool CompileCommand() {
 					auto&& f = liketoRun(parameters);
-					if (f.isEnough()) {
-						auto&& result = f.Result();
-						if (result != nullptr) {
-							// 引数が十分に積まれている時:
-							if (f.is_dynamic) {
-								if (generating_command_name == L"of") {
-									auto endof = words.at(L"__endof")({}).Result();
-									commands.push_back(std::move(endof));
-								}
-
-								// 動的コマンドはイベントのコマンドに追加。
-								commands.push_back(std::move(result));
-
-							} else if (f.is_static) {
-								// 静的コマンドは即実行。
-								result->Execute();
-							}
+					auto Param_Enough = f.checkParamState();
+					switch (Param_Enough) {
+						case KeywordInfo::ParamResult::Lack:
+						{
+							return false;
 						}
-						liketoRun = nullptr;
-						parameters.clear();
-						return true;
+						case KeywordInfo::ParamResult::Medium:
+						case KeywordInfo::ParamResult::Maximum:
+						case KeywordInfo::ParamResult::Excess:
+						{
+							auto&& result = f.Result();
+							if (result != nullptr) {
+								// 引数が十分に積まれている時:
+								if (f.is_dynamic) {
+									if (generating_command_name == L"of") {
+										auto endof = words.at(L"__endof")({}).Result();
+										commands.push_back(std::move(endof));
+									}
+
+									// 動的コマンドはイベントのコマンドに追加。
+									commands.push_back(std::move(result));
+
+								} else if (f.is_static) {
+									// 静的コマンドは即実行。
+									result->Execute();
+								}
+							}
+							liketoRun = nullptr;
+							parameters.clear();
+							return true;
+						}
 					}
 					return false;
 				}
@@ -840,7 +850,14 @@ namespace karapo::event {
 								const auto [Var, Type] = GetParamInfo(params[0]);
 								return (IsStringType(Type) ? std::make_unique<command::Music>(Var) : nullptr);
 							},
-							.isEnough = [params]() -> bool { return params.size() == 1; },
+							.checkParamState  = [params]() -> KeywordInfo::ParamResult { 
+								switch (params.size()) {
+									case 1:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Lack;
+								}
+							},
 							.is_static = false,
 							.is_dynamic = true
 						};
@@ -862,7 +879,18 @@ namespace karapo::event {
 									return nullptr;
 								}
 							},
-							.isEnough = [params]() -> bool { return params.size() == 1; },
+							.checkParamState  = [params]() -> KeywordInfo::ParamResult { 
+								switch (params.size()) {
+									case 0:
+									case 1:
+									case 2:
+										return KeywordInfo::ParamResult::Lack;
+									case 3:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
 							.is_static = false,
 							.is_dynamic = true
 						};
@@ -883,7 +911,18 @@ namespace karapo::event {
 									return nullptr;
 								}
 							},
-							.isEnough = [params]() -> bool { return params.size() == 3; },
+							.checkParamState  = [params]() -> KeywordInfo::ParamResult { 
+								switch (params.size()) {
+									case 0:
+									case 1:
+									case 2:
+										return KeywordInfo::ParamResult::Lack;
+									case 3:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
 							.is_static = false,
 							.is_dynamic = true
 						};
@@ -905,7 +944,18 @@ namespace karapo::event {
 									return nullptr;
 								}
 							},
-							.isEnough = [params]() -> bool { return params.size() == 3; },
+							.checkParamState  = [params]() -> KeywordInfo::ParamResult { 
+								switch (params.size()) {
+									case 0:
+									case 1:
+									case 2:
+										return KeywordInfo::ParamResult::Lack;
+									case 3:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
 							.is_static = false,
 							.is_dynamic = true
 						};
@@ -918,7 +968,16 @@ namespace karapo::event {
 								const auto [Var, Type] = GetParamInfo(params[0]);
 								return (IsStringType(Type) ? std::make_unique<command::entity::Kill>(Var) : nullptr);
 							},
-							.isEnough = [params]() -> bool { return params.size() == 1; },
+							.checkParamState  = [params]() -> KeywordInfo::ParamResult { 
+								switch (params.size()) {
+									case 0:
+										return KeywordInfo::ParamResult::Lack;
+									case 1:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
 							.is_static = false,
 							.is_dynamic = true
 						};
@@ -935,7 +994,17 @@ namespace karapo::event {
 								else
 									return nullptr;
 							},
-							.isEnough = [params]() -> bool { return params.size() == 2; },
+							.checkParamState  = [params]() -> KeywordInfo::ParamResult { 
+								switch (params.size()) {
+									case 0:
+									case 1:
+										return KeywordInfo::ParamResult::Lack;
+									case 2:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
 							.is_static = true,
 							.is_dynamic = false
 						};
@@ -949,7 +1018,16 @@ namespace karapo::event {
 								const auto [Var, Type] = GetParamInfo(params[0]);
 								return (IsStringType(Type) ? std::make_unique<command::Attach>(Var) : nullptr);
 							},
-							.isEnough = [params]() -> bool { return params.size() == 1; },
+							.checkParamState  = [params]() -> KeywordInfo::ParamResult { 
+								switch (params.size()) {
+									case 0:
+										return KeywordInfo::ParamResult::Lack;
+									case 1:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
 							.is_static = true,
 							.is_dynamic = false
 						};
@@ -963,7 +1041,16 @@ namespace karapo::event {
 								const auto [Var, Type] = GetParamInfo(params[0]);
 								return (IsStringType(Type) ? std::make_unique<command::Detach>(Var) : nullptr);
 							},
-							.isEnough = [params]() -> bool { return params.size() == 1; },
+							.checkParamState  = [params]() -> KeywordInfo::ParamResult { 
+								switch (params.size()) {
+									case 0:
+										return KeywordInfo::ParamResult::Lack;
+									case 1:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
 							.is_static = true,
 							.is_dynamic = false
 						};
@@ -979,7 +1066,16 @@ namespace karapo::event {
 								else
 									return nullptr;
 							},
-							.isEnough = [params]() -> bool { return params.size() == 1; },
+							.checkParamState  = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+										return KeywordInfo::ParamResult::Lack;
+									case 1:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
 							.is_static = false,
 							.is_dynamic = true
 						};
@@ -996,7 +1092,17 @@ namespace karapo::event {
 								else
 									return nullptr;
 							},
-							.isEnough = [params]() -> bool { return params.size() == 2; },
+							.checkParamState  = [params]() -> KeywordInfo::ParamResult { 
+								switch (params.size()) {
+									case 0:
+									case 1:
+										return KeywordInfo::ParamResult::Lack;
+									case 2:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}  
+							},
 							.is_static = true,
 							.is_dynamic = false
 						};
@@ -1010,7 +1116,18 @@ namespace karapo::event {
 								const auto Potency = std::stoi(params[2]);
 								return std::make_unique<command::Filter>(Index, params[1], Potency);
 							},
-							.isEnough = [params]() -> bool { return params.size() == 3; },
+							.checkParamState  = [params]() -> KeywordInfo::ParamResult { 
+								switch (params.size()) {
+									case 0:
+									case 1:
+									case 2:
+										return KeywordInfo::ParamResult::Lack;
+									case 3:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
 							.is_static = false,
 							.is_dynamic = true
 						};
@@ -1022,7 +1139,16 @@ namespace karapo::event {
 							.Result = [&]() -> CommandPtr {
 								return std::make_unique<command::Case>(params[0]);
 							},
-							.isEnough = [params]() -> bool { return params.size() == 1; },
+							.checkParamState  = [params]() -> KeywordInfo::ParamResult { 
+								switch (params.size()) {
+									case 0:
+										return KeywordInfo::ParamResult::Lack;
+									case 1:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								} 
+							},
 							.is_static = false,
 							.is_dynamic = true
 						};
@@ -1038,7 +1164,16 @@ namespace karapo::event {
 								else
 									return nullptr;
 							},
-							.isEnough = [params]() -> bool { return params.size() == 1; },
+							.checkParamState  = [params]() -> KeywordInfo::ParamResult { 
+								switch (params.size()) {
+									case 0:
+										return KeywordInfo::ParamResult::Lack;
+									case 1:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
 							.is_static = false,
 							.is_dynamic = true
 						};
@@ -1047,7 +1182,14 @@ namespace karapo::event {
 					words[L"__endof"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
 						return {
 							.Result = [&]() -> CommandPtr { return std::make_unique<command::hidden::EndOf>(); },
-							.isEnough = [params]() -> bool { return params.size() == 0; },
+							.checkParamState  = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
 							.is_static = false,
 							.is_dynamic = true
 						};
@@ -1059,7 +1201,14 @@ namespace karapo::event {
 							.Result = [&]() -> CommandPtr {
 								return std::make_unique<command::EndCase>();
 							},
-							.isEnough = [params]() -> bool { return params.size() == 0; },
+							.checkParamState  = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
 							.is_static = true,
 							.is_dynamic = false
 						};
