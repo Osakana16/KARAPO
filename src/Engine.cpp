@@ -144,6 +144,94 @@ namespace karapo {
 		return (keys_state[static_cast<int>(Any_Key)] > 0);
 	}
 
+	value::Key Program::Engine::GetKeyValueByString(const std::wstring& Key_Name) {
+		std::unordered_map<std::wstring, int> special_key{
+			{ L"tab", KEY_INPUT_TAB },
+			{ L"space", KEY_INPUT_SPACE },
+			{ L"enter", KEY_INPUT_ENTER },
+			{ L"escape", KEY_INPUT_ESCAPE },
+			{ L"insert", KEY_INPUT_INSERT },
+			{ L"home", KEY_INPUT_HOME },
+			{ L"end", KEY_INPUT_END },
+			{ L"delete", KEY_INPUT_DELETE },
+			{ L"pageup", KEY_INPUT_PGUP },
+			{ L"pagedown", KEY_INPUT_PGDN },
+			{ L"printscreen", KEY_INPUT_SYSRQ },
+			{ L"-", KEY_INPUT_MINUS },
+			{ L"^", KEY_INPUT_PREVTRACK },
+			{ L"lctrl", KEY_INPUT_LCONTROL },
+			{ L"rctrl", KEY_INPUT_RCONTROL },
+			{ L"lshift", KEY_INPUT_LSHIFT },
+			{ L"rshift", KEY_INPUT_RSHIFT },
+			{ L"lalt", KEY_INPUT_LALT },
+			{ L"ralt", KEY_INPUT_RALT },
+			{ L"capslock", KEY_INPUT_CAPSLOCK },
+			{ L"apps", KEY_INPUT_APPS },
+			{ L"pause", KEY_INPUT_PAUSE },
+			{ L"convert", KEY_INPUT_CONVERT },
+			{ L"•ÏŠ·", KEY_INPUT_CONVERT },
+			{ L"noconvert", KEY_INPUT_NOCONVERT },
+			{ L"–³•ÏŠ·", KEY_INPUT_NOCONVERT },
+			{ L"/", KEY_INPUT_SLASH },
+			{ L"\\", KEY_INPUT_BACKSLASH },
+			{ L",", KEY_INPUT_COMMA },
+			{ L".", KEY_INPUT_PERIOD },
+			{ L";", KEY_INPUT_SEMICOLON },
+			{ L":", KEY_INPUT_COLON },
+			{ L"[", KEY_INPUT_LBRACKET },
+			{ L"]", KEY_INPUT_RBRACKET },
+			{ L"f1", KEY_INPUT_F1 },
+			{ L"f2", KEY_INPUT_F2 },
+			{ L"f3", KEY_INPUT_F3 },
+			{ L"f4", KEY_INPUT_F4 },
+			{ L"f5", KEY_INPUT_F5 },
+			{ L"f6", KEY_INPUT_F6 },
+			{ L"f7", KEY_INPUT_F7 },
+			{ L"f8", KEY_INPUT_F8 },
+			{ L"f9", KEY_INPUT_F9 },
+			{ L"f10", KEY_INPUT_F10 },
+			{ L"f11", KEY_INPUT_F11 },
+			{ L"f12", KEY_INPUT_F12 },
+		};
+
+		if (iswalpha(Key_Name[0])) {
+			return static_cast<value::Key>(std::abs(L'a' - std::tolower(Key_Name[0])) + KEY_INPUT_A);
+		} else if (iswdigit(Key_Name[0])) {
+			if (Key_Name[0] == L'0')
+				return static_cast<value::Key>(KEY_INPUT_0);
+			else
+				return static_cast<value::Key>(std::abs(L'1' - std::tolower(Key_Name[0])) + KEY_INPUT_1);
+		} else {
+			auto result = special_key.find(Key_Name);
+			if (result != special_key.end())
+				return static_cast<value::Key>(result->second);
+		}
+		return static_cast<value::Key>(-1);
+	}
+
+	void Program::Engine::UpdateBindedKeys() {
+		for (auto& fk : functional_key) {
+			if (fk.pressed != nullptr && (this->*fk.pressed)(fk.key))
+				fk.func();
+		}
+	}
+
+	void Program::Engine::BindKey(std::wstring key_name, std::function<void()> func) {
+		bool is_one_press_mode = false;
+		retry:
+		if (key_name[0] == L'+' && key_name.size() > 1) {
+			key_name.erase(0);
+			is_one_press_mode = true;
+			goto retry;
+		}
+		int key_value = static_cast<int>(GetKeyValueByString(key_name));
+		if (key_value > -1) {
+			functional_key[key_value].func = func;
+			functional_key[key_value].key = static_cast<value::Key>(key_value);
+			functional_key[key_value].pressed = (is_one_press_mode ? &Program::Engine::IsPressedKey : &Program::Engine::IsPressingKey);
+		}
+	}
+
 	Program::Engine::~Engine() noexcept {
 		DxLib_End();
 	}

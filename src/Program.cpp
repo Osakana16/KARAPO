@@ -28,6 +28,7 @@ namespace karapo {
 
 		while (UpdateMessage() == 0) {
 			engine.UpdateKeys();
+			engine.UpdateBindedKeys();
 			engine.ClearScreen();
 			Frame();
 			dll_manager.Update();

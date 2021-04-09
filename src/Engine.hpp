@@ -79,6 +79,12 @@ namespace karapo {
 
 	class Program final : private Singleton {
 		class Engine final : private Singleton {
+			struct FunctionalKey final {
+				std::function<void()> func{};
+				value::Key key{};
+				bool (Program::Engine::*pressed)(value::Key) const noexcept = nullptr;
+			} functional_key[256];
+
 			std::vector<TargetRender> screens;
 			std::unordered_map<std::wstring, resource::Resource> resources;
 
@@ -107,6 +113,8 @@ namespace karapo {
 
 			void UpdateKeys() noexcept;
 			bool IsPressingKey(const value::Key)const noexcept, IsPressedKey(const value::Key) const noexcept;
+			value::Key GetKeyValueByString(const std::wstring&);
+			void UpdateBindedKeys(), BindKey(std::wstring, std::function<void()>);
 			
 			static Engine& Instance() noexcept {
 				static Engine engine;

@@ -232,6 +232,20 @@ namespace karapo::event {
 			};
 		}
 
+		// キー入力毎のコマンド割当
+		class Bind final : public StandardCommand {
+			std::wstring key_name{}, command_sentence{};
+		public:
+			Bind(const std::wstring& Key_Name, const std::wstring& Command_Sentence) noexcept {
+				key_name = Key_Name;
+				if (key_name[0] == L'+')
+					key_name.erase(key_name.begin());
+				command_sentence = Command_Sentence;
+			}
+
+			void Execute() override;
+		};
+
 		// コマンドの別名
 		class Alias : public StandardCommand {
 			std::wstring newone, original;
@@ -983,6 +997,47 @@ namespace karapo::event {
 						};
 					};
 
+					words[L"bind"] =
+						words[L"キー"] = [this](const std::vector<std::wstring>& params) -> KeywordInfo {
+							return {
+							.Result = [&]() -> CommandPtr {
+								const auto [Base, Base_Type] = GetParamInfo(params[0]);
+								const auto [Cmd, Cmd_Type] = GetParamInfo(params[1]);
+								if (IsStringType(Base_Type)) {
+									std::wstring sub_param = Cmd + L' ';
+									for (auto it = params.begin() + 2; it != params.end(); it++) {
+										auto [word, word_type] = GetParamInfo(*it);
+										if (IsStringType(word_type)) {
+											sub_param += L'\'' + word + L'\'' + std::wstring(L" ");
+										} else {
+											sub_param += word + std::wstring(L" ");
+										}
+									}
+									return std::make_unique<command::Bind>(Base, sub_param);
+								} else
+									return nullptr;
+							},
+							.checkParamState = [&]() -> KeywordInfo::ParamResult {
+								if (params.size() <= 1) {
+									return KeywordInfo::ParamResult::Lack;
+								}
+
+								const auto [Cmd, Cmd_Type] = GetParamInfo(params[1]);
+								auto it = words.find(Cmd);
+								if (it == words.end())
+									return KeywordInfo::ParamResult::Lack;
+
+								std::vector<std::wstring> exparams{};
+								for (auto it = params.begin() + 2; it < params.end(); it++) {
+									exparams.push_back(*it);
+								}
+								return it->second(exparams).checkParamState();
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
 					words[L"alias"] =
 						words[L"別名"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
 						return {
@@ -1508,6 +1563,24 @@ namespace karapo::event {
 
 	void command::Alias::Execute() {
 		EventGenerator::Instance().MakeAliasCommand(original, newone);
+		StandardCommand::Execute();
+	}
+
+	void command::Bind::Execute() {
+		static uint64_t count = 0;
+		EventGenerator::Parser parser;
+		const auto Event_Name = L"__キーイベント_" + std::to_wstring(count++);
+		auto editor = Program::Instance().MakeEventEditor();
+		editor->MakeNewEvent(Event_Name);
+		editor->ChangeTriggerType(L"n");
+		editor->ChangeRange({ 0, 0 }, { 0, 0 });
+		editor->AddCommand(L'{' + command_sentence + L'}', 0);
+		Program::Instance().FreeEventEditor(editor);
+
+
+		Program::Instance().engine.BindKey(key_name, [Event_Name]() {
+			Program::Instance().event_manager.Call(Event_Name);
+		});
 		StandardCommand::Execute();
 	}
 }
