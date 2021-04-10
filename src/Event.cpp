@@ -226,7 +226,27 @@ namespace karapo::event {
 				~Kill() override {}
 
 				void Execute() override {
-					Program::Instance().entity_manager.Kill(entity_name);
+					if (entity_name == L"__all" || entity_name == L"__‘Sˆõ") {
+						std::vector<std::wstring> names{};
+						auto sen = std::any_cast<std::wstring>(Program::Instance().var_manager.Get<false>(variable::Managing_Entity_Name));
+						{
+							std::wstring temp{};
+							for (auto ch : sen) {
+								if (ch != L'\n') {
+									temp += ch;
+								} else {
+									names.push_back(temp);
+									temp.clear();
+								}
+							}
+						}
+
+						for (const auto& name : names) {
+							Program::Instance().entity_manager.Kill(name.substr(0, name.find(L'=')));
+						}
+					} else {
+						Program::Instance().entity_manager.Kill(entity_name);
+					}
 					StandardCommand::Execute();
 				}
 			};
