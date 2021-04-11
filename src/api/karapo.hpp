@@ -221,6 +221,8 @@ namespace karapo {
 		std::function<void(event::EventEditor*, const WorldVector, const WorldVector)>
 			ChangeEventRange;
 		std::function<void(event::EventEditor*)> FreeEventEditor;
+		std::function<std::pair<std::wstring, std::wstring>(const std::wstring&)> GetParamInfo;
+		std::function<bool(const std::wstring&)> IsStringType, IsNumberType, IsNoType;
 
 		// - ÉLÅ[ån -
 

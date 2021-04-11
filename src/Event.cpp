@@ -11,28 +11,6 @@
 namespace karapo::event {
 	using Context = std::queue<std::wstring, std::list<std::wstring>>;
 
-	namespace {
-		std::pair<std::wstring, std::wstring> GetParamInfo(const std::wstring& Param) {
-			// à¯êîÇÃèÓïÒÅB
-			const auto Index = Param.find(L':');
-			const auto Var = (Index == Param.npos ? Param : Param.substr(0, Index));
-			const auto Type = (Index == Param.npos ? L"" : Param.substr(Index + 1));
-			return { Var, Type };
-		}
-
-		bool IsStringType(const std::wstring& Param_Type) noexcept {
-			return Param_Type == innertype::String;
-		}
-
-		bool IsNumberType(const std::wstring& Param_Type) noexcept {
-			return Param_Type == innertype::Number;
-		}
-
-		bool IsNoType(const std::wstring& Param_Type) noexcept {
-			return Param_Type == innertype::None;
-		}
-	}
-
 	namespace command {
 		// EntityëÄçÏånÉRÉ}ÉìÉh
 		class EntityCommand : public Command {
@@ -97,10 +75,10 @@ namespace karapo::event {
 			std::any value;
 		public:
 			Case(const std::wstring& Param) noexcept {
-				const auto [Value, Type] = GetParamInfo(Param);
-				if (IsStringType(Type)) {
+				const auto [Value, Type] = Default_ProgramInterface.GetParamInfo(Param);
+				if (Default_ProgramInterface.IsStringType(Type)) {
 					value = Value;
-				} else if (IsNumberType(Type)) {
+				} else if (Default_ProgramInterface.IsNumberType(Type)) {
 					value = std::stoi(Value);
 				}
 			}
@@ -881,8 +859,8 @@ namespace karapo::event {
 					{
 						return {
 							.Result = [&]() noexcept -> CommandPtr {
-								const auto [Var, Type] = GetParamInfo(params[0]);
-								return (IsStringType(Type) ? std::make_unique<command::Music>(Var) : nullptr);
+								const auto [Var, Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								return (Default_ProgramInterface.IsStringType(Type) ? std::make_unique<command::Music>(Var) : nullptr);
 							},
 							.checkParamState  = [params]() -> KeywordInfo::ParamResult { 
 								switch (params.size()) {
@@ -904,10 +882,10 @@ namespace karapo::event {
 						printf("There is a sound!\n");
 						return {
 							.Result = [&]() noexcept -> CommandPtr {
-								const auto [File_Path, Path_Type] = GetParamInfo(params[0]);
-								const auto [Vec_X, X_Type] = GetParamInfo(params[1]);
-								const auto [Vec_Y, Y_Type] = GetParamInfo(params[2]);
-								if (IsStringType(Path_Type) && IsNumberType(X_Type) && IsNumberType(Y_Type)) {
+								const auto [File_Path, Path_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								const auto [Vec_X, X_Type] = Default_ProgramInterface.GetParamInfo(params[1]);
+								const auto [Vec_Y, Y_Type] = Default_ProgramInterface.GetParamInfo(params[2]);
+								if (Default_ProgramInterface.IsStringType(Path_Type) && Default_ProgramInterface.IsNumberType(X_Type) && Default_ProgramInterface.IsNumberType(Y_Type)) {
 									return std::make_unique<command::Sound>(File_Path, WorldVector{ ToDec<Dec>(Vec_X.c_str(), nullptr), ToDec<Dec>(Vec_Y.c_str(), nullptr) });
 								} else {
 									return nullptr;
@@ -936,10 +914,10 @@ namespace karapo::event {
 					{
 						return {
 							.Result = [&]() noexcept -> CommandPtr {
-								const auto [File_Path, Path_Type] = GetParamInfo(params[0]);
-								const auto [Vec_X, X_Type] = GetParamInfo(params[1]);
-								const auto [Vec_Y, Y_Type] = GetParamInfo(params[2]);
-								if (IsStringType(Path_Type) && IsNumberType(X_Type) && IsNumberType(Y_Type)) {
+								const auto [File_Path, Path_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								const auto [Vec_X, X_Type] = Default_ProgramInterface.GetParamInfo(params[1]);
+								const auto [Vec_Y, Y_Type] = Default_ProgramInterface.GetParamInfo(params[2]);
+								if (Default_ProgramInterface.IsStringType(Path_Type) && Default_ProgramInterface.IsNumberType(X_Type) && Default_ProgramInterface.IsNumberType(Y_Type)) {
 									return std::make_unique<command::Image>(File_Path, WorldVector{ ToDec<Dec>(Vec_X.c_str(), nullptr), ToDec<Dec>(Vec_Y.c_str(), nullptr) });
 								} else {
 									return nullptr;
@@ -966,10 +944,10 @@ namespace karapo::event {
 						words[L"èuä‘à⁄ìÆ"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
 						return {
 							.Result = [&]() noexcept -> CommandPtr {
-								const auto [Target, Target_Type] = GetParamInfo(params[0]);
-								const auto [X, X_Type] = GetParamInfo(params[1]);
-								const auto [Y, Y_Type] = GetParamInfo(params[2]);
-								if (IsStringType(Target_Type) && IsNumberType(X_Type) && IsNumberType(Y_Type)) {
+								const auto [Target, Target_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								const auto [X, X_Type] = Default_ProgramInterface.GetParamInfo(params[1]);
+								const auto [Y, Y_Type] = Default_ProgramInterface.GetParamInfo(params[2]);
+								if (Default_ProgramInterface.IsStringType(Target_Type) && Default_ProgramInterface.IsNumberType(X_Type) && Default_ProgramInterface.IsNumberType(Y_Type)) {
 									return std::make_unique<command::entity::Teleport>(
 										Target,
 										WorldVector{ ToDec<Dec>(X.c_str(), nullptr), ToDec<Dec>(Y.c_str(), nullptr)
@@ -999,8 +977,8 @@ namespace karapo::event {
 						words[L"éEäQ"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
 						return {
 							.Result = [&]() noexcept -> CommandPtr {
-								const auto [Var, Type] = GetParamInfo(params[0]);
-								return (IsStringType(Type) ? std::make_unique<command::entity::Kill>(Var) : nullptr);
+								const auto [Var, Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								return (Default_ProgramInterface.IsStringType(Type) ? std::make_unique<command::entity::Kill>(Var) : nullptr);
 							},
 							.checkParamState  = [params]() -> KeywordInfo::ParamResult { 
 								switch (params.size()) {
@@ -1021,13 +999,13 @@ namespace karapo::event {
 						words[L"ÉLÅ["] = [this](const std::vector<std::wstring>& params) -> KeywordInfo {
 							return {
 							.Result = [&]() -> CommandPtr {
-								const auto [Base, Base_Type] = GetParamInfo(params[0]);
-								const auto [Cmd, Cmd_Type] = GetParamInfo(params[1]);
-								if (IsStringType(Base_Type)) {
+								const auto [Base, Base_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								const auto [Cmd, Cmd_Type] = Default_ProgramInterface.GetParamInfo(params[1]);
+								if (Default_ProgramInterface.IsStringType(Base_Type)) {
 									std::wstring sub_param = Cmd + L' ';
 									for (auto it = params.begin() + 2; it != params.end(); it++) {
-										auto [word, word_type] = GetParamInfo(*it);
-										if (IsStringType(word_type)) {
+										auto [word, word_type] = Default_ProgramInterface.GetParamInfo(*it);
+										if (Default_ProgramInterface.IsStringType(word_type)) {
 											sub_param += L'\'' + word + L'\'' + std::wstring(L" ");
 										} else {
 											sub_param += word + std::wstring(L" ");
@@ -1042,7 +1020,7 @@ namespace karapo::event {
 									return KeywordInfo::ParamResult::Lack;
 								}
 
-								const auto [Cmd, Cmd_Type] = GetParamInfo(params[1]);
+								const auto [Cmd, Cmd_Type] = Default_ProgramInterface.GetParamInfo(params[1]);
 								auto it = words.find(Cmd);
 								if (it == words.end())
 									return KeywordInfo::ParamResult::Lack;
@@ -1062,9 +1040,9 @@ namespace karapo::event {
 						words[L"ï ñº"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
 						return {
 							.Result = [&]() -> CommandPtr {
-								const auto [Base, Base_Type] = GetParamInfo(params[0]);
-								const auto [New_One, New_Type] = GetParamInfo(params[1]);
-								if (IsNoType(Base_Type) && IsNoType(New_Type))
+								const auto [Base, Base_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								const auto [New_One, New_Type] = Default_ProgramInterface.GetParamInfo(params[1]);
+								if (Default_ProgramInterface.IsNoType(Base_Type) && Default_ProgramInterface.IsNoType(New_Type))
 									return std::make_unique<command::Alias>(Base, New_One);
 								else
 									return nullptr;
@@ -1090,8 +1068,8 @@ namespace karapo::event {
 						words[L"ê⁄ë±"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
 						return {
 							.Result = [&]() -> CommandPtr {
-								const auto [Var, Type] = GetParamInfo(params[0]);
-								return (IsStringType(Type) ? std::make_unique<command::Attach>(Var) : nullptr);
+								const auto [Var, Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								return (Default_ProgramInterface.IsStringType(Type) ? std::make_unique<command::Attach>(Var) : nullptr);
 							},
 							.checkParamState  = [params]() -> KeywordInfo::ParamResult { 
 								switch (params.size()) {
@@ -1113,8 +1091,8 @@ namespace karapo::event {
 						words[L"êÿíf"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
 						return {
 							.Result = [&]() -> CommandPtr {
-								const auto [Var, Type] = GetParamInfo(params[0]);
-								return (IsStringType(Type) ? std::make_unique<command::Detach>(Var) : nullptr);
+								const auto [Var, Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								return (Default_ProgramInterface.IsStringType(Type) ? std::make_unique<command::Detach>(Var) : nullptr);
 							},
 							.checkParamState  = [params]() -> KeywordInfo::ParamResult { 
 								switch (params.size()) {
@@ -1135,8 +1113,8 @@ namespace karapo::event {
 						words[L"åƒèo"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
 						return {
 							.Result = [&]() -> CommandPtr {
-								const auto [Event_Name, Name_Type] = GetParamInfo(params[0]);
-								if (IsStringType(Name_Type))
+								const auto [Event_Name, Name_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								if (Default_ProgramInterface.IsStringType(Name_Type))
 									return std::make_unique<command::Call>(Event_Name);
 								else
 									return nullptr;
@@ -1160,8 +1138,8 @@ namespace karapo::event {
 						words[L"ïœêî"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
 						return {
 							.Result = [&]() -> CommandPtr {
-								const auto [Var, Var_Type] = GetParamInfo(params[0]);
-								const auto [Value, Value_Type] = GetParamInfo(params[1]);
+								const auto [Var, Var_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								const auto [Value, Value_Type] = Default_ProgramInterface.GetParamInfo(params[1]);
 								if (Var_Type == L"")
 									return std::make_unique<command::Variable>(Var, Value);
 								else
@@ -1233,8 +1211,8 @@ namespace karapo::event {
 						words[L"ï™äÚ"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
 						return {
 							.Result = [&]() -> CommandPtr {
-								const auto [Var, Type] = GetParamInfo(params[0]);
-								if (!IsNoType(Type))
+								const auto [Var, Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								if (!Default_ProgramInterface.IsNoType(Type))
 									return std::make_unique<command::Of>(Var);
 								else
 									return nullptr;

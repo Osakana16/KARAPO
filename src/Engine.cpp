@@ -305,6 +305,16 @@ namespace karapo {
 		.AddCommand = [](event::EventEditor* editor, const std::wstring& Sentence, const int Index) { editor->AddCommand(Sentence, Index); },
 		.ChangeEventRange = [](event::EventEditor* editor, const WorldVector Min, const WorldVector Max) { editor->ChangeRange(Min, Max); },
 		.FreeEventEditor = [](event::EventEditor* editor) { Program::Instance().FreeEventEditor(editor); },
+		.GetParamInfo = [](const std::wstring& Param) -> std::pair<std::wstring, std::wstring> {
+			// ˆø”‚Ìî•ñB
+			const auto Index = Param.rfind(L':');
+			const auto Var = (Index == Param.npos ? Param : Param.substr(0, Index));
+			const auto Type = (Index == Param.npos ? L"" : Param.substr(Index + 1));
+			return { Var, Type };
+		},
+		.IsStringType = [](const std::wstring& Param_Type) { return Param_Type == event::innertype::String; },
+		.IsNumberType = [](const std::wstring& Param_Type) { return Param_Type == event::innertype::Number; },
+		.IsNoType = [](const std::wstring& Param_Type) { return Param_Type == event::innertype::None; },
 		.IsPressingKey = [](const value::Key Any_Key) noexcept -> bool { return Program::Instance().engine.IsPressingKey(Any_Key); },
 		.IsPressedKey = [](const value::Key Any_Key) noexcept -> bool {return Program::Instance().engine.IsPressedKey(Any_Key); },
 		.keys = {
