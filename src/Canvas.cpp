@@ -94,7 +94,18 @@ namespace karapo {
 
 	void ImageLayer::Execute() {
 		auto& p = Program::Instance();
+		{
+			std::vector<std::shared_ptr<Entity>> dels{};
+			for (auto& ent : drawing) {
+				if (ent->CanDelete()) {
+					dels.push_back(ent);
+				}
+			}
 
+			for (auto ent : dels) {
+				drawing.erase(std::find(drawing.begin(), drawing.end(), ent));
+			}
+		}
 		p.engine.ClearScreen();
 		Draw();
 		p.engine.ChangeTargetScreen(p.engine.GetBackScreen());
@@ -125,6 +136,10 @@ namespace karapo {
 			SetFilter(std::make_unique<filter::None>());
 		}
 
+		void Execute() override {
+			ImageLayer::Execute();
+		}
+
 		/**
 		* •`ŽÊ
 		* (0,0) <= base_origin <= (W, H)‚ð–ž‚½‚·‚æ‚¤‚É‰æ–Ê•`ŽÊ‚ðs‚¤B
@@ -134,21 +149,13 @@ namespace karapo {
 			const ScreenVector Screen_Size { p.WindowSize().first, p.WindowSize().second };
 			const auto Draw_Origin = Screen_Size / 2;
 			auto base_origin = base->Origin();
-			std::vector<std::shared_ptr<Entity>> deadmen;
 			filter->Draw(Screen);
 			p.engine.ChangeTargetScreen(Screen);
 			p.engine.ClearScreen();
 			for (auto drawer : drawing) {
-				if (drawer->CanDelete()) {
-					deadmen.push_back(drawer);
-				} else {
-					drawer->Draw(base_origin);
-				}
+				drawer->Draw(base_origin);
 			}
 			p.engine.ChangeTargetScreen(p.engine.GetBackScreen());
-			for (auto& dead : deadmen) {
-				drawing.erase(std::find(drawing.begin(), drawing.end(), dead));
-			}
 		}
 	};
 
@@ -168,16 +175,9 @@ namespace karapo {
 			p.engine.ChangeTargetScreen(Screen);
 			p.engine.ClearScreen();
 			for (auto drawer : drawing) {
-				if (drawer->CanDelete()) {
-					deadmen.push_back(drawer);
-				} else {
-					drawer->Draw(WorldVector{ 0.0, 0.0 });
-				}
+				drawer->Draw(WorldVector{ 0.0, 0.0 });
 			}
 			p.engine.ChangeTargetScreen(p.engine.GetBackScreen());
-			for (auto& dead : deadmen) {
-				drawing.erase(std::find(drawing.begin(), drawing.end(), dead));
-			}
 		}
 	};
 }
