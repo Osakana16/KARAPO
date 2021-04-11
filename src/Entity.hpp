@@ -47,12 +47,12 @@ namespace karapo::entity {
 
 	// Entityを一つの塊(配列)で管理するクラス
 	class Chunk {
-		std::vector<std::shared_ptr<Entity>> entities;
-		std::unordered_map<std::wstring, std::weak_ptr<Entity>> refs;
+		std::unordered_map<std::wstring, std::shared_ptr<Entity>> entities{};
 	public:
-		Chunk();
 		// Entityを更新する。
 		void Update() noexcept;
+		// Entityを登録する。
+		void Register(std::shared_ptr<Entity>&) noexcept;
 		// 該当する名前のEntityを取得する。
 		std::shared_ptr<Entity> Get(const std::wstring& Name) const noexcept;
 		// 該当する条件のEntityを取得する。
@@ -63,102 +63,9 @@ namespace karapo::entity {
 		void Kill(const std::wstring& name) noexcept;
 	};
 
-	// Entityを一つの塊(配列)で管理するクラス(固定長版)
-	template<uint N>
-	class FixedChunk {
-		std::shared_ptr<Entity> entities[N]{ nullptr };
-		std::unordered_map<std::wstring, std::weak_ptr<Entity>> refs;
-	public:
-		FixedChunk() noexcept {
-			refs.clear();
-		}
-
-		// Entityを更新する。
-		auto Update() noexcept {
-			for (auto& ent : entities) {
-				if (ent == nullptr)
-					continue;
-
-				if (!ent->CanDelete())
-					ent->Main();
-				else {
-					refs.erase(ent->Name());
-					ent = nullptr;
-				}
-			}
-		}
-
-		// 管理中の数を返す。
-		size_t Size() const noexcept {
-			return refs.size();
-		}
-
-		// この塊が満タンかを返す。
-		bool IsFull() const noexcept {
-			for (auto& ent : entities) {
-				if (ent == nullptr)
-					return false;
-			}
-			return true;
-		}
-
-		// Entityを登録する。
-		auto Register(std::shared_ptr<Entity> ent) {
-			Register(ent, ent->Name());
-		}
-
-		// Entityを登録する。
-		auto Register(std::shared_ptr<Entity> ent, const std::wstring& Name) {
-			if (ent == nullptr)
-				return;
-
-			refs[ent->Name()] = ent;
-			for (int i = 0; i < N; i++) {
-				if (entities[i] == nullptr) {
-					entities[i] = ent;
-					break;
-				}
-			}
-		}
-
-		// Entityを殺す。
-		auto Kill(const std::wstring& name) noexcept {
-			try {
-				auto weak = refs.at(name);
-				auto shared = weak.lock();
-				if (shared) shared->Delete();
-				else refs.erase(name);
-			} catch (std::out_of_range& e) {
-				// 発見されなければ何もしない。
-			}
-		}
-
-		// 該当する名前のEntityを取得する。
-		std::shared_ptr<Entity> Get(const std::wstring& Name) const noexcept {
-			std::shared_ptr<Entity> ent = nullptr;
-			try {
-				std::weak_ptr<Entity> weak = refs.at(Name);
-				ent = weak.lock();
-			} catch (std::out_of_range&) {}
-			return ent;
-		}
-
-		// 該当する条件のEntityを取得する。
-		std::shared_ptr<Entity> Get(std::function<bool(std::shared_ptr<Entity>)> Condition) const noexcept {
-			for (auto& ent : entities) {
-				if (Condition(ent)) {
-					return ent;
-				}
-			}
-			return nullptr;
-		}
-	};
-
-	using DefaultChunk = FixedChunk<1000>;
-
 	// Entityを管理するクラス。
 	class Manager final : private Singleton {
-		std::vector<DefaultChunk> entities;
+		std::vector<Chunk> chunks;
 
 		Manager() = default;
 		~Manager() = default;

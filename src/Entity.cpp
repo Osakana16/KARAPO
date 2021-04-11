@@ -10,15 +10,15 @@
 
 namespace karapo::entity {
 	void Manager::Update() noexcept {
-		for (auto& group : entities) {
-			std::thread th(&DefaultChunk::Update, &group);
+		for (auto& group : chunks) {
+			std::thread th(&Chunk::Update, &group);
 			th.join();
 		}
 		return;
 	}
 
 	std::shared_ptr<Entity> Manager::GetEntity(const std::wstring& Name) noexcept {
-		for (auto& group : entities) {
+		for (auto& group : chunks) {
 			auto result = group.Get(Name);
 			if (result != nullptr)
 				return result;
@@ -28,7 +28,7 @@ namespace karapo::entity {
 
 	std::shared_ptr<Entity> Manager::GetEntity(std::function<bool(std::shared_ptr<Entity>)> Condition) noexcept {
 		std::vector<std::shared_ptr<Entity>> results;
-		for (auto& group : entities) {
+		for (auto& group : chunks) {
 			auto async = std::async(std::launch::async, [&group, Condition] { return group.Get(Condition); });
 			results.push_back(async.get());
 		}
@@ -37,7 +37,7 @@ namespace karapo::entity {
 	}
 
 	void Manager::Kill(const std::wstring& Name) noexcept {
-		for (auto& group : entities) {
+		for (auto& group : chunks) {
 			group.Kill(Name);
 		}
 	}
@@ -48,18 +48,11 @@ namespace karapo::entity {
 	}
 
 	void Manager::Register(std::shared_ptr<Entity> entity, const size_t Index) noexcept {
-		DefaultChunk *candidate = nullptr;
-		for (auto& group : entities) {
-			if (!group.IsFull()) {
-				candidate = &group;
-				break;
-			}
+		decltype(chunks)::iterator candidate;
+		if (chunks.empty()) {
+			chunks.push_back(Chunk());
 		}
-
-		if (candidate == nullptr) {
-			entities.push_back(DefaultChunk());
-			candidate = &entities.back();
-		}
+		candidate = chunks.begin();
 		candidate->Register(entity);
 		Program::Instance().canvas.Register(entity, Index);
 		auto var = std::any_cast<std::wstring>(Program::Instance().var_manager.Get<false>(variable::Managing_Entity_Name));
@@ -69,47 +62,40 @@ namespace karapo::entity {
 
 	size_t Manager::Amount() const noexcept {
 		size_t amount = 0;
-		for (auto& group : entities) {
+		for (auto& group : chunks) {
 			amount += group.Size();
 		}
 		return amount;
 	}
 
-	Chunk::Chunk() {
-		entities.clear();
-		refs.clear();
-	}
-
 	void Chunk::Update() noexcept {
-		std::vector<std::shared_ptr<Entity>*> deadmen;
+		std::vector<const std::wstring*> deadmen;
 		for (auto& ent : entities) {
-			if (ent == nullptr)
-				continue;
-
-			if (!ent->CanDelete())
-				ent->Main();
+			if (!ent.second->CanDelete())
+				ent.second->Main();
 			else
-				deadmen.push_back(&ent);
+				deadmen.push_back(&ent.first);
 		}
 
 		for (auto& dead : deadmen) {
-			refs.erase((*dead)->Name());
-			entities.erase(std::find(entities.begin(), entities.end(), (*dead)));
+			entities.erase(entities.find(*dead));
 		}
 	}
 
+	void Chunk::Register(std::shared_ptr<Entity>& ent) noexcept {
+		if (ent != nullptr)
+			entities[ent->Name()] = ent;
+	}
+
 	std::shared_ptr<Entity> Chunk::Get(const std::wstring& Name) const noexcept {
-		try {
-			return std::shared_ptr<Entity>(refs.at(Name));
-		} catch (std::out_of_range&) {
-			return nullptr;
-		}
+		auto ent = entities.find(Name);
+		return (ent != entities.end() ? ent->second : nullptr);
 	}
 
 	std::shared_ptr<Entity> Chunk::Get(std::function<bool(std::shared_ptr<Entity>)> Condition) const noexcept {
 		for (auto& ent : entities) {
-			if (Condition(ent)) {
-				return ent;
+			if (Condition(ent.second)) {
+				return ent.second;
 			}
 		}
 		return nullptr;
@@ -117,19 +103,14 @@ namespace karapo::entity {
 
 	// 管理中の数を返す。
 	size_t Chunk::Size() const noexcept {
-		return refs.size();
+		return entities.size();
 	}
 
 	// Entityを殺す。
-	void Chunk::Kill(const std::wstring& name) noexcept {
-		try {
-			auto weak = refs.at(name);
-			auto shared = weak.lock();
-			if (shared) shared->Delete();
-			else refs.erase(name);
-		} catch (std::out_of_range& e) {
-			// 発見されなければ何もしない。
-		}
+	void Chunk::Kill(const std::wstring& Name) noexcept {
+		auto ent = entities.find(Name);
+		if (ent != entities.end())
+			ent->second->Delete();
 	}
 
 	WorldVector Object::Origin() const noexcept {
