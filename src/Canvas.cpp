@@ -131,13 +131,15 @@ namespace karapo {
 	private:
 		std::shared_ptr<Entity> base;
 	public:
-		inline RelativeLayer(std::shared_ptr<Entity> b) : ImageLayer() {
+		inline RelativeLayer(std::shared_ptr<Entity>& b) : ImageLayer() {
 			base = b;
 			SetFilter(std::make_unique<filter::None>());
 		}
 
 		void Execute() override {
 			ImageLayer::Execute();
+			if (base != nullptr && base->CanDelete())
+				base = nullptr;
 		}
 
 		/**
@@ -145,10 +147,14 @@ namespace karapo {
 		* (0,0) <= base_origin <= (W, H)‚ð–ž‚½‚·‚æ‚¤‚É‰æ–Ê•`ŽÊ‚ðs‚¤B
 		*/
 		void Draw() override {
+			static WorldVector old_origin = { 0.0, 0.0 };
 			auto& p = Program::Instance();
 			const ScreenVector Screen_Size { p.WindowSize().first, p.WindowSize().second };
 			const auto Draw_Origin = Screen_Size / 2;
-			auto base_origin = base->Origin();
+
+			if (base != nullptr)
+				old_origin = base->Origin();
+			auto base_origin = old_origin;
 			filter->Draw(Screen);
 			p.engine.ChangeTargetScreen(Screen);
 			p.engine.ClearScreen();
