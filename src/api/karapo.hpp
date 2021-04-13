@@ -200,6 +200,9 @@ namespace karapo {
 												 CreateRelativeLayer;
 		std::function<bool(const std::wstring&, const int)> InsertAbsoluteLayer,
 															InsertRelativeLayer;
+		std::function<void(const int)> DeleteLayerByIndex;
+		std::function<void(const std::wstring&)> DeleteLayerByName;
+
 
 		// - Entityån -
 
