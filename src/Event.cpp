@@ -340,6 +340,20 @@ namespace karapo::event {
 					return true;
 				}
 			};
+
+			// Entityが関わる全てのManagerを更新
+			class UpdateEntity final : public StandardCommand {
+			public:
+				UpdateEntity() noexcept {}
+				~UpdateEntity() noexcept final {}
+
+				void Execute() final {
+					Program::Instance().entity_manager.Update();
+					Program::Instance().canvas.Update();
+
+					StandardCommand::Execute();
+				}
+			};
 		}
 	}
 
@@ -746,14 +760,15 @@ namespace karapo::event {
 							if (result != nullptr) {
 								// 引数が十分に積まれている時:
 								if (f.is_dynamic) {
-									if (generating_command_name == L"of") {
-										auto endof = words.at(L"__endof")({}).Result();
-										commands.push_back(std::move(endof));
-									}
-
 									// 動的コマンドはイベントのコマンドに追加。
 									commands.push_back(std::move(result));
-
+									if (generating_command_name == L"of") {
+										auto endof = words.at(L"__endof")({}).Result();
+										commands.insert(commands.end() - 1, std::move(endof));
+									} else if (generating_command_name == L"kill") {
+										auto force = words.at(L"__entity強制更新")({}).Result();
+										commands.push_back(std::move(force));
+									}
 								} else if (f.is_static) {
 									// 静的コマンドは即実行。
 									result->Execute();
@@ -1266,6 +1281,25 @@ namespace karapo::event {
 							.is_dynamic = false
 						};
 					};
+
+					words[L"__entity強制更新"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() -> CommandPtr {
+								return std::make_unique<command::hidden::UpdateEntity>();
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
 					Interpret(context);
 				}
 
