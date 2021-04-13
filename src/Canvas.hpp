@@ -58,7 +58,7 @@ namespace karapo {
 		void ApplyFilter(const int, const std::wstring&, const int);
 
 		// レイヤーを作成し、追加する。
-		size_t CreateRelativeLayer(std::shared_ptr<Entity>), CreateAbsoluteLayer();
+		size_t CreateRelativeLayer(), CreateAbsoluteLayer();
 		static Canvas& Instance() noexcept {
 			static Canvas canvas;
 			return canvas;

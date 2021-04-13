@@ -197,7 +197,7 @@ namespace karapo {
 		// - Canvasån -
 
 		std::function<size_t()> CreateAbsoluteLayer;
-		std::function<size_t(std::shared_ptr<Entity>)> CreateRelativeLayer;
+		std::function<size_t()> CreateRelativeLayer;
 
 		// - Entityån -
 

@@ -128,11 +128,9 @@ namespace karapo {
 	* 座標base_originを中心とした相対位置による描写を行うレイヤー。
 	*/
 	class RelativeLayer : public ImageLayer {
-	private:
-		std::shared_ptr<Entity> base;
+		std::shared_ptr<Entity> base = nullptr;
 	public:
-		inline RelativeLayer(std::shared_ptr<Entity>& b) : ImageLayer() {
-			base = b;
+		inline RelativeLayer() : ImageLayer() {
 			SetFilter(std::make_unique<filter::None>());
 		}
 
@@ -140,6 +138,10 @@ namespace karapo {
 			ImageLayer::Execute();
 			if (base != nullptr && base->CanDelete())
 				base = nullptr;
+		}
+
+		void SetBase(std::shared_ptr<Entity>& ent) noexcept {
+			base = ent;
 		}
 
 		/**
@@ -152,8 +154,7 @@ namespace karapo {
 			const ScreenVector Screen_Size { p.WindowSize().first, p.WindowSize().second };
 			const auto Draw_Origin = Screen_Size / 2;
 
-			if (base != nullptr)
-				old_origin = base->Origin();
+			if (base != nullptr) old_origin = base->Origin();
 			auto base_origin = old_origin;
 			filter->Draw(Screen);
 			p.engine.ChangeTargetScreen(Screen);
@@ -208,8 +209,8 @@ namespace karapo {
 		layers[Index]->SetFilter(filter_maker.Generate(Filter_Name));
 	}
 
-	size_t Canvas::CreateRelativeLayer(std::shared_ptr<Entity> e) {
-		layers.push_back(std::make_unique<RelativeLayer>(e));
+	size_t Canvas::CreateRelativeLayer() {
+		layers.push_back(std::make_unique<RelativeLayer>());
 		return layers.size();
 	}
 
