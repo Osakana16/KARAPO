@@ -196,8 +196,10 @@ namespace karapo {
 
 		// - Canvasån -
 
-		std::function<bool(const std::wstring&)> CreateAbsoluteLayer;
-		std::function<bool(const std::wstring&)> CreateRelativeLayer;
+		std::function<bool(const std::wstring&)> CreateAbsoluteLayer,
+												 CreateRelativeLayer;
+		std::function<bool(const std::wstring&, const int)> InsertAbsoluteLayer,
+															InsertRelativeLayer;
 
 		// - Entityån -
 

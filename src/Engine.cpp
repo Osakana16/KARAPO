@@ -289,6 +289,8 @@ namespace karapo {
 		.LoadSound = [](const std::wstring& Path) -> resource::Resource { return Program::Instance().engine.LoadSound(Path); },
 		.CreateAbsoluteLayer = [](const std::wstring& Name) { return Program::Instance().canvas.CreateAbsoluteLayer(Name); },
 		.CreateRelativeLayer = [](const std::wstring& Name) { return Program::Instance().canvas.CreateRelativeLayer(Name); },
+		.InsertAbsoluteLayer = [](const std::wstring& Name, const int Index) { return Program::Instance().canvas.CreateAbsoluteLayer(Name, Index); },
+		.InsertRelativeLayer = [](const std::wstring& Name, const int Index) { return Program::Instance().canvas.CreateRelativeLayer(Name, Index); },
 		.RegisterEntity = [](std::shared_ptr<Entity> entity, const std::wstring& Layer_Name) { Program::Instance().entity_manager.Register(entity, Layer_Name); },
 		.KillEntity = [](const std::wstring& Name) { Program::Instance().entity_manager.Kill(Name); },
 		.GetEntityByName = [](const std::wstring& Name) -> std::shared_ptr<Entity> { return Program::Instance().entity_manager.GetEntity(Name); },
