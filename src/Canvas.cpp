@@ -197,7 +197,25 @@ namespace karapo {
 	}
 
 	void Canvas::Register(std::shared_ptr<Entity>& d) {
+		if (selecting_layer == nullptr)
+			return;
+
 		(*selecting_layer)->Register(d);
+	}
+
+	void Canvas::Register(std::shared_ptr<Entity>& d, const int Index) {
+		if (Index < 0 || Index >= layers.size())
+			return;
+
+		layers[Index]->Register(d);
+	}
+
+	void Canvas::Register(std::shared_ptr<Entity>& d, const std::wstring& Name) {
+		auto it = std::find_if(layers.begin(), layers.end(), [Name](std::unique_ptr<ImageLayer>& layer) { return layer->Name() == Name; });
+		if (it == layers.end())
+			return;
+
+		(*it)->Register(d);
 	}
 
 	void Canvas::SelectLayer(const int Index) noexcept {
@@ -215,6 +233,10 @@ namespace karapo {
 		layers.erase(std::find_if(layers.begin(), layers.end(), [Name](std::unique_ptr<ImageLayer>& layer) { return layer->Name() == Name; }));
 	}
 
+	void Canvas::DeleteLayer(const int Index) noexcept {
+		layers.erase(layers.begin() + Index);
+	}
+
 	void Canvas::ApplyFilter(const std::wstring& Name, const std::wstring& Filter_Name, const int Potency) {
 		FilterMaker filter_maker(Potency);
 		auto it = std::find_if(layers.begin(), layers.end(), [Name](std::unique_ptr<ImageLayer>& layer) { return layer->Name() == Name; });
@@ -222,19 +244,29 @@ namespace karapo {
 			(*it)->SetFilter(filter_maker.Generate(Filter_Name));
 	}
 
-	bool Canvas::CreateLayer(std::unique_ptr<ImageLayer> layer) {
-		if (layer == nullptr || std::find_if(layers.begin(), layers.end(), [&layer](std::unique_ptr<ImageLayer>& candidate) { return layer->Name() == candidate->Name(); }) != layers.end())
+	bool Canvas::CreateLayer(std::unique_ptr<ImageLayer> layer, const int Index) {
+		if (layer == nullptr || 
+			std::find_if(layers.begin(), layers.end(), [&layer](std::unique_ptr<ImageLayer>& candidate) { return layer->Name() == candidate->Name(); }) != layers.end() ||
+			(Index < 0 || Index >= layers.size()))
 			return false;
 
-		layers.push_back(std::move(layer));
+		layers.insert(layers.begin() + Index, std::move(layer));
 		return true;
 	}
 
 	bool Canvas::CreateRelativeLayer(const std::wstring& Name) {
-		return CreateLayer(std::make_unique<RelativeLayer>(Name));
+		return CreateLayer(std::make_unique<RelativeLayer>(Name), 0);
 	}
 
 	bool Canvas::CreateAbsoluteLayer(const std::wstring& Name) {
-		return CreateLayer(std::make_unique<AbsoluteLayer>(Name));
+		return CreateLayer(std::make_unique<AbsoluteLayer>(Name), 0);
+	}
+
+	bool Canvas::CreateRelativeLayer(const std::wstring& Name, const int Index) {
+		return CreateLayer(std::make_unique<RelativeLayer>(Name), Index);
+	}
+
+	bool Canvas::CreateAbsoluteLayer(const std::wstring& Name, const int Index) {
+		return CreateLayer(std::make_unique<AbsoluteLayer>(Name), Index);
 	}
 }

@@ -57,11 +57,15 @@ namespace karapo {
 		LayerPtr* selecting_layer{};
 	public:
 		void Update() noexcept;
-		void Register(std::shared_ptr<Entity>&);
+		void Register(std::shared_ptr<Entity>&),
+			Register(std::shared_ptr<Entity>&, const int), 
+			Register(std::shared_ptr<Entity>&, const std::wstring&);
 
 		// レイヤーを作成し、追加する。
-		bool CreateRelativeLayer(const std::wstring&), CreateAbsoluteLayer(const std::wstring&), CreateLayer(std::unique_ptr<ImageLayer>);
-		void DeleteLayer(const std::wstring&) noexcept;
+		bool CreateRelativeLayer(const std::wstring&), CreateAbsoluteLayer(const std::wstring&);
+		bool CreateRelativeLayer(const std::wstring&, const int), CreateAbsoluteLayer(const std::wstring&, const int);
+		bool CreateLayer(std::unique_ptr<ImageLayer>, const int);
+		void DeleteLayer(const std::wstring&) noexcept, DeleteLayer(const int) noexcept;
 		// 操作対象のレイヤーを選択する。
 		void SelectLayer(const int) noexcept, SelectLayer(const std::wstring&) noexcept;
 
