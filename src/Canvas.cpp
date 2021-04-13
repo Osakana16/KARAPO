@@ -197,7 +197,18 @@ namespace karapo {
 	}
 
 	void Canvas::Register(std::shared_ptr<Entity>& d) {
-		
+		(*selecting_layer)->Register(d);
+	}
+
+	void Canvas::SelectLayer(const int Index) noexcept {
+		selecting_layer = &layers[Index];
+	}
+
+	void Canvas::SelectLayer(const std::wstring& Name) noexcept {
+		auto it = std::find_if(layers.begin(), layers.end(), [Name](std::unique_ptr<ImageLayer>& layer) { return layer->Name() == Name; });
+		if (it != layers.end()) {
+			selecting_layer = &*it;
+		}
 	}
 
 	void Canvas::DeleteLayer(const std::wstring& Name) noexcept {

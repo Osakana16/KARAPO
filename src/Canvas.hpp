@@ -53,15 +53,20 @@ namespace karapo {
 		using Layers = std::vector<LayerPtr>;
 		// 管理中レイヤー
 		Layers layers;
+		// 操作対象のレイヤー
+		LayerPtr* selecting_layer{};
 	public:
 		void Update() noexcept;
 		void Register(std::shared_ptr<Entity>&);
-		void DeleteLayer(const std::wstring&) noexcept;
-
-		void ApplyFilter(const std::wstring&, const std::wstring&, const int);
 
 		// レイヤーを作成し、追加する。
 		bool CreateRelativeLayer(const std::wstring&), CreateAbsoluteLayer(const std::wstring&), CreateLayer(std::unique_ptr<ImageLayer>);
+		void DeleteLayer(const std::wstring&) noexcept;
+		// 操作対象のレイヤーを選択する。
+		void SelectLayer(const int) noexcept, SelectLayer(const std::wstring&) noexcept;
+
+		void ApplyFilter(const std::wstring&, const std::wstring&, const int);
+
 		static Canvas& Instance() noexcept {
 			static Canvas canvas;
 			return canvas;
