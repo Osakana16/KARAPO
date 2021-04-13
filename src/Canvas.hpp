@@ -32,13 +32,15 @@ namespace karapo {
 	};
 
 	class ImageLayer : public Layer {
+		std::wstring name{};	// レイヤー名
 	protected:
 		std::vector<std::shared_ptr<Entity>> drawing;
 	public:
-		ImageLayer() : Layer() {}
+		ImageLayer(const std::wstring& lname) : Layer() { name = lname; }
 		virtual void Execute() override;
 		void Register(std::shared_ptr<Entity>);
 		bool IsRegistered(std::shared_ptr<Entity>) const noexcept;
+		inline auto Name() const noexcept { return name; }
 
 		virtual void Draw() = 0;
 	};
@@ -49,16 +51,17 @@ namespace karapo {
 		using LayerPtr = std::unique_ptr<ImageLayer>;
 		// レイヤー
 		using Layers = std::vector<LayerPtr>;
+		// 管理中レイヤー
 		Layers layers;
 	public:
 		void Update() noexcept;
-		void Register(std::shared_ptr<Entity>, const int);
-		void DeleteLayer(const int) noexcept;
+		void Register(std::shared_ptr<Entity>&);
+		void DeleteLayer(const std::wstring&) noexcept;
 
-		void ApplyFilter(const int, const std::wstring&, const int);
+		void ApplyFilter(const std::wstring&, const std::wstring&, const int);
 
 		// レイヤーを作成し、追加する。
-		size_t CreateRelativeLayer(), CreateAbsoluteLayer();
+		bool CreateRelativeLayer(const std::wstring&), CreateAbsoluteLayer(const std::wstring&), CreateLayer(std::unique_ptr<ImageLayer>);
 		static Canvas& Instance() noexcept {
 			static Canvas canvas;
 			return canvas;

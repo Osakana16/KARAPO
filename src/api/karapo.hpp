@@ -196,12 +196,12 @@ namespace karapo {
 
 		// - Canvasån -
 
-		std::function<size_t()> CreateAbsoluteLayer;
-		std::function<size_t()> CreateRelativeLayer;
+		std::function<bool(const std::wstring&)> CreateAbsoluteLayer;
+		std::function<bool(const std::wstring&)> CreateRelativeLayer;
 
 		// - Entityån -
 
-		std::function<void(std::shared_ptr<Entity>, const size_t)> RegisterEntity;
+		std::function<void(std::shared_ptr<Entity>, const std::wstring&)> RegisterEntity;
 		std::function<void(const std::wstring&)> KillEntity;
 		std::function<std::shared_ptr<Entity>(const std::wstring&)> GetEntityByName;
 		std::function<std::shared_ptr<Entity>(std::function<bool(std::shared_ptr<Entity>)>)> GetEntityByFunc;

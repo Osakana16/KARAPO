@@ -9,7 +9,7 @@ namespace karapo {
 			throw;
 
 		engine.OnInit(this);
-		canvas.CreateAbsoluteLayer();
+		canvas.CreateAbsoluteLayer(L"デフォルトレイヤー");
 	}
 
 	int Program::Main() {

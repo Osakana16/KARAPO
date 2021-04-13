@@ -84,7 +84,7 @@ namespace karapo::entity {
 		size_t Amount() const noexcept;
 
 		// Entity‚ğŠÇ—‰º‚É’u‚­B
-		void Register(std::shared_ptr<Entity>) noexcept, Register(std::shared_ptr<Entity>, const size_t) noexcept;
+		void Register(std::shared_ptr<Entity>) noexcept, Register(std::shared_ptr<Entity>, const std::wstring&) noexcept;
 
 		static Manager& Instance() noexcept {
 			static Manager manager;

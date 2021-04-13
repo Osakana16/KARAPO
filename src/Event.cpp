@@ -259,11 +259,11 @@ namespace karapo::event {
 		};
 
 		class Filter final : public StandardCommand {
-			int index, potency;
-			std::wstring kind_name;
+			int potency{};
+			std::wstring layer_name{}, kind_name{};
 		public:
-			Filter(const int I, const std::wstring& KN, const int P) noexcept {
-				index = I;
+			Filter(const std::wstring& N, const std::wstring& KN, const int P) noexcept {
+				layer_name = N;
 				kind_name = KN;
 				potency = P % 256;
 			}
@@ -271,7 +271,7 @@ namespace karapo::event {
 			~Filter() final {}
 
 			void Execute() final {
-				Program::Instance().canvas.ApplyFilter(index, kind_name, potency);
+				Program::Instance().canvas.ApplyFilter(layer_name, kind_name, potency);
 				StandardCommand::Execute();
 			}
 		};
@@ -1180,9 +1180,8 @@ namespace karapo::event {
 						words[L"フィルター"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
 						return {
 							.Result = [&]() -> CommandPtr {
-								const auto Index = std::stoi(params[0]);
 								const auto Potency = std::stoi(params[2]);
-								return std::make_unique<command::Filter>(Index, params[1], Potency);
+								return std::make_unique<command::Filter>(params[0], params[1], Potency);
 							},
 							.checkParamState  = [params]() -> KeywordInfo::ParamResult { 
 								switch (params.size()) {
