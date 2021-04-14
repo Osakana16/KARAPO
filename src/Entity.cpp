@@ -44,7 +44,7 @@ namespace karapo::entity {
 
 	// Entityの登録
 	void Manager::Register(std::shared_ptr<Entity> entity) noexcept {
-		Register(entity, L"デフォルトレイヤー");
+		Register(entity, L"");
 	}
 
 	void Manager::Register(std::shared_ptr<Entity> entity, const std::wstring& Layer_Name) noexcept {
@@ -54,10 +54,13 @@ namespace karapo::entity {
 		}
 		candidate = chunks.begin();
 		candidate->Register(entity);
-		Program::Instance().canvas.Register(entity);
 		auto var = std::any_cast<std::wstring>(Program::Instance().var_manager.Get<false>(variable::Managing_Entity_Name));
 		var += std::wstring(entity->Name()) + L"=" + std::wstring(entity->KindName()) + L"\n";
 		Program::Instance().var_manager.Get<false>(variable::Managing_Entity_Name) = var;
+		if (!Layer_Name.empty())
+			Program::Instance().canvas.Register(entity, Layer_Name);
+		else
+			Program::Instance().canvas.Register(entity);
 	}
 
 	size_t Manager::Amount() const noexcept {
