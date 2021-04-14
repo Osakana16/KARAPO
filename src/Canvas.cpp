@@ -245,10 +245,12 @@ namespace karapo {
 	}
 
 	bool Canvas::CreateLayer(std::unique_ptr<ImageLayer> layer, const int Index) {
-		if (layer == nullptr || 
-			std::find_if(layers.begin(), layers.end(), [&layer](std::unique_ptr<ImageLayer>& candidate) { return layer->Name() == candidate->Name(); }) != layers.end() ||
-			(Index < 0 || Index >= layers.size()))
-			return false;
+		if (layer == nullptr ||
+			std::find_if(layers.begin(), layers.end(), [&layer](std::unique_ptr<ImageLayer>& candidate) { return layer->Name() == candidate->Name(); }) != layers.end())
+		{
+			if (!layers.empty() && (Index < 0 || Index >= layers.size()))
+				return false;
+		}
 
 		layers.insert(layers.begin() + Index, std::move(layer));
 		return true;
