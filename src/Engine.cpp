@@ -320,7 +320,9 @@ namespace karapo {
 		.IsStringType = [](const std::wstring& Param_Type) { return Param_Type == event::innertype::String; },
 		.IsNumberType = [](const std::wstring& Param_Type) { return Param_Type == event::innertype::Number; },
 		.IsNoType = [](const std::wstring& Param_Type) { return Param_Type == event::innertype::None; },
-		.IsPressingKey = [](const value::Key Any_Key) noexcept -> bool { return Program::Instance().engine.IsPressingKey(Any_Key); },
+		.IsPressingKey = [](const value::Key Any_Key) noexcept -> bool { return Program::Instance().engine.IsPressingKey(Any_Key);
+
+		},
 		.IsPressedKey = [](const value::Key Any_Key) noexcept -> bool {return Program::Instance().engine.IsPressedKey(Any_Key); },
 		.keys = {
 			.F1 = (value::Key)KEY_INPUT_F1,
@@ -343,7 +345,7 @@ namespace karapo {
 			.Escape = (value::Key)KEY_INPUT_ESCAPE,
 			.Space = (value::Key)KEY_INPUT_SPACE,
 			.Backspace = (value::Key)KEY_INPUT_BACK,
-			.Enter = (value::Key)KEY_INPUT_ENTER,
+			.Enter = (value::Key)KEY_INPUT_RETURN,
 			.Delete = (value::Key)KEY_INPUT_DELETE,
 			.Home = (value::Key)KEY_INPUT_HOME,
 			.End = (value::Key)KEY_INPUT_END,
