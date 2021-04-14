@@ -206,7 +206,8 @@ namespace karapo {
 
 		// - Entityån -
 
-		std::function<void(std::shared_ptr<Entity>, const std::wstring&)> RegisterEntity;
+		std::function<void(std::shared_ptr<Entity>)> RegisterEntity;
+		std::function<void(std::shared_ptr<Entity>, const std::wstring&)> RegisterEntityByLayerName;
 		std::function<void(const std::wstring&)> KillEntity;
 		std::function<std::shared_ptr<Entity>(const std::wstring&)> GetEntityByName;
 		std::function<std::shared_ptr<Entity>(std::function<bool(std::shared_ptr<Entity>)>)> GetEntityByFunc;
