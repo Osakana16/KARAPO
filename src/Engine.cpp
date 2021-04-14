@@ -148,7 +148,7 @@ namespace karapo {
 		std::unordered_map<std::wstring, int> special_key{
 			{ L"tab", KEY_INPUT_TAB },
 			{ L"space", KEY_INPUT_SPACE },
-			{ L"enter", KEY_INPUT_ENTER },
+			{ L"enter", KEY_INPUT_RETURN },
 			{ L"escape", KEY_INPUT_ESCAPE },
 			{ L"insert", KEY_INPUT_INSERT },
 			{ L"home", KEY_INPUT_HOME },
@@ -343,7 +343,7 @@ namespace karapo {
 			.Escape = (value::Key)KEY_INPUT_ESCAPE,
 			.Space = (value::Key)KEY_INPUT_SPACE,
 			.Backspace = (value::Key)KEY_INPUT_BACK,
-			.Enter = (value::Key)KEY_INPUT_ENTER,
+			.Enter = (value::Key)KEY_INPUT_RETURN,
 			.Delete = (value::Key)KEY_INPUT_DELETE,
 			.Home = (value::Key)KEY_INPUT_HOME,
 			.End = (value::Key)KEY_INPUT_END,
