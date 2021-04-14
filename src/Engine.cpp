@@ -148,7 +148,7 @@ namespace karapo {
 		std::unordered_map<std::wstring, int> special_key{
 			{ L"tab", KEY_INPUT_TAB },
 			{ L"space", KEY_INPUT_SPACE },
-			{ L"enter", KEY_INPUT_ENTER },
+			{ L"enter", KEY_INPUT_RETURN },
 			{ L"escape", KEY_INPUT_ESCAPE },
 			{ L"insert", KEY_INPUT_INSERT },
 			{ L"home", KEY_INPUT_HOME },
@@ -320,9 +320,7 @@ namespace karapo {
 		.IsStringType = [](const std::wstring& Param_Type) { return Param_Type == event::innertype::String; },
 		.IsNumberType = [](const std::wstring& Param_Type) { return Param_Type == event::innertype::Number; },
 		.IsNoType = [](const std::wstring& Param_Type) { return Param_Type == event::innertype::None; },
-		.IsPressingKey = [](const value::Key Any_Key) noexcept -> bool { return Program::Instance().engine.IsPressingKey(Any_Key);
-
-		},
+		.IsPressingKey = [](const value::Key Any_Key) noexcept -> bool { return Program::Instance().engine.IsPressingKey(Any_Key); },
 		.IsPressedKey = [](const value::Key Any_Key) noexcept -> bool {return Program::Instance().engine.IsPressedKey(Any_Key); },
 		.keys = {
 			.F1 = (value::Key)KEY_INPUT_F1,
