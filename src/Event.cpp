@@ -324,6 +324,90 @@ namespace karapo::event {
 			}
 		};
 
+		namespace layer {
+			// レイヤー生成(指定位置)
+			class Make final : public StandardCommand {
+				std::wstring kind_name{}, layer_name{};
+				int index = 0;
+				std::unordered_map<std::wstring, bool (Canvas::*)(const std::wstring&, const int)> create{};
+			public:
+				Make(const int Index, const std::wstring& KN, const std::wstring& LN) noexcept {
+					index = Index;
+					kind_name = KN;
+					layer_name = LN;
+
+					create[L"scroll"] =
+						create[L"スクロール"] =
+						create[L"relative"] =
+						create[L"相対位置"] = &Canvas::CreateRelativeLayer;
+
+					create[L"fixed"] =
+						create[L"固定"] =
+						create[L"absolute"] =
+						create[L"絶対位置"] = &Canvas::CreateAbsoluteLayer;
+				}
+
+				~Make() final {}
+
+				void Execute() final {
+					auto it = create.find(kind_name);
+					if (it != create.end()) {
+						(Program::Instance().canvas.*it->second)(layer_name, index);
+					}
+					StandardCommand::Execute();
+				}
+			};
+
+			// レイヤー変更
+			class Select final : public StandardCommand {
+				std::wstring layer_name{};
+			public:
+				Select(const std::wstring& LN) noexcept {
+					layer_name = LN;
+				}
+
+				~Select() final {}
+
+				void Execute() final {
+					Program::Instance().canvas.SelectLayer(layer_name);
+					StandardCommand::Execute();
+				}
+			};
+
+			// 相対位置レイヤーの基準設定
+			class SetBasis final : public StandardCommand {
+				std::wstring entity_name{}, layer_name{};
+			public:
+				SetBasis(const std::wstring& EN, const std::wstring& LN) noexcept {
+					entity_name = EN;
+					layer_name = LN;
+				}
+
+				~SetBasis() final {}
+
+				void Execute() final {
+
+					StandardCommand::Execute();
+				}
+			};
+
+			// レイヤー削除
+			class Delete final :public StandardCommand {
+				std::wstring name{};
+			public:
+				Delete(const std::wstring& N) noexcept {
+					name = N;
+				}
+
+				~Delete() final {}
+
+				void Execute() final {
+					Program::Instance().canvas.DeleteLayer(name);
+					StandardCommand::Execute();
+				}
+			};
+		}
+
 		namespace hidden {
 			class EndOf final : public StandardCommand {
 				bool executed = false;
@@ -996,6 +1080,111 @@ namespace karapo::event {
 								return (Default_ProgramInterface.IsStringType(Type) ? std::make_unique<command::entity::Kill>(Var) : nullptr);
 							},
 							.checkParamState  = [params]() -> KeywordInfo::ParamResult { 
+								switch (params.size()) {
+									case 0:
+										return KeywordInfo::ParamResult::Lack;
+									case 1:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"makelayer"] =
+						words[L"レイヤー生成"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() noexcept -> CommandPtr {
+								const auto [Index, Index_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								const auto [Kind, Kind_Type] = Default_ProgramInterface.GetParamInfo(params[1]);
+								const auto [Name, Name_Type] = Default_ProgramInterface.GetParamInfo(params[2]);
+								if (Default_ProgramInterface.IsNumberType(Index_Type) &&
+									Default_ProgramInterface.IsStringType(Kind_Type) &&
+									Default_ProgramInterface.IsStringType(Name_Type))
+								{
+									auto i = ToInt<int>(Index.c_str(), nullptr);
+									return std::make_unique<command::layer::Make>(i, Kind, Name);
+								}
+								else
+									return nullptr;
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+									case 1:
+									case 2:
+										return KeywordInfo::ParamResult::Lack;
+									case 3:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"setbasis"] =
+						words[L"レイヤー基準"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() noexcept -> CommandPtr {
+								const auto [Entity_Name, Entity_Name_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								const auto [Layer_Name, Layer_Name_Type] = Default_ProgramInterface.GetParamInfo(params[1]);
+								if (Default_ProgramInterface.IsStringType(Entity_Name_Type) && Default_ProgramInterface.IsStringType(Layer_Name_Type))
+									return std::make_unique<command::layer::SetBasis>(Entity_Name, Layer_Name);
+								else
+									return nullptr;
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+									case 1:
+										return KeywordInfo::ParamResult::Lack;
+									case 2:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"selectlayer"] =
+						words[L"レイヤー選択"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() noexcept -> CommandPtr {
+								const auto [Name, Name_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								return (Default_ProgramInterface.IsStringType(Name_Type) ? std::make_unique<command::layer::Select>(Name) : nullptr);
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+										return KeywordInfo::ParamResult::Lack;
+									case 1:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"deletelayer"] =
+						words[L"レイヤー削除"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() noexcept -> CommandPtr {
+								const auto [Name, Name_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								return (Default_ProgramInterface.IsStringType(Name_Type) ? std::make_unique<command::layer::Delete>(Name) : nullptr);
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
 								switch (params.size()) {
 									case 0:
 										return KeywordInfo::ParamResult::Lack;
