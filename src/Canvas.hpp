@@ -68,6 +68,7 @@ namespace karapo {
 		void DeleteLayer(const std::wstring&) noexcept, DeleteLayer(const int) noexcept;
 		// 操作対象のレイヤーを選択する。
 		void SelectLayer(const int) noexcept, SelectLayer(const std::wstring&) noexcept;
+		void SetBasis(std::shared_ptr<Entity>&, const std::wstring&);
 
 		void ApplyFilter(const std::wstring&, const std::wstring&, const int);
 

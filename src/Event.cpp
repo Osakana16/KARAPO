@@ -386,7 +386,8 @@ namespace karapo::event {
 				~SetBasis() final {}
 
 				void Execute() final {
-
+					auto ent = Program::Instance().entity_manager.GetEntity(entity_name);
+					Program::Instance().canvas.SetBasis(ent, layer_name);
 					StandardCommand::Execute();
 				}
 			};

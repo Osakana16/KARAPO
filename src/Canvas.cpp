@@ -237,6 +237,13 @@ namespace karapo {
 		layers.erase(layers.begin() + Index);
 	}
 
+	void Canvas::SetBasis(std::shared_ptr<Entity>& base, const std::wstring& Layer_Name) {
+		auto it = std::find_if(layers.begin(), layers.end(), [Layer_Name](std::unique_ptr<ImageLayer>& layer) { return layer->Name() == Layer_Name; });
+		if (it == layers.end())
+			return;
+		static_cast<RelativeLayer*>(it->get())->SetBase(base);
+	}
+
 	void Canvas::ApplyFilter(const std::wstring& Name, const std::wstring& Filter_Name, const int Potency) {
 		FilterMaker filter_maker(Potency);
 		auto it = std::find_if(layers.begin(), layers.end(), [Name](std::unique_ptr<ImageLayer>& layer) { return layer->Name() == Name; });
