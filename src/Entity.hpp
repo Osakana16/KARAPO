@@ -45,6 +45,19 @@ namespace karapo::entity {
 		void Load(const std::wstring&);
 	};
 
+	class Mouse : public Object {
+		bool can_delete{};
+	public:
+		Mouse() noexcept;
+		~Mouse() final {}
+		int Main() final;
+		const wchar_t *Name() const noexcept final;
+		const wchar_t *KindName() const noexcept final;
+		bool CanDelete() const noexcept final { return can_delete; }
+		void Delete() final { can_delete = true; }
+		void Draw(WorldVector) final {}
+	};
+
 	// Entity‚ğˆê‚Â‚Ì‰ò(”z—ñ)‚ÅŠÇ—‚·‚éƒNƒ‰ƒX
 	class Chunk {
 		std::unordered_map<std::wstring, std::shared_ptr<Entity>> entities{};

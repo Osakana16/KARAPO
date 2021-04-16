@@ -177,4 +177,32 @@ namespace karapo::entity {
 	void Sound::Delete() {
 		can_delete = true;
 	}
+
+	Mouse::Mouse() noexcept {
+		Program::Instance().var_manager.MakeNew(L"マウスポインタ.左クリック") = 0;
+		Program::Instance().var_manager.MakeNew(L"マウスポインタ.右クリック") = 0;
+		Program::Instance().var_manager.MakeNew(L"マウスポインタ.中央クリック") = 0;
+		origin = WorldVector{ (Dec)0, (Dec)0 };
+	}
+
+	int Mouse::Main() {
+		Program::Instance().var_manager.Get<false>(L"マウスポインタ.左クリック") = 
+			(int)Program::Instance().engine.IsPressingMouse(Default_ProgramInterface.keys.Left_Click);		
+		Program::Instance().var_manager.Get<false>(L"マウスポインタ.右クリック") = 
+			(int)Program::Instance().engine.IsPressingMouse(Default_ProgramInterface.keys.Right_Click);
+		Program::Instance().var_manager.Get<false>(L"マウスポインタ.中央クリック") = 
+			(int)Program::Instance().engine.IsPressingMouse(Default_ProgramInterface.keys.Wheel_Click);
+		
+		auto [x, y] = Default_ProgramInterface.GetMousePos();
+		origin = WorldVector{ (Dec)x, (Dec)y };
+		return 0;
+	}
+
+	const wchar_t *Mouse::Name() const noexcept {
+		return L"マウスポインタ";
+	}
+
+	const wchar_t *Mouse::KindName() const noexcept {
+		return L"マウスポインタ";
+	}
 }
