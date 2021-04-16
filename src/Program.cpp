@@ -11,6 +11,7 @@ namespace karapo {
 		engine.OnInit(this);
 		canvas.CreateAbsoluteLayer(L"デフォルトレイヤー");
 		canvas.SelectLayer(L"デフォルトレイヤー");
+		entity_manager.Register(std::make_shared<entity::Mouse>());
 	}
 
 	int Program::Main() {
