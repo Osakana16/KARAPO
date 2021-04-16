@@ -134,6 +134,15 @@ namespace karapo {
 			else 
 				key = 0;
 		}
+
+		for (int i = 0; i < 8; i++) {
+			int mouse = DxLib::GetMouseInput();
+			auto& key = mouse_state[i];
+			if (mouse & key)
+				key++;
+			else
+				key = 0;
+		}
 	}
 
 	bool Program::Engine::IsPressedKey(const value::Key Any_Key) const noexcept {
@@ -142,6 +151,14 @@ namespace karapo {
 
 	bool Program::Engine::IsPressingKey(const value::Key Any_Key) const noexcept {
 		return (keys_state[static_cast<int>(Any_Key)] > 0);
+	}
+
+	bool Program::Engine::IsPressedMouse(const value::Key Any_Key) const noexcept {
+		return (mouse_state[static_cast<int>(Any_Key)] <= 2);
+	}
+
+	bool Program::Engine::IsPressingMouse(const value::Key Any_Key) const noexcept {
+		return (mouse_state[static_cast<int>(Any_Key)] > 0);
 	}
 
 	value::Key Program::Engine::GetKeyValueByString(const std::wstring& Key_Name) {
@@ -192,6 +209,12 @@ namespace karapo {
 			{ L"f10", KEY_INPUT_F10 },
 			{ L"f11", KEY_INPUT_F11 },
 			{ L"f12", KEY_INPUT_F12 },
+			{ L"leftclick", MOUSE_INPUT_LEFT },
+			{ L"左クリック", MOUSE_INPUT_LEFT },
+			{ L"rightclick", MOUSE_INPUT_RIGHT },
+			{ L"右クリック", MOUSE_INPUT_RIGHT },
+			{ L"wheelclick", MOUSE_INPUT_MIDDLE },
+			{ L"中央クリック", MOUSE_INPUT_MIDDLE }
 		};
 
 		if (iswalpha(Key_Name[0])) {
@@ -320,8 +343,11 @@ namespace karapo {
 		.IsStringType = [](const std::wstring& Param_Type) { return Param_Type == event::innertype::String; },
 		.IsNumberType = [](const std::wstring& Param_Type) { return Param_Type == event::innertype::Number; },
 		.IsNoType = [](const std::wstring& Param_Type) { return Param_Type == event::innertype::None; },
+		.GetMousePos = []() -> std::pair<int, int> { int x, y; GetMousePoint(&x, &y); return { x, y }; },
 		.IsPressingKey = [](const value::Key Any_Key) noexcept -> bool { return Program::Instance().engine.IsPressingKey(Any_Key); },
 		.IsPressedKey = [](const value::Key Any_Key) noexcept -> bool {return Program::Instance().engine.IsPressedKey(Any_Key); },
+		.IsPressedMouse = [](const value::Key Any_Key) noexcept -> bool {return Program::Instance().engine.IsPressedMouse(Any_Key); },
+		.IsPressingMouse = [](const value::Key Any_Key) noexcept -> bool {return Program::Instance().engine.IsPressingMouse(Any_Key); },
 		.keys = {
 			.F1 = (value::Key)KEY_INPUT_F1,
 			.F2 = (value::Key)KEY_INPUT_F2,
@@ -401,7 +427,10 @@ namespace karapo {
 			.N6 = (value::Key)KEY_INPUT_6,
 			.N7 = (value::Key)KEY_INPUT_7,
 			.N8 = (value::Key)KEY_INPUT_8,
-			.N9 = (value::Key)KEY_INPUT_9
+			.N9 = (value::Key)KEY_INPUT_9,
+			.Left_Click = (value::Key)MOUSE_INPUT_LEFT,
+			.Right_Click = (value::Key)MOUSE_INPUT_RIGHT,
+			.Wheel_Click = (value::Key)MOUSE_INPUT_MIDDLE
 		}
 	};
 }

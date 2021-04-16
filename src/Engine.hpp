@@ -89,7 +89,7 @@ namespace karapo {
 			std::unordered_map<std::wstring, resource::Resource> resources;
 
 			bool fullscreen = false, synchronize = false, fixed = false;
-			unsigned keys_state[256];
+			unsigned keys_state[256], mouse_state[8];
 			Engine() noexcept, ~Engine() noexcept;
 		public:
 			void OnInit(Program*) noexcept;
@@ -112,7 +112,8 @@ namespace karapo {
 			void ClearScreen(), FlipScreen();
 
 			void UpdateKeys() noexcept;
-			bool IsPressingKey(const value::Key)const noexcept, IsPressedKey(const value::Key) const noexcept;
+			bool IsPressingKey(const value::Key) const noexcept, IsPressedKey(const value::Key) const noexcept;
+			bool IsPressedMouse(const value::Key) const noexcept, IsPressingMouse(const value::Key) const noexcept;
 			value::Key GetKeyValueByString(const std::wstring&);
 			void UpdateBindedKeys(), BindKey(std::wstring, std::function<void()>);
 			

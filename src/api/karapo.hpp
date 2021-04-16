@@ -231,8 +231,8 @@ namespace karapo {
 		std::function<bool(const std::wstring&)> IsStringType, IsNumberType, IsNoType;
 
 		// - ÉLÅ[ån -
-
-		std::function<bool(const value::Key)> IsPressingKey, IsPressedKey;
+		std::function<std::pair<int, int>()> GetMousePos;
+		std::function<bool(const value::Key)> IsPressingKey, IsPressedKey, IsPressedMouse, IsPressingMouse;
 
 		struct {
 			value::Key
@@ -314,7 +314,10 @@ namespace karapo {
 				N6,
 				N7,
 				N8,
-				N9;
+				N9,
+				Left_Click,
+				Right_Click,
+				Wheel_Click;
 		} keys;
 	};
 }
