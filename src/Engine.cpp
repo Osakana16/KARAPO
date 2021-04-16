@@ -138,7 +138,7 @@ namespace karapo {
 		for (int i = 0; i < 8; i++) {
 			int mouse = DxLib::GetMouseInput();
 			auto& key = mouse_state[i];
-			if (mouse & key)
+			if (mouse & i)
 				key++;
 			else
 				key = 0;
