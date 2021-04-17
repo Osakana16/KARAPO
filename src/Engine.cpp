@@ -268,7 +268,7 @@ namespace karapo {
 	}
 
 	TargetRender Program::Engine::MakeScreen() {
-		auto raw_screen = DxLib::MakeScreen(Program::Instance().WindowSize().first, Program::Instance().WindowSize().second);
+		auto raw_screen = DxLib::MakeScreen(Program::Instance().WindowSize().first, Program::Instance().WindowSize().second, TRUE);
 		auto screen = static_cast<TargetRender>(raw_screen);
 		if (raw_screen > -1)
 			screens.push_back(screen);

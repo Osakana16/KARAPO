@@ -106,10 +106,7 @@ namespace karapo {
 				drawing.erase(std::find(drawing.begin(), drawing.end(), ent));
 			}
 		}
-		p.engine.ClearScreen();
 		Draw();
-		p.engine.ChangeTargetScreen(p.engine.GetBackScreen());
-		p.engine.DrawRect(Rect{ 0, 0, 0, 0 }, Screen);
 	}
 
 	void ImageLayer::Register(std::shared_ptr<Entity> d) {
@@ -156,13 +153,14 @@ namespace karapo {
 
 			if (base != nullptr) old_origin = base->Origin();
 			auto base_origin = old_origin;
-			filter->Draw(Screen);
+			
 			p.engine.ChangeTargetScreen(Screen);
 			p.engine.ClearScreen();
 			for (auto drawer : drawing) {
 				drawer->Draw(base_origin);
 			}
 			p.engine.ChangeTargetScreen(p.engine.GetBackScreen());
+			filter->Draw(Screen);
 		}
 	};
 
@@ -178,13 +176,13 @@ namespace karapo {
 		void Draw() override {
 			auto& p = Program::Instance();
 			std::vector<std::shared_ptr<Entity>> deadmen;
-			filter->Draw(Screen);
 			p.engine.ChangeTargetScreen(Screen);
 			p.engine.ClearScreen();
 			for (auto drawer : drawing) {
 				drawer->Draw(WorldVector{ 0.0, 0.0 });
 			}
 			p.engine.ChangeTargetScreen(p.engine.GetBackScreen());
+			filter->Draw(Screen);
 		}
 	};
 }
