@@ -124,8 +124,10 @@ namespace karapo::event {
 			std::shared_ptr<karapo::entity::Image> image;
 			const std::wstring Path;
 		public:
-			Image(const std::wstring& P, const WorldVector WV) : Path(P) {
-				image = std::make_shared<karapo::entity::Image>(WV);
+			Image(const std::wstring& P, const WorldVector WV) : Image(P, WV, WorldVector{ 0, 0 }) {}
+
+			Image(const std::wstring& P, const WorldVector WV, const WorldVector Len) : Path(P) {
+				image = std::make_shared<karapo::entity::Image>(WV, Len);
 			}
 
 			~Image() override {}
@@ -1015,10 +1017,20 @@ namespace karapo::event {
 						return {
 							.Result = [&]() noexcept -> CommandPtr {
 								const auto [File_Path, Path_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
-								const auto [Vec_X, X_Type] = Default_ProgramInterface.GetParamInfo(params[1]);
-								const auto [Vec_Y, Y_Type] = Default_ProgramInterface.GetParamInfo(params[2]);
-								if (Default_ProgramInterface.IsStringType(Path_Type) && Default_ProgramInterface.IsNumberType(X_Type) && Default_ProgramInterface.IsNumberType(Y_Type)) {
-									return std::make_unique<command::Image>(File_Path, WorldVector{ ToDec<Dec>(Vec_X.c_str(), nullptr), ToDec<Dec>(Vec_Y.c_str(), nullptr) });
+								const auto [Vec_X, VX_Type] = Default_ProgramInterface.GetParamInfo(params[1]);
+								const auto [Vec_Y, VY_Type] = Default_ProgramInterface.GetParamInfo(params[2]);
+								const auto [Len_X, LX_Type] = Default_ProgramInterface.GetParamInfo(params[3]);
+								const auto [Len_Y, LY_Type] = Default_ProgramInterface.GetParamInfo(params[4]);
+	
+								if (Default_ProgramInterface.IsStringType(Path_Type) && 
+									Default_ProgramInterface.IsNumberType(VX_Type) && 
+									Default_ProgramInterface.IsNumberType(VY_Type) &&
+									Default_ProgramInterface.IsNumberType(LX_Type) &&
+									Default_ProgramInterface.IsNumberType(LY_Type))
+								{
+									return std::make_unique<command::Image>(File_Path, 
+										WorldVector{ ToDec<Dec>(Vec_X.c_str(), nullptr), ToDec<Dec>(Vec_Y.c_str(), nullptr) }, 
+										WorldVector{ ToDec<Dec>(Len_X.c_str(), nullptr), ToDec<Dec>(Len_Y.c_str(), nullptr) });
 								} else {
 									return nullptr;
 								}
@@ -1028,8 +1040,10 @@ namespace karapo::event {
 									case 0:
 									case 1:
 									case 2:
-										return KeywordInfo::ParamResult::Lack;
 									case 3:
+									case 4:
+										return KeywordInfo::ParamResult::Lack;
+									case 5:
 										return KeywordInfo::ParamResult::Maximum;
 									default:
 										return KeywordInfo::ParamResult::Excess;

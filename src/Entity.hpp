@@ -16,8 +16,10 @@ namespace karapo::entity {
 	class Image : public Object {
 		resource::Image image = resource::Image(&Default_ProgramInterface);
 		bool can_delete = false;
+	protected:
+		WorldVector length{};
 	public:
-		inline Image(WorldVector WV) { origin = WV; }
+		Image(const WorldVector&, const WorldVector&);
 		inline int Main() override { return 0; }
 		const wchar_t *Name() const noexcept override;
 		const wchar_t *KindName() const noexcept override;
@@ -25,6 +27,7 @@ namespace karapo::entity {
 		void Delete() override;
 		void Draw(WorldVector) override;
 		void Load(const std::wstring&);
+		WorldVector Length() const noexcept;
 	};
 
 	// ‰¹EntityƒNƒ‰ƒX

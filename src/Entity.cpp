@@ -124,12 +124,21 @@ namespace karapo::entity {
 		origin = wv;
 	}
 
+	Image::Image(const WorldVector& WV, const WorldVector& Size) {
+		origin = WV;
+		length = Size;
+	}
+
 	void Image::Load(const std::wstring& Path) {
 		image.Load(Path);
 	}
 
+	WorldVector Image::Length() const noexcept {
+		return length;
+	}
+
 	void Image::Draw(WorldVector) {
-		Program::Instance().engine.DrawRect(Rect({ (LONG)Origin()[0], (LONG)Origin()[1], 0, 0 }), image);
+		Program::Instance().engine.DrawRect(Rect({ (LONG)Origin()[0], (LONG)Origin()[1], (LONG)Length()[0], (LONG)Length()[1] }), image);
 	}
 
 	bool Image::CanDelete() const noexcept {
