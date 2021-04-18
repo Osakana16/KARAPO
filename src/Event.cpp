@@ -1773,22 +1773,23 @@ namespace karapo::event {
 	}
 
 	void Manager::Call(const std::wstring& EName) noexcept {
-		auto event_name = std::any_cast<std::wstring>(Program::Instance().var_manager.Get<false>(variable::Executing_Event_Name));
-		Program::Instance().var_manager.Get<false>(variable::Executing_Event_Name) = (event_name += std::wstring(EName) + L"\n");
-		CommandExecuter cmd_executer(std::move(events.at(EName).commands));
-		cmd_executer.Execute();
-		Event *event;
-		try {
-			event = &events.at(EName);
-		} catch (std::out_of_range& e) {
+		auto candidate = events.find(EName);
+		if (candidate != events.end()) {
+			auto event_name = std::any_cast<std::wstring>(Program::Instance().var_manager.Get<false>(variable::Executing_Event_Name));
+			CommandExecuter cmd_executer(std::move(candidate->second.commands));
+			Program::Instance().var_manager.Get<false>(variable::Executing_Event_Name) = (event_name += std::wstring(EName) + L"\n");
+			cmd_executer.Execute();
+
+			candidate->second.commands = std::move(cmd_executer.Result());
+			candidate->second.trigger_type = TriggerType::None;
+			event_name.erase(event_name.find(EName + L"\n"));
+
+			Program::Instance().var_manager.Get<false>(variable::Executing_Event_Name) = event_name;
+		} else {
 			std::wstring message = L"イベント名「" + EName + L"」が見つからなかったので実行できません。";
 			MessageBoxW(nullptr, message.c_str(), L"イベントエラー", MB_OK | MB_ICONERROR);
 			return;
 		}
-		event->commands = std::move(cmd_executer.Result());
-		event->trigger_type = TriggerType::None;
-		event_name.erase(event_name.find(EName + L"\n"));
-		Program::Instance().var_manager.Get<false>(variable::Executing_Event_Name) = event_name;
 	}
 
 	void Manager::SetCondTarget(std::any tv) {
