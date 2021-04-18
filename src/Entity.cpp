@@ -142,21 +142,21 @@ namespace karapo::entity {
 		relative_origin += { Program::Instance().WindowSize().first / 2.0, Program::Instance().WindowSize().second / 2.0 };
 		auto& x = relative_origin[0], &y = relative_origin[1];
 		if (image.IsValid()) {
-			Program::Instance().engine.DrawRect(Rect({ 
-					static_cast<int>(x), 
-					static_cast<int>(y),
-					static_cast<int>(x + Length()[0]),
-					static_cast<int>(y + Length()[1])
-				}), 
-				image);
-		} else {
-			Program::Instance().engine.DrawRect(Rect({ 
+			Program::Instance().engine.DrawRect(Rect({
 					static_cast<int>(x),
 					static_cast<int>(y),
 					static_cast<int>(x + Length()[0]),
 					static_cast<int>(y + Length()[1])
-				}), 
-				{ .r = 0xEC, .g = 0x00, .b = 0x8C }, 
+				}),
+				image);
+		} else {
+			Program::Instance().engine.DrawRect(Rect({
+					static_cast<int>(x),
+					static_cast<int>(y),
+					static_cast<int>(x + Length()[0]),
+					static_cast<int>(y + Length()[1])
+				}),
+				{ .r = 0xEC, .g = 0x00, .b = 0x8C },
 				true);
 		}
 	}
@@ -233,5 +233,57 @@ namespace karapo::entity {
 
 	const wchar_t *Mouse::KindName() const noexcept {
 		return L"マウスポインタ";
+	}
+
+	Button::Button(const std::wstring& N, const WorldVector& O, const WorldVector& S) noexcept : Image(O, S) {
+		name = N;
+	}
+
+	int Button::Main() {
+		Collide();
+		return 0;
+	}
+
+	void Button::Collide() noexcept {
+		const auto Colliding_Event_Name = std::wstring(Name()) + L".colliding",
+			Collided_Event_Name = std::wstring(Name()) + L".collided",
+			Clicking_Event_Name = std::wstring(Name()) + L".clicking";
+
+		auto mouse = Program::Instance().entity_manager.GetEntity(L"マウスポインタ");
+		auto dist = std::abs(mouse->Origin() - Image::Origin());
+		if (dist[0] < Length()[0] && dist[1] < Length()[1]) {
+			Program::Instance().event_manager.Call(Colliding_Event_Name);
+			if (!collided_enough) {
+				Program::Instance().event_manager.Call(Collided_Event_Name);
+				collided_enough = true;
+			}
+
+			const bool Is_Clicking = std::any_cast<int>(Program::Instance().var_manager.Get<false>(L"マウスポインタ.左クリック"));
+			if (Is_Clicking) {
+				Program::Instance().event_manager.Call(Clicking_Event_Name);
+			}
+		} else {
+			collided_enough = false;
+		}
+	}
+
+	const wchar_t* Button::Name() const noexcept {
+		return name.c_str();
+	}
+
+	const wchar_t* Button::KindName() const noexcept {
+		return L"ボタン";
+	}
+
+	void Button::Delete() {
+		Image::Delete();
+	}
+
+	bool Button::CanDelete() const noexcept {
+		return Image::CanDelete();
+	}
+
+	void Button::Draw(WorldVector base) {
+		Image::Draw(base);
 	}
 }

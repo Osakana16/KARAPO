@@ -175,6 +175,29 @@ namespace karapo::event {
 			}
 		};
 
+		// ボタン
+		class Button final : public StandardCommand {
+			std::shared_ptr<karapo::entity::Button> button;
+			std::wstring path{};
+		public:
+			Button(const std::wstring& Name,
+				const WorldVector& WV,
+				const std::wstring& Image_Path,
+				const WorldVector& Size) noexcept
+			{
+				button = std::make_shared<karapo::entity::Button>(Name, WV, Size);
+				path = Image_Path;
+			}
+
+			~Button() noexcept final {}
+
+			void Execute() final {
+				button->Load(path);
+				Program::Instance().entity_manager.Register(button);
+				StandardCommand::Execute();
+			}
+		};
+
 		namespace entity {
 			// Entityの移動
 			class Teleport final : public StandardCommand {
@@ -1044,6 +1067,53 @@ namespace karapo::event {
 									case 4:
 										return KeywordInfo::ParamResult::Lack;
 									case 5:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"button"] =
+						words[L"ボタン"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() noexcept -> CommandPtr {
+								const auto [Name, Name_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								const auto [VX, VX_Type] = Default_ProgramInterface.GetParamInfo(params[1]);
+								const auto [VY, VY_Type] = Default_ProgramInterface.GetParamInfo(params[2]);
+								const auto [Img, Img_Type] = Default_ProgramInterface.GetParamInfo(params[3]);
+								const auto [SX, SX_Type] = Default_ProgramInterface.GetParamInfo(params[4]);
+								const auto [SY, SY_Type] = Default_ProgramInterface.GetParamInfo(params[5]);
+								if (Default_ProgramInterface.IsStringType(Name_Type) &&
+									Default_ProgramInterface.IsNumberType(VX_Type) &&
+									Default_ProgramInterface.IsNumberType(VY_Type) &&
+									Default_ProgramInterface.IsStringType(Img_Type) &&
+									Default_ProgramInterface.IsNumberType(SX_Type) &&
+									Default_ProgramInterface.IsNumberType(SY_Type))
+								{
+									return std::make_unique<command::Button>(
+										Name,
+										WorldVector{ ToDec<Dec>(VX.c_str(), nullptr), ToDec<Dec>(VY.c_str(), nullptr) },
+										Img,
+										WorldVector{ ToDec<Dec>(SX.c_str(), nullptr), ToDec<Dec>(SY.c_str(), nullptr) }
+									);
+								} else {
+									return nullptr;
+								}
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+									case 1:
+									case 2:
+									case 3:
+									case 4:
+									case 5:
+										return KeywordInfo::ParamResult::Lack;
+									case 6:
 										return KeywordInfo::ParamResult::Maximum;
 									default:
 										return KeywordInfo::ParamResult::Excess;

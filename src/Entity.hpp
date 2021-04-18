@@ -61,6 +61,23 @@ namespace karapo::entity {
 		void Draw(WorldVector) final {}
 	};
 
+	// ボタン
+	class Button : public Image {
+		std::wstring name{};
+		bool collided_enough{};
+
+		// 衝突時の処理
+		void Collide() noexcept;
+	public:
+		Button(const std::wstring&, const WorldVector&, const WorldVector&) noexcept;
+		int Main() override;
+		const wchar_t *Name() const noexcept override;
+		const wchar_t *KindName() const noexcept override;
+		bool CanDelete() const noexcept override;
+		void Delete() override;
+		void Draw(WorldVector) override;
+	};
+
 	// Entityを一つの塊(配列)で管理するクラス
 	class Chunk {
 		std::unordered_map<std::wstring, std::shared_ptr<Entity>> entities{};
