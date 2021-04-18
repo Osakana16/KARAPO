@@ -137,8 +137,28 @@ namespace karapo::entity {
 		return length;
 	}
 
-	void Image::Draw(WorldVector) {
-		Program::Instance().engine.DrawRect(Rect({ (LONG)Origin()[0], (LONG)Origin()[1], (LONG)Length()[0], (LONG)Length()[1] }), image);
+	void Image::Draw(WorldVector base) {
+		auto relative_origin = Origin() - base;
+		relative_origin += { Program::Instance().WindowSize().first / 2.0, Program::Instance().WindowSize().second / 2.0 };
+		auto& x = relative_origin[0], &y = relative_origin[1];
+		if (image.IsValid()) {
+			Program::Instance().engine.DrawRect(Rect({ 
+					static_cast<int>(x), 
+					static_cast<int>(y),
+					static_cast<int>(x + Length()[0]),
+					static_cast<int>(y + Length()[1])
+				}), 
+				image);
+		} else {
+			Program::Instance().engine.DrawRect(Rect({ 
+					static_cast<int>(x),
+					static_cast<int>(y),
+					static_cast<int>(x + Length()[0]),
+					static_cast<int>(y + Length()[1])
+				}), 
+				{ .r = 0xEC, .g = 0x00, .b = 0x8C }, 
+				true);
+		}
 	}
 
 	bool Image::CanDelete() const noexcept {
