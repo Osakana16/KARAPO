@@ -138,9 +138,17 @@ namespace karapo::entity {
 	}
 
 	void Image::Draw(WorldVector base) {
-		auto relative_origin = Origin() - base;
-		relative_origin += { Program::Instance().WindowSize().first / 2.0, Program::Instance().WindowSize().second / 2.0 };
-		auto& x = relative_origin[0], &y = relative_origin[1];
+		Dec x, y;
+		if (base[0] > .0 || base[1] > .0) {
+			auto relative_origin = Origin() - base;
+			relative_origin += { Program::Instance().WindowSize().first / 2.0, Program::Instance().WindowSize().second / 2.0 };
+			x = relative_origin[0];
+			y = relative_origin[1];
+		} else {
+			x = Origin()[0];
+			y = Origin()[1];
+		}
+
 		if (image.IsValid()) {
 			Program::Instance().engine.DrawRect(Rect({
 					static_cast<int>(x),
