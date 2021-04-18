@@ -41,28 +41,23 @@ namespace karapo {
 
 		struct ResourceType {
 			inline operator Resource() const noexcept { return resource; }
+			ResourceType& operator=(const Resource);
+			bool IsValid() const noexcept;
 		protected:
 			Resource resource = Resource::Invalid;
-			std::wstring path;
-			ProgramInterface* pi;
-		public:
-			const std::wstring& Path = path;
-			std::function<void()> Reload;
-
-			ResourceType(ProgramInterface*);
-			void Load(const std::wstring&);
-			bool IsValid() const noexcept;
 		};
 
 		class Image : public ResourceType {
 		public:
 			using Length = int;
 			using ResourceType::ResourceType;
+			using ResourceType::operator=;
 		};
 
 		class Sound : public ResourceType {
 		public:
 			using ResourceType::ResourceType;
+			using ResourceType::operator=;
 		};
 
 		class Video : public Image {

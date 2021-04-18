@@ -4,16 +4,9 @@ namespace karapo {
 	event::Command::~Command() {}
 
 	namespace resource {
-		ResourceType::ResourceType(ProgramInterface* p) {
-			pi = p;
-		}
-
-		void ResourceType::Load(const std::wstring& P) {
-			path = P;
-			if (Reload == nullptr) {
-				Reload = [&]() { resource = pi->LoadImage(Path); };
-			}
-			Reload();
+		ResourceType& ResourceType::operator=(const Resource res) {
+			resource = res;
+			return (*this);
 		}
 
 		bool ResourceType::IsValid() const noexcept {

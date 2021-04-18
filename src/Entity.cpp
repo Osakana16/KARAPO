@@ -130,7 +130,8 @@ namespace karapo::entity {
 	}
 
 	void Image::Load(const std::wstring& Path) {
-		image.Load(Path);
+		path = Path;
+		image = Program::Instance().engine.LoadImage(Path);
 	}
 
 	WorldVector Image::Length() const noexcept {
@@ -178,7 +179,7 @@ namespace karapo::entity {
 	}
 
 	const wchar_t *Image::Name() const noexcept {
-		return image.Path.c_str();
+		return path.c_str();
 	}
 
 	const wchar_t *Image::KindName() const noexcept {
@@ -192,7 +193,7 @@ namespace karapo::entity {
 	}
 
 	const wchar_t *Sound::Name() const noexcept {
-		return sound.Path.c_str();
+		return path.c_str();
 	}
 
 	const wchar_t *Sound::KindName() const noexcept {
@@ -204,7 +205,8 @@ namespace karapo::entity {
 	}
 
 	void Sound::Load(const std::wstring& Path) {
-		sound.Load(Path);
+		path = Path;
+		sound = Program::Instance().engine.LoadSound(Path);
 	}
 
 	bool Sound::CanDelete() const noexcept {

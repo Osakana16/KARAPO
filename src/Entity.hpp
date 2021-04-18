@@ -14,8 +14,9 @@ namespace karapo::entity {
 
 	// 画像Entityクラス
 	class Image : public Object {
-		resource::Image image = resource::Image(&Default_ProgramInterface);
+		resource::Image image;
 		bool can_delete = false;
+		std::wstring path{};
 	protected:
 		WorldVector length{};
 	public:
@@ -32,8 +33,9 @@ namespace karapo::entity {
 
 	// 音Entityクラス
 	class Sound : public Object {
-		resource::Sound sound = resource::Sound(&Default_ProgramInterface);
+		resource::Sound sound;
 		bool can_delete = false;
+		std::wstring path{};
 	public:
 		inline Sound(WorldVector WV) { origin = WV; }
 
