@@ -13,6 +13,7 @@ namespace karapo::event {
 
 	// イベント発生タイプ
 	enum class TriggerType {
+		Invalid,				// 不正
 		None,					// 何もしない(call用)
 		Load,					// ロード後実行
 		Auto,					// 並列実行

@@ -676,47 +676,24 @@ namespace karapo::event {
 					}
 				} nparser;
 
-				// 発生タイプの解析と変換を行うクラス
-				class TriggerParser final : public SubParser<L'(', L')'> {
-					TriggerType tt;
-					std::unordered_map<std::wstring, TriggerType> trigger_map;
-				public:
-					TriggerParser() {
-						trigger_map[L"t"] = TriggerType::Trigger;
-						trigger_map[L"b"] = TriggerType::Button;
-						trigger_map[L"l"] = TriggerType::Load;
-						trigger_map[L"n"] = TriggerType::None;
-					}
-
-					[[nodiscard]] auto Interpret(const std::wstring& Sentence) noexcept {
-						if (Sentence.size() == 1) {
-							if (IsValidToStart(Sentence[0])) {
-								StartParsing();
-								return false;
-							} else if (IsValidToEnd(Sentence[0])) {
-								EndParsing();
-								return true;
-							}
-						}
-
-						if (IsParsing()) {
-							tt = trigger_map.at(Sentence);
-						}
-						return false;
-					}
-
-					auto Result() const noexcept {
-						return tt;
-					}
-				} tparser;
-
-				// イベント位置の解析と変換を行うクラス
+				// イベント発生タイプ及び位置の解析と変換を行うクラス
 				class ConditionParser final : public SubParser<L'<', L'>'> {
-					static constexpr auto DecMin = std::numeric_limits<Dec>::min();
+					const std::unordered_map<std::wstring, TriggerType> Trigger_Map{
+						{ L"n", TriggerType::None },
+						{ L"t", TriggerType::Trigger },
+						{ L"b", TriggerType::Button },
+						{ L"l", TriggerType::Load }
+					};
 
-					Dec minx, maxx;		// minxの次にmaxxが来る前提なので、宣言位置を変更しない事。
-					Dec miny, maxy;		// minyの次にmaxyが来る前提なので、宣言位置を変更しない事。
-					Dec *current = &minx;	// currentはminxから始まる。
+					// 発生タイプ
+					TriggerType tt = TriggerType::Invalid;
+
+					// 最小・最大X座標
+					Dec minx{}, maxx{};
+					// 最小・最大Y座標
+					Dec miny{}, maxy{};
+					// 解析結果格納用ポインタ
+					Dec *current = &minx;
 				public:
 					[[nodiscard]] auto Interpret(const std::wstring& Sentence) noexcept {
 						if (Sentence.size() == 1) {
@@ -730,26 +707,34 @@ namespace karapo::event {
 						}
 
 						if (IsParsing()) {
-							if (Sentence == L"~") {
-								if (current + 1 <= &maxy)
-									current++;
-							} else if (Sentence == L",") {
-								current = &miny;
+							if (tt == TriggerType::Invalid) {
+								// 発生タイプ解析
+								auto it = Trigger_Map.find(Sentence);
+								if (it != Trigger_Map.end()) {
+									tt = it->second;
+								}
+							} else if (tt != TriggerType::None && tt != TriggerType::Auto && tt != TriggerType::Load) {
+								if (Sentence == L"~") {
+									if (current + 1 <= &maxy)
+										current++;
+								} else if (Sentence == L",") {
+									current = &miny;
+								}
+								*current = ToDec<Dec>(Sentence.c_str(), nullptr);
 							}
-							*current = ToDec<Dec>(Sentence.c_str(), nullptr);
 						}
 						return false;
 					}
 
 					auto Result() const noexcept {
-						return std::pair<WorldVector, WorldVector>{ WorldVector{ minx, miny }, WorldVector{ maxx, maxy }};
+						return std::tuple<TriggerType, WorldVector, WorldVector>{ tt, WorldVector{ minx, miny }, WorldVector{ maxx, maxy }};
 					}
 				} pparser;
 
 				std::wstring event_name;
 				TriggerType trigger;
 				WorldVector min_origin, max_origin;
-				std::valarray<bool> enough_result{ false, false, false };
+				std::valarray<bool> enough_result{ false, false };
 
 				auto Interpret(Context *context) noexcept {
 					if (std::count(std::begin(enough_result), std::end(enough_result), true) == enough_result.size())
@@ -760,20 +745,16 @@ namespace karapo::event {
 					// 
 
 					auto& Sentence = context->front();
-					std::valarray<bool> result{ false, false, false };	// 各内容の解析結果
+					std::valarray<bool> result{ false, false };	// 各内容の解析結果
 
 					if (!enough_result[0] && nparser.Interpret(Sentence)) {
 						event_name = nparser.Result();
 						result[0] = true;
 					}
 
-					if (!enough_result[1] && tparser.Interpret(Sentence)) {
-						trigger = tparser.Result();
-						result[1] = true;
-					}
-
-					if (!enough_result[2] && pparser.Interpret(Sentence)) {
-						auto [min, max] = pparser.Result();
+					if (!enough_result[1] && pparser.Interpret(Sentence)) {
+						auto [trigger_type, min, max] = pparser.Result();
+						trigger = trigger_type;
 						if (min[0] > max[0])
 							std::swap(min[0], max[0]);
 						if (min[1] > max[1])
@@ -781,7 +762,7 @@ namespace karapo::event {
 
 						min_origin = min;
 						max_origin = max;
-						result[2] = true;
+						result[1] = true;
 					}
 
 					if (std::count(std::begin(result), std::end(result), true) > 1) {
