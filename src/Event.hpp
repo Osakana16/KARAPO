@@ -7,6 +7,7 @@ namespace karapo::event {
 	namespace innertype {
 		constexpr const wchar_t *const Number = L"number";	// 数値型(整数または浮動小数点数)
 		constexpr const wchar_t *const String = L"string";	// 文字列型(文字または文字列)
+		constexpr const wchar_t *const Param = L"param";	// 引数型(値次第で上記の型に変化)
 		constexpr const wchar_t *const None = L"";			// 型無し(変数や特定の記号)
 		constexpr const wchar_t *const Block = L"scope";	// スコープ型({ または })
 	}
@@ -24,9 +25,11 @@ namespace karapo::event {
 	// イベント
 	struct Event {
 		using Commands = std::deque<CommandPtr>;
-		Commands commands;			// コマンド
-		TriggerType trigger_type;	// イベント発生タイプ
-		WorldVector origin[2];		// イベント
+		
+		Commands commands;						// コマンド
+		TriggerType trigger_type;				// イベント発生タイプ
+		WorldVector origin[2];					// イベント
+		std::vector<std::wstring> param_names{};	// 引数名
 	};
 
 	// イベント管理クラス

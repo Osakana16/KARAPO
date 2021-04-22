@@ -785,6 +785,45 @@ namespace karapo::event {
 				}
 			};
 
+			// イベントの引数を解析するクラス
+			class ParamParser final : public SubParser<L'(', L')'> {
+				std::vector<std::wstring> param_names{};
+			public:
+				auto Interpret(Context *const context) noexcept {
+					const auto Sentence = context->front();
+					if (IsParsing()) {
+						if (IsValidToEnd(Sentence[0])) {
+							if (param_names[0] == L"") {
+								param_names.clear();
+							}
+							EndParsing();
+							return;
+						} else {
+							if (Sentence != L",") {
+								*(param_names.end() - 1) = Sentence;
+							} else {
+								param_names.push_back({});
+							}
+						}
+					} else {
+						if (IsValidToStart(Sentence[0])) {
+							StartParsing();
+							param_names.push_back({});
+						}
+					}
+					context->pop();
+					Interpret(context);
+				}
+
+				ParamParser(Context *context) {
+					Interpret(context);
+				}
+
+				auto Result() const noexcept {
+					return param_names;
+				}
+			};
+
 			std::unordered_map<std::wstring, Event> events;
 			std::wstring ename;
 		public:
@@ -1585,6 +1624,12 @@ namespace karapo::event {
 				return infoparser.Result();
 			}
 
+			// イベント引数を解析し、その結果を返す。
+			auto ParseArgs(Context* context) const noexcept {
+				ParamParser pparser(context);
+				return pparser.Result();
+			}
+
 			// コマンドを解析し、その結果を返す。
 			Event::Commands ParseCommand(Context* context, bool* const abort) const noexcept {
 				CommandParser cmdparser(context);
@@ -1600,9 +1645,10 @@ namespace karapo::event {
 
 				while (!context.empty() && !aborted) {
 					auto [name, trigger, min, max] = ParseInformation(&context);
+					auto params = ParseArgs(&context);
 					Event::Commands commands = ParseCommand(&context, &aborted);
 
-					Event event{ .commands = std::move(commands), .trigger_type = trigger, .origin{ min, max } };
+					Event event{ .commands = std::move(commands), .trigger_type = trigger, .origin{ min, max }, .param_names=std::move(params) };
 					events[name] = std::move(event);
 				}
 
