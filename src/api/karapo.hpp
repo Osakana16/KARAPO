@@ -169,6 +169,11 @@ namespace karapo {
 		class EventEditor;
 
 		using GenerateFunc = std::function<KeywordInfo(const std::vector<std::wstring>&)>;
+
+		// “Á•Ê’l
+		enum class SpecialValue {
+			Undecided		// –¢Œˆ’è‚Ì’l
+		};
 	}
 
 	enum class PlayType {
