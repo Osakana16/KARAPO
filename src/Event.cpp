@@ -1645,6 +1645,8 @@ namespace karapo::event {
 
 				while (!context.empty() && !aborted) {
 					auto [name, trigger, min, max] = ParseInformation(&context);
+					Program::Instance().var_manager.MakeNew(L"__¶¬’†ƒCƒxƒ“ƒg") = name;
+
 					auto params = ParseArgs(&context);
 					Event::Commands commands = ParseCommand(&context, &aborted);
 
