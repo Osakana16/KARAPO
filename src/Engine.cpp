@@ -343,6 +343,7 @@ namespace karapo {
 		.IsStringType = [](const std::wstring& Param_Type) { return Param_Type == event::innertype::String; },
 		.IsNumberType = [](const std::wstring& Param_Type) { return Param_Type == event::innertype::Number; },
 		.IsNoType = [](const std::wstring& Param_Type) { return Param_Type == event::innertype::None; },
+		.IsUndecidedType = [](const std::wstring& Param_Type) { return Param_Type == event::innertype::Undecided; },
 		.GetMousePos = []() -> std::pair<int, int> { int x, y; GetMousePoint(&x, &y); return { x, y }; },
 		.IsPressingKey = [](const value::Key Any_Key) noexcept -> bool { return Program::Instance().engine.IsPressingKey(Any_Key); },
 		.IsPressedKey = [](const value::Key Any_Key) noexcept -> bool {return Program::Instance().engine.IsPressedKey(Any_Key); },

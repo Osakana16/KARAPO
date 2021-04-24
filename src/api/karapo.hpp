@@ -228,7 +228,7 @@ namespace karapo {
 			ChangeEventRange;
 		std::function<void(event::EventEditor*)> FreeEventEditor;
 		std::function<std::pair<std::wstring, std::wstring>(const std::wstring&)> GetParamInfo;
-		std::function<bool(const std::wstring&)> IsStringType, IsNumberType, IsNoType;
+		std::function<bool(const std::wstring&)> IsStringType, IsNumberType, IsNoType, IsUndecidedType;
 
 		// - ÉLÅ[ån -
 		std::function<std::pair<int, int>()> GetMousePos;
