@@ -39,6 +39,30 @@ namespace karapo::event {
 			}
 		};
 
+		// 動的コマンド向け抽象クラス。
+		// 引数をコマンド実行時に読み込む為のメンバ関数を持つ。
+		class DynamicCommand : public StandardCommand {
+			// 読み込む予定の引数名。
+			std::vector<std::wstring> param_names{};
+		protected:
+			DynamicCommand() = default;
+
+			DynamicCommand(const decltype(param_names)& Param) noexcept {
+				param_names = Param;
+			}
+
+			// 引数をコマンド実行時に読み込む必要があるか否か。
+			bool MustSearch() const noexcept {
+				return !param_names.empty();
+			}
+
+			// 指定した番号から引数名を読み込む。
+			template<typename T>
+			T GetParam(const int Index) const noexcept {
+				return std::any_cast<T>(Program::Instance().var_manager.Get<false>(param_names[Index]));
+			}
+		};
+
 		// 変数
 		class Variable : public StandardCommand {
 			std::wstring varname;
