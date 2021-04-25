@@ -1131,7 +1131,7 @@ namespace karapo::event {
 					if (IsParsing()) {
 						// HACK: CheckCommandWordとCheckArgsを含め、「'」等の引数に含まれない文字に対する処理を改善する。
 						finish_sentence = (text == L"\n");
-						if (!finish_sentence){
+						if (!finish_sentence) {
 							if (!IsValidToEnd(text[0])) {
 								bool is_command = false;
 
@@ -1164,10 +1164,10 @@ namespace karapo::event {
 									}
 								}
 							}
+						}
 
-							if (!request_abort) {
-								compiled = CompileCommand();
-							}
+						if (!request_abort) {
+							compiled = CompileCommand();
 						}
 					}
 
