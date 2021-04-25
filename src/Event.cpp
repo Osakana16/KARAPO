@@ -1054,6 +1054,10 @@ namespace karapo::event {
 								return false;
 							}
 							case KeywordInfo::ParamResult::Medium:
+							{
+								if (!finish_sentence)
+									return;
+							}
 							case KeywordInfo::ParamResult::Maximum:
 							case KeywordInfo::ParamResult::Excess:
 							{
