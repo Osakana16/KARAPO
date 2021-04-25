@@ -992,6 +992,7 @@ namespace karapo::event {
 					if (Is_Const) {
 						parameters.push_back(text);
 					} else {
+#if 0
 						// •Ï”’T‚µ
 						auto& value = Program::Instance().var_manager.Get<true>(text);
 						if (value.type() == typeid(int))
@@ -1000,6 +1001,10 @@ namespace karapo::event {
 							parameters.push_back(std::to_wstring(std::any_cast<Dec>(value)) + std::wstring(L":") + innertype::Number);
 						else
 							parameters.push_back(std::any_cast<std::wstring>(value) + std::wstring(L":") + innertype::String);
+#else
+						const auto Event_Name = std::any_cast<std::wstring>(Program::Instance().event_manager.GetEvent(L"__¶¬’†ƒCƒxƒ“ƒg"));
+						parameters.push_back(Event_Name + L'.' + text + std::wstring(L":") + innertype::Undecided);
+#endif
 					}
 				}
 
