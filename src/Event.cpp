@@ -702,6 +702,11 @@ namespace karapo::event {
 								if (!text.empty()) {
 									PushWord(&context, &text);
 								}
+
+								if (c == L'\n') {
+									text = L'\n';
+									PushWord(&context, &text);
+								}
 								continue;
 							} else if (c == L'\r') {
 								// 復帰コードは無視。
