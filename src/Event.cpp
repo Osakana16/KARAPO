@@ -68,9 +68,15 @@ namespace karapo::event {
 						// 型が判明する場合、定数なのでその値を取得。
 						if (Default_ProgramInterface.IsStringType(vtype))
 							return std::any_cast<T>(vname);
-						else if (Default_ProgramInterface.IsNumberType(vtype))
-							return std::any_cast<T>(vname);
-						else {
+						else if (Default_ProgramInterface.IsNumberType(vtype)) {
+							if constexpr (std::is_same_v<T, Dec>) {
+								auto [fv, fp] = ToDec<Dec>(vname.c_str());
+								return fv;
+							} else if constexpr (std::is_same_v<T, int>) {
+								auto [iv, ip] = ToInt(vname.c_str());
+								return iv;
+							}
+						} 						else {
 							// 型がない場合は変数管理オブジェクトから取得。
 							return std::any_cast<T>(Program::Instance().var_manager.Get<false>(vname));
 						}
