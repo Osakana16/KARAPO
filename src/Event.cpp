@@ -76,7 +76,8 @@ namespace karapo::event {
 								auto [iv, ip] = ToInt(vname.c_str());
 								return iv;
 							}
-						} 						else {
+						}
+						else {
 							// 型がない場合は変数管理オブジェクトから取得。
 							return std::any_cast<T>(Program::Instance().var_manager.Get<false>(vname));
 						}
@@ -87,6 +88,24 @@ namespace karapo::event {
 				} else {
 					// 引数名を返す。
 					return Default_ProgramInterface.GetParamInfo(param_names[Index]).first;
+				}
+			}
+
+			void SetAllParams(std::vector<std::any>* to) {
+				for (int i = 0; i < param_names.size(); i++) {
+					auto value = GetParam<std::any>(i);
+					if (value.type() == typeid(std::nullptr_t)) {
+						auto value_name = GetParam<std::wstring, true>(i);
+						auto [fv, fp] = ToDec<Dec>(value_name.c_str());
+						auto [iv, ip] = ToInt(value_name.c_str());
+						if (wcslen(fp) <= 0)
+							value = fv;
+						else if (wcslen(ip) <= 0)
+							value = iv;
+						else
+							value = value_name;
+					}
+					to->push_back(value);
 				}
 			}
 		};
@@ -474,17 +493,29 @@ namespace karapo::event {
 		DYNAMIC_COMMAND(Call final) {
 			std::wstring event_name;
 		public:
-			Call(const std::wstring& ename) noexcept {
-				event_name = ename;
-			}
-
 			DYNAMIC_COMMAND_CONSTRUCTOR(Call) {}
 
 			~Call() noexcept final {}
 
 			void Execute() override {
+				std::vector<std::any> params{};
+				SetAllParams(&params);
 				if (MustSearch()) {
-					event_name = GetParam<std::wstring>(0);
+					event_name = std::any_cast<std::wstring>(params[0]);
+				}
+
+				Event* e = Program::Instance().event_manager.GetEvent(event_name);
+				if (!params.empty()) {
+					for (int i = 0; i < e->param_names.size(); i++) {
+						auto value = params[i + 1];
+						auto& newvar = Program::Instance().var_manager.MakeNew(event_name + std::wstring(L".") + e->param_names[i]);
+						if (value.type() == typeid(int))
+							newvar = std::any_cast<int>(value);
+						else if (value.type() == typeid(Dec))
+							newvar = std::any_cast<Dec>(value);
+						else if (value.type() == typeid(std::wstring))
+							newvar = std::any_cast<std::wstring>(value);
+					}
 				}
 				Program::Instance().event_manager.Call(event_name);
 				StandardCommand::Execute();
@@ -1161,11 +1192,6 @@ namespace karapo::event {
 						}
 					}
 					context->pop();
-					if (compiled) {
-						while (context->front() == L"\n") {
-							context->pop();
-						}
-					}
 					Interpret(context);
 				}
 			public:
@@ -1618,18 +1644,14 @@ namespace karapo::event {
 						words[L"呼出"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
 						return {
 							.Result = [&]() -> CommandPtr {
-								const auto [Event_Name, Name_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
-								if (Default_ProgramInterface.IsStringType(Name_Type))
-									return std::make_unique<command::Call>(Event_Name);
-								else
-									return std::make_unique<command::Call>(params);
+								return std::make_unique<command::Call>(params);
 							},
 							.checkParamState  = [params]() -> KeywordInfo::ParamResult {
 								switch (params.size()) {
 									case 0:
 										return KeywordInfo::ParamResult::Lack;
 									case 1:
-										return KeywordInfo::ParamResult::Maximum;
+										return KeywordInfo::ParamResult::Medium;
 									default:
 										return KeywordInfo::ParamResult::Excess;
 								}
