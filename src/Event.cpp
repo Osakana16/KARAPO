@@ -1002,6 +1002,7 @@ namespace karapo::event {
 				GenerateFunc liketoRun;				// 生成関数を実行するための関数ポインタ。
 				std::wstring generating_command_name = L"";
 				bool request_abort = false;
+				bool finish_sentence = false;
 
 				void CheckCommandWord(const std::wstring& text) noexcept(false) {
 					// コマンド生成関数を取得。
@@ -1044,38 +1045,40 @@ namespace karapo::event {
 				}
 
 				bool CompileCommand() {
-					auto&& f = liketoRun(parameters);
-					auto Param_Enough = f.checkParamState();
-					switch (Param_Enough) {
-						case KeywordInfo::ParamResult::Lack:
-						{
-							return false;
-						}
-						case KeywordInfo::ParamResult::Medium:
-						case KeywordInfo::ParamResult::Maximum:
-						case KeywordInfo::ParamResult::Excess:
-						{
-							auto&& result = f.Result();
-							if (result != nullptr) {
-								// 引数が十分に積まれている時:
-								if (f.is_dynamic) {
-									// 動的コマンドはイベントのコマンドに追加。
-									commands.push_back(std::move(result));
-									if (generating_command_name == L"of") {
-										auto endof = words.at(L"__endof")({}).Result();
-										commands.insert(commands.end() - 1, std::move(endof));
-									} else if (generating_command_name == L"kill") {
-										auto force = words.at(L"__entity強制更新")({}).Result();
-										commands.push_back(std::move(force));
-									}
-								} else if (f.is_static) {
-									// 静的コマンドは即実行。
-									result->Execute();
-								}
+					if (liketoRun) {
+						auto&& f = liketoRun(parameters);
+						auto Param_Enough = f.checkParamState();
+						switch (Param_Enough) {
+							case KeywordInfo::ParamResult::Lack:
+							{
+								return false;
 							}
-							liketoRun = nullptr;
-							parameters.clear();
-							return true;
+							case KeywordInfo::ParamResult::Medium:
+							case KeywordInfo::ParamResult::Maximum:
+							case KeywordInfo::ParamResult::Excess:
+							{
+								auto&& result = f.Result();
+								if (result != nullptr) {
+									// 引数が十分に積まれている時:
+									if (f.is_dynamic) {
+										// 動的コマンドはイベントのコマンドに追加。
+										commands.push_back(std::move(result));
+										if (generating_command_name == L"of") {
+											auto endof = words.at(L"__endof")({}).Result();
+											commands.insert(commands.end() - 1, std::move(endof));
+										} else if (generating_command_name == L"kill") {
+											auto force = words.at(L"__entity強制更新")({}).Result();
+											commands.push_back(std::move(force));
+										}
+									} else if (f.is_static) {
+										// 静的コマンドは即実行。
+										result->Execute();
+									}
+								}
+								liketoRun = nullptr;
+								parameters.clear();
+								return true;
+							}
 						}
 					}
 					return false;
@@ -1086,35 +1089,37 @@ namespace karapo::event {
 					bool compiled = false;
 					if (IsParsing()) {
 						// HACK: CheckCommandWordとCheckArgsを含め、「'」等の引数に含まれない文字に対する処理を改善する。
+						finish_sentence = (text == L"\n");
+						if (!finish_sentence){
+							if (!IsValidToEnd(text[0])) {
+								bool is_command = false;
 
-						if (!IsValidToEnd(text[0])) {
-							bool is_command = false;
-
-							// ここで、一行内のコマンドとその為の引数を一つずつ確認していく。
-							// コマンド確認
-							try {
-								CheckCommandWord(text);
-								is_command = true;
-							} catch (std::runtime_error& e) {
-								// 主にCheckCommandWordからの例外をここで捕捉。
-								if (liketoRun != nullptr) {
-									MessageBoxA(nullptr, e.what(), "エラー", MB_OK | MB_ICONERROR);
-									request_abort = true;
-								}
-							} catch (std::out_of_range& e) {}
-
-							if (!is_command && !request_abort) {
+								// ここで、一行内のコマンドとその為の引数を一つずつ確認していく。
+								// コマンド確認
 								try {
-									CheckArgs(text);			// 引数確認。
-								} catch (std::out_of_range& e) {
-									const bool Is_Variable = (generating_command_name == L"var" || generating_command_name == L"変数");
-									// 主にCheckArgsからの例外をここで捕捉。
-									if (Is_Variable) {
-										// 変数コマンドの引数だった場合は変数名として引数に積む。
-										parameters.push_back(text);
-									} else {
-										MessageBoxA(nullptr, "未定義の変数が使用されています。", "エラー", MB_OK | MB_ICONERROR);
+									CheckCommandWord(text);
+									is_command = true;
+								} catch (std::runtime_error& e) {
+									// 主にCheckCommandWordからの例外をここで捕捉。
+									if (liketoRun != nullptr) {
+										MessageBoxA(nullptr, e.what(), "エラー", MB_OK | MB_ICONERROR);
 										request_abort = true;
+									}
+								} catch (std::out_of_range& e) {}
+
+								if (!is_command && !request_abort) {
+									try {
+										CheckArgs(text);			// 引数確認。
+									} catch (std::out_of_range& e) {
+										const bool Is_Variable = (generating_command_name == L"var" || generating_command_name == L"変数");
+										// 主にCheckArgsからの例外をここで捕捉。
+										if (Is_Variable) {
+											// 変数コマンドの引数だった場合は変数名として引数に積む。
+											parameters.push_back(text);
+										} else {
+											MessageBoxA(nullptr, "未定義の変数が使用されています。", "エラー", MB_OK | MB_ICONERROR);
+											request_abort = true;
+										}
 									}
 								}
 							}
@@ -1140,6 +1145,9 @@ namespace karapo::event {
 							// '}' を削除。
 							context->pop();
 							return;
+						} else if (finish_sentence) {
+							liketoRun = nullptr;
+							parameters.clear();
 						}
 					}
 					context->pop();
