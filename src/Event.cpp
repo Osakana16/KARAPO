@@ -8,6 +8,9 @@
 #include <chrono>
 #include <forward_list>
 
+#define DYNAMIC_COMMAND(NAME) class NAME : public DynamicCommand
+#define DYNAMIC_COMMAND_CONSTRUCTOR(NAME) NAME(const std::vector<std::wstring>& Param) : DynamicCommand(Param)
+
 namespace karapo::event {
 	using Context = std::queue<std::wstring, std::list<std::wstring>>;
 
@@ -64,7 +67,7 @@ namespace karapo::event {
 		};
 
 		// 変数
-		class Variable : public StandardCommand {
+		DYNAMIC_COMMAND(Variable final) {
 			std::wstring varname;
 			std::any value;
 		public:
@@ -86,16 +89,22 @@ namespace karapo::event {
 				}
 			}
 
+			DYNAMIC_COMMAND_CONSTRUCTOR(Variable) {}
+
 			~Variable() noexcept final {}
 
 			void Execute() override {
+				if (MustSearch()) {
+					varname = GetParam<std::wstring>(0);
+					value = GetParam<std::any>(1);
+				}
 				Program::Instance().var_manager.MakeNew(varname) = value;
 				StandardCommand::Execute();
 			}
 		};
-
+		
 		// 条件対象設定
-		class Case : public StandardCommand {
+		DYNAMIC_COMMAND(Case final) {
 			std::any value;
 		public:
 			Case(const std::wstring& Param) noexcept {
@@ -107,35 +116,47 @@ namespace karapo::event {
 				}
 			}
 
+			DYNAMIC_COMMAND_CONSTRUCTOR(Case) {}
+
 			~Case() noexcept final {}
 
 			void Execute() override {
+				if (MustSearch()) {
+					value = GetParam<std::any>(0);
+				}
 				Program::Instance().event_manager.SetCondTarget(value);
 				StandardCommand::Execute();
 			}
 		};
 
 		// 条件式
-		class Of : public StandardCommand {
+		DYNAMIC_COMMAND(Of final) {
 			std::wstring condition_sentence;
 		public:
 			Of(const std::wstring& Condition_Sentence) noexcept {
 				condition_sentence = Condition_Sentence;
 			}
 
+			DYNAMIC_COMMAND_CONSTRUCTOR(Of) {}
+
 			~Of() noexcept final {}
 
 			void Execute() override {
+				if (MustSearch()) {
+					condition_sentence = GetParam<std::wstring>(0);
+				}
 				Program::Instance().event_manager.Evalute(condition_sentence);
 				StandardCommand::Execute();
 			}
 		};
 
 		// 条件終了
-		class EndCase final : public StandardCommand {
+		DYNAMIC_COMMAND(EndCase final) {
 		public:
 			EndCase() noexcept {}
 			~EndCase() final {}
+
+			DYNAMIC_COMMAND_CONSTRUCTOR(EndCase) {}
 
 			void Execute() final {
 				Program::Instance().event_manager.FreeCase();
@@ -144,63 +165,88 @@ namespace karapo::event {
 		};
 
 		// 画像を読み込み、表示させる。
-		class Image : public StandardCommand {
+		DYNAMIC_COMMAND(Image) {
 			std::shared_ptr<karapo::entity::Image> image;
-			const std::wstring Path;
+			std::wstring path;
 		public:
 			Image(const std::wstring& P, const WorldVector WV) : Image(P, WV, WorldVector{ 0, 0 }) {}
 
-			Image(const std::wstring& P, const WorldVector WV, const WorldVector Len) : Path(P) {
+			Image(const std::wstring& P, const WorldVector WV, const WorldVector Len) : path(P) {
 				image = std::make_shared<karapo::entity::Image>(WV, Len);
 			}
+
+			DYNAMIC_COMMAND_CONSTRUCTOR(Image) {}
 
 			~Image() override {}
 
 			void Execute() override {
-				image->Load(Path.c_str());
+				if (MustSearch()) {
+					path = GetParam<std::wstring>(0);
+					auto x = GetParam<Dec>(1);
+					auto y = GetParam<Dec>(2);
+					auto w = GetParam<Dec>(3);
+					auto h = GetParam<Dec>(4);
+					image = std::make_shared<karapo::entity::Image>(WorldVector{ x, y }, WorldVector{ w, h });
+				}
+				image->Load(path.c_str());
 				Program::Instance().entity_manager.Register(image);
 				StandardCommand::Execute();
 			}
 		};
 
 		// BGM
-		class Music final : public StandardCommand {
+		DYNAMIC_COMMAND(Music) {
 			std::shared_ptr<karapo::entity::Sound> music;
-			const std::wstring Path;
+			std::wstring path;
 		public:
-			Music(const std::wstring& P) : Path(P) {
+			Music(const std::wstring & P) : Music(std::vector<std::wstring>{}) {
+				path = P;
+			}
+
+			DYNAMIC_COMMAND_CONSTRUCTOR(Music) {
 				music = std::make_shared<karapo::entity::Sound>(WorldVector{ 0, 0 });
 			}
 
 			~Music() override {}
 
 			void Execute() override {
-				music->Load(Path);
+				if (MustSearch()) {
+					path = GetParam<std::wstring>(0);
+				}
+				music->Load(path);
 				Program::Instance().entity_manager.Register(music);
 				StandardCommand::Execute();
 			}
 		};
 
 		// 効果音
-		class Sound final : public StandardCommand {
+		DYNAMIC_COMMAND(Sound) {
 			std::shared_ptr<karapo::entity::Sound> sound;
-			const std::wstring Path;
+			std::wstring path;
 		public:
-			Sound(const std::wstring& P, const WorldVector& WV) : Path(P) {
+			Sound(const std::wstring& P, const WorldVector& WV) : path(P) {
 				sound = std::make_shared<karapo::entity::Sound>(WV);
 			}
+
+			DYNAMIC_COMMAND_CONSTRUCTOR(Sound) {}
 
 			~Sound() noexcept override {}
 
 			void Execute() override {
-				sound->Load(Path);
+				if (MustSearch()) {
+					path = GetParam<std::wstring>(0);
+					auto x = GetParam<Dec>(1);
+					auto y = GetParam<Dec>(2);
+					sound = std::make_shared<karapo::entity::Sound>(WorldVector{ x, y });
+				}
+				sound->Load(path);
 				Program::Instance().entity_manager.Register(sound);
 				StandardCommand::Execute();
 			}
 		};
 
 		// ボタン
-		class Button final : public StandardCommand {
+		DYNAMIC_COMMAND(Button final) {
 			std::shared_ptr<karapo::entity::Button> button;
 			std::wstring path{};
 		public:
@@ -213,9 +259,20 @@ namespace karapo::event {
 				path = Image_Path;
 			}
 
+			DYNAMIC_COMMAND_CONSTRUCTOR(Button) {}
+
 			~Button() noexcept final {}
 
 			void Execute() final {
+				if (MustSearch()) {
+					auto name = GetParam<std::wstring>(0);
+					auto x = GetParam<Dec>(1);
+					auto y = GetParam<Dec>(2);
+					auto w = GetParam<Dec>(3);
+					auto h = GetParam<Dec>(4);
+					path = GetParam<std::wstring>(5);
+					button = std::make_shared<karapo::entity::Button>(name, WorldVector{ x, y }, WorldVector{ w, h });
+				}
 				button->Load(path);
 				Program::Instance().entity_manager.Register(button);
 				StandardCommand::Execute();
@@ -224,7 +281,7 @@ namespace karapo::event {
 
 		namespace entity {
 			// Entityの移動
-			class Teleport final : public StandardCommand {
+			DYNAMIC_COMMAND(Teleport final) {
 				std::wstring entity_name;
 				WorldVector move;
 			public:
@@ -233,9 +290,17 @@ namespace karapo::event {
 					move = MV;
 				}
 
+				DYNAMIC_COMMAND_CONSTRUCTOR(Teleport) {}
+
 				~Teleport() override {}
 
 				void Execute() override {
+					if (MustSearch()) {
+						entity_name = GetParam<std::wstring>(0);
+						auto x = GetParam<Dec>(1);
+						auto y = GetParam<Dec>(2);
+						move = { x, y };
+					}
 					auto ent = Program::Instance().entity_manager.GetEntity(entity_name);
 					ent->Teleport(move);
 					StandardCommand::Execute();
@@ -243,16 +308,21 @@ namespace karapo::event {
 			};
 
 			// Entityの削除。
-			class Kill final : public StandardCommand {
+			DYNAMIC_COMMAND(Kill final) {
 				std::wstring entity_name;
 			public:
 				Kill(const std::wstring& ename) noexcept {
 					entity_name = ename;
 				}
 
+				DYNAMIC_COMMAND_CONSTRUCTOR(Kill) {}
+
 				~Kill() override {}
 
 				void Execute() override {
+					if (MustSearch()) {
+						entity_name = GetParam<std::wstring>(0);
+					}
 					if (entity_name == L"__all" || entity_name == L"__全員") {
 						std::vector<std::wstring> names{};
 						auto sen = std::any_cast<std::wstring>(Program::Instance().var_manager.Get<false>(variable::Managing_Entity_Name));
@@ -307,7 +377,7 @@ namespace karapo::event {
 			void Execute() override;
 		};
 
-		class Filter final : public StandardCommand {
+		DYNAMIC_COMMAND(Filter final) {
 			int potency{};
 			std::wstring layer_name{}, kind_name{};
 		public:
@@ -317,9 +387,16 @@ namespace karapo::event {
 				potency = P % 256;
 			}
 
+			DYNAMIC_COMMAND_CONSTRUCTOR(Filter) {}
+
 			~Filter() final {}
 
 			void Execute() final {
+				if (MustSearch()) {
+					layer_name = GetParam<std::wstring>(0);
+					kind_name = GetParam<std::wstring>(0);
+					potency = GetParam<int>(2);
+				}
 				Program::Instance().canvas.ApplyFilter(layer_name, kind_name, potency);
 				StandardCommand::Execute();
 			}
@@ -358,16 +435,21 @@ namespace karapo::event {
 		};
 
 		// イベント呼出
-		class Call : public StandardCommand {
+		DYNAMIC_COMMAND(Call final) {
 			std::wstring event_name;
 		public:
 			Call(const std::wstring& ename) noexcept {
 				event_name = ename;
 			}
 
+			DYNAMIC_COMMAND_CONSTRUCTOR(Call) {}
+
 			~Call() noexcept final {}
 
 			void Execute() override {
+				if (MustSearch()) {
+					event_name = GetParam<std::wstring>(0);
+				}
 				Program::Instance().event_manager.Call(event_name);
 				StandardCommand::Execute();
 			}
@@ -375,7 +457,7 @@ namespace karapo::event {
 
 		namespace layer {
 			// レイヤー生成(指定位置)
-			class Make final : public StandardCommand {
+			DYNAMIC_COMMAND(Make final) {
 				std::wstring kind_name{}, layer_name{};
 				int index = 0;
 				std::unordered_map<std::wstring, bool (Canvas::*)(const std::wstring&, const int)> create{};
@@ -396,9 +478,16 @@ namespace karapo::event {
 						create[L"絶対位置"] = &Canvas::CreateAbsoluteLayer;
 				}
 
+				DYNAMIC_COMMAND_CONSTRUCTOR(Make) {}
+
 				~Make() final {}
 
 				void Execute() final {
+					if (MustSearch()) {
+						index = GetParam<int>(0);
+						kind_name = GetParam<std::wstring>(1);
+						layer_name = GetParam<std::wstring>(2);
+					}
 					auto it = create.find(kind_name);
 					if (it != create.end()) {
 						(Program::Instance().canvas.*it->second)(layer_name, index);
@@ -408,23 +497,28 @@ namespace karapo::event {
 			};
 
 			// レイヤー変更
-			class Select final : public StandardCommand {
+			DYNAMIC_COMMAND(Select final) {
 				std::wstring layer_name{};
 			public:
 				Select(const std::wstring& LN) noexcept {
 					layer_name = LN;
 				}
 
+				DYNAMIC_COMMAND_CONSTRUCTOR(Select) {}
+
 				~Select() final {}
 
 				void Execute() final {
+					if (MustSearch()) {
+						layer_name = GetParam<std::wstring>(0);
+					}
 					Program::Instance().canvas.SelectLayer(layer_name);
 					StandardCommand::Execute();
 				}
 			};
 
 			// 相対位置レイヤーの基準設定
-			class SetBasis final : public StandardCommand {
+			DYNAMIC_COMMAND(SetBasis final) {
 				std::wstring entity_name{}, layer_name{};
 			public:
 				SetBasis(const std::wstring& EN, const std::wstring& LN) noexcept {
@@ -432,9 +526,15 @@ namespace karapo::event {
 					layer_name = LN;
 				}
 
+				DYNAMIC_COMMAND_CONSTRUCTOR(SetBasis) {}
+
 				~SetBasis() final {}
 
 				void Execute() final {
+					if (MustSearch()) {
+						entity_name = GetParam<std::wstring>(0);
+						layer_name = GetParam<std::wstring>(1);
+					}
 					auto ent = Program::Instance().entity_manager.GetEntity(entity_name);
 					Program::Instance().canvas.SetBasis(ent, layer_name);
 					StandardCommand::Execute();
@@ -442,16 +542,21 @@ namespace karapo::event {
 			};
 
 			// レイヤー削除
-			class Delete final :public StandardCommand {
+			DYNAMIC_COMMAND(Delete final) {
 				std::wstring name{};
 			public:
 				Delete(const std::wstring& N) noexcept {
 					name = N;
 				}
 
+				DYNAMIC_COMMAND_CONSTRUCTOR(Delete) {}
+
 				~Delete() final {}
 
 				void Execute() final {
+					if (MustSearch()) {
+						name = GetParam<std::wstring>(0);
+					}
 					Program::Instance().canvas.DeleteLayer(name);
 					StandardCommand::Execute();
 				}
