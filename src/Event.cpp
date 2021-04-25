@@ -1002,7 +1002,7 @@ namespace karapo::event {
 						else
 							parameters.push_back(std::any_cast<std::wstring>(value) + std::wstring(L":") + innertype::String);
 #else
-						const auto Event_Name = std::any_cast<std::wstring>(Program::Instance().event_manager.GetEvent(L"__生成中イベント"));
+						const auto Event_Name = std::any_cast<std::wstring>(Program::Instance().var_manager.Get<false>(L"__生成中イベント"));
 						parameters.push_back(Event_Name + L'.' + text + std::wstring(L":") + innertype::Undecided);
 #endif
 					}
@@ -1139,7 +1139,10 @@ namespace karapo::event {
 						return {
 							.Result = [&]() noexcept -> CommandPtr {
 								const auto [Var, Type] = Default_ProgramInterface.GetParamInfo(params[0]);
-								return (Default_ProgramInterface.IsStringType(Type) ? std::make_unique<command::Music>(Var) : nullptr);
+								if (Default_ProgramInterface.IsStringType(Type))
+									return std::make_unique<command::Music>(Var);
+								else 
+									return std::make_unique<command::Music>(params);
 							},
 							.checkParamState  = [params]() -> KeywordInfo::ParamResult { 
 								switch (params.size()) {
@@ -1158,7 +1161,6 @@ namespace karapo::event {
 						words[L"効果音"] =
 						words[L"音"] = [](const std::vector<std::wstring>& params) -> KeywordInfo
 					{
-						printf("There is a sound!\n");
 						return {
 							.Result = [&]() noexcept -> CommandPtr {
 								const auto [File_Path, Path_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
@@ -1167,7 +1169,7 @@ namespace karapo::event {
 								if (Default_ProgramInterface.IsStringType(Path_Type) && Default_ProgramInterface.IsNumberType(X_Type) && Default_ProgramInterface.IsNumberType(Y_Type)) {
 									return std::make_unique<command::Sound>(File_Path, WorldVector{ ToDec<Dec>(Vec_X.c_str(), nullptr), ToDec<Dec>(Vec_Y.c_str(), nullptr) });
 								} else {
-									return nullptr;
+									return std::make_unique<command::Sound>(params);
 								}
 							},
 							.checkParamState  = [params]() -> KeywordInfo::ParamResult { 
@@ -1209,7 +1211,7 @@ namespace karapo::event {
 										WorldVector{ ToDec<Dec>(Vec_X.c_str(), nullptr), ToDec<Dec>(Vec_Y.c_str(), nullptr) }, 
 										WorldVector{ ToDec<Dec>(Len_X.c_str(), nullptr), ToDec<Dec>(Len_Y.c_str(), nullptr) });
 								} else {
-									return nullptr;
+									return std::make_unique<command::Image>(params);
 								}
 							},
 							.checkParamState  = [params]() -> KeywordInfo::ParamResult { 
@@ -1255,7 +1257,7 @@ namespace karapo::event {
 										WorldVector{ ToDec<Dec>(SX.c_str(), nullptr), ToDec<Dec>(SY.c_str(), nullptr) }
 									);
 								} else {
-									return nullptr;
+									return std::make_unique<command::Button>(params);
 								}
 							},
 							.checkParamState = [params]() -> KeywordInfo::ParamResult {
@@ -1291,7 +1293,7 @@ namespace karapo::event {
 										WorldVector{ ToDec<Dec>(X.c_str(), nullptr), ToDec<Dec>(Y.c_str(), nullptr)
 									});
 								} else {
-									return nullptr;
+									return std::make_unique<command::entity::Teleport>(params);
 								}
 							},
 							.checkParamState  = [params]() -> KeywordInfo::ParamResult { 
@@ -1316,7 +1318,10 @@ namespace karapo::event {
 						return {
 							.Result = [&]() noexcept -> CommandPtr {
 								const auto [Var, Type] = Default_ProgramInterface.GetParamInfo(params[0]);
-								return (Default_ProgramInterface.IsStringType(Type) ? std::make_unique<command::entity::Kill>(Var) : nullptr);
+								if (Default_ProgramInterface.IsStringType(Type))
+									return std::make_unique<command::entity::Kill>(Var);
+								else
+									return std::make_unique<command::entity::Kill>(params);
 							},
 							.checkParamState  = [params]() -> KeywordInfo::ParamResult { 
 								switch (params.size()) {
@@ -1348,7 +1353,7 @@ namespace karapo::event {
 									return std::make_unique<command::layer::Make>(i, Kind, Name);
 								}
 								else
-									return nullptr;
+									return std::make_unique<command::layer::Make>(params);
 							},
 							.checkParamState = [params]() -> KeywordInfo::ParamResult {
 								switch (params.size()) {
@@ -1376,7 +1381,7 @@ namespace karapo::event {
 								if (Default_ProgramInterface.IsStringType(Entity_Name_Type) && Default_ProgramInterface.IsStringType(Layer_Name_Type))
 									return std::make_unique<command::layer::SetBasis>(Entity_Name, Layer_Name);
 								else
-									return nullptr;
+									return std::make_unique<command::layer::SetBasis>(params);
 							},
 							.checkParamState = [params]() -> KeywordInfo::ParamResult {
 								switch (params.size()) {
@@ -1399,6 +1404,10 @@ namespace karapo::event {
 						return {
 							.Result = [&]() noexcept -> CommandPtr {
 								const auto [Name, Name_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								if (Default_ProgramInterface.IsStringType(Name_Type))
+									std::make_unique<command::layer::Select>(Name);
+								else
+									return std::make_unique<command::layer::Select>(params);
 								return (Default_ProgramInterface.IsStringType(Name_Type) ? std::make_unique<command::layer::Select>(Name) : nullptr);
 							},
 							.checkParamState = [params]() -> KeywordInfo::ParamResult {
@@ -1560,7 +1569,7 @@ namespace karapo::event {
 								if (Default_ProgramInterface.IsStringType(Name_Type))
 									return std::make_unique<command::Call>(Event_Name);
 								else
-									return nullptr;
+									return std::make_unique<command::Call>(params);
 							},
 							.checkParamState  = [params]() -> KeywordInfo::ParamResult {
 								switch (params.size()) {
@@ -1586,7 +1595,7 @@ namespace karapo::event {
 								if (Var_Type == L"")
 									return std::make_unique<command::Variable>(Var, Value);
 								else
-									return nullptr;
+									return std::make_unique<command::Variable>(params);
 							},
 							.checkParamState  = [params]() -> KeywordInfo::ParamResult { 
 								switch (params.size()) {
@@ -1608,8 +1617,18 @@ namespace karapo::event {
 						words[L"フィルター"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
 						return {
 							.Result = [&]() -> CommandPtr {
-								const auto Potency = std::stoi(params[2]);
-								return std::make_unique<command::Filter>(params[0], params[1], Potency);
+								const auto [Layer_Name, Layer_Name_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								const auto [Filter_Name, Filter_Name_Type] = Default_ProgramInterface.GetParamInfo(params[1]);
+								const auto [Potency_Value, Potency_Value_Type] = Default_ProgramInterface.GetParamInfo(params[2]);
+								if (Default_ProgramInterface.IsStringType(Layer_Name_Type) &&
+								    Default_ProgramInterface.IsStringType(Filter_Name_Type) &&
+								    Default_ProgramInterface.IsNumberType(Potency_Value_Type))
+								{
+									const auto Potency = std::stoi(Potency_Value);
+									return std::make_unique<command::Filter>(Layer_Name, Filter_Name, Potency);
+								} else {
+									return std::make_unique<command::Filter>(params);
+								}
 							},
 							.checkParamState  = [params]() -> KeywordInfo::ParamResult { 
 								switch (params.size()) {
@@ -1632,7 +1651,11 @@ namespace karapo::event {
 						words[L"条件"] = [&](const std::vector<std::wstring>& params) -> KeywordInfo {
 						return {
 							.Result = [&]() -> CommandPtr {
-								return std::make_unique<command::Case>(params[0]);
+								const auto [Var, Var_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								if (Default_ProgramInterface.IsUndecidedType(Var_Type))
+									return std::make_unique<command::Case>(Var);
+								else
+									return std::make_unique<command::Case>(params[0]);
 							},
 							.checkParamState  = [params]() -> KeywordInfo::ParamResult { 
 								switch (params.size()) {
@@ -1657,7 +1680,7 @@ namespace karapo::event {
 								if (!Default_ProgramInterface.IsNoType(Type))
 									return std::make_unique<command::Of>(Var);
 								else
-									return nullptr;
+									return std::make_unique<command::Of>(params);
 							},
 							.checkParamState  = [params]() -> KeywordInfo::ParamResult { 
 								switch (params.size()) {
