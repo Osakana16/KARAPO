@@ -498,11 +498,13 @@ namespace karapo::event {
 				int index = 0;
 				std::unordered_map<std::wstring, bool (Canvas::*)(const std::wstring&, const int)> create{};
 			public:
-				Make(const int Index, const std::wstring& KN, const std::wstring& LN) noexcept {
+				Make(const int Index, const std::wstring & KN, const std::wstring & LN) noexcept : Make(std::vector<std::wstring>{}) {
 					index = Index;
 					kind_name = KN;
 					layer_name = LN;
+				}
 
+				DYNAMIC_COMMAND_CONSTRUCTOR(Make) {
 					create[L"scroll"] =
 						create[L"スクロール"] =
 						create[L"relative"] =
@@ -513,8 +515,6 @@ namespace karapo::event {
 						create[L"absolute"] =
 						create[L"絶対位置"] = &Canvas::CreateAbsoluteLayer;
 				}
-
-				DYNAMIC_COMMAND_CONSTRUCTOR(Make) {}
 
 				~Make() final {}
 
