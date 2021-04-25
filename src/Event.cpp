@@ -60,9 +60,28 @@ namespace karapo::event {
 			}
 
 			// 指定した番号から引数名を読み込む。
-			template<typename T>
-			T GetParam(const int Index) const noexcept {
-				return std::any_cast<T>(Program::Instance().var_manager.Get<false>(param_names[Index]));
+			template<typename T, const bool Get_Param_Name = false>
+			T GetParam(const int Index) const {
+				if constexpr (!Get_Param_Name) {
+					auto [vname, vtype] = Default_ProgramInterface.GetParamInfo(param_names[Index]);
+					if constexpr (!std::is_same_v<T, std::any>) {
+						// 型が判明する場合、定数なのでその値を取得。
+						if (Default_ProgramInterface.IsStringType(vtype))
+							return std::any_cast<T>(vname);
+						else if (Default_ProgramInterface.IsNumberType(vtype))
+							return std::any_cast<T>(vname);
+						else {
+							// 型がない場合は変数管理オブジェクトから取得。
+							return std::any_cast<T>(Program::Instance().var_manager.Get<false>(vname));
+						}
+					} else {
+						// std::anyが指定された場合、変数から直接取得。
+						return Program::Instance().var_manager.Get<false>(vname);
+					}
+				} else {
+					// 引数名を返す。
+					return Default_ProgramInterface.GetParamInfo(param_names[Index]).first;
+				}
 			}
 		};
 
@@ -95,8 +114,19 @@ namespace karapo::event {
 
 			void Execute() override {
 				if (MustSearch()) {
-					varname = GetParam<std::wstring>(0);
+					varname = GetParam<std::wstring, true>(0);
 					value = GetParam<std::any>(1);
+					if (value.type() == typeid(std::nullptr_t)) {
+						auto value_name = GetParam<std::wstring, true>(1);
+						auto [fv, fp] = ToDec<Dec>(value_name.c_str());
+						auto [iv, ip] = ToInt(value_name.c_str());
+						if (wcslen(fp) <= 0)
+							value = fv;
+						else if (wcslen(ip) <= 0)
+							value = iv;
+						else
+							value = value_name;
+					}
 				}
 				Program::Instance().var_manager.MakeNew(varname) = value;
 				StandardCommand::Execute();
