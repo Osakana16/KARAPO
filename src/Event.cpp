@@ -98,10 +98,11 @@ namespace karapo::event {
 						auto value_name = GetParam<std::wstring, true>(i);
 						auto [fv, fp] = ToDec<Dec>(value_name.c_str());
 						auto [iv, ip] = ToInt(value_name.c_str());
-						if (wcslen(fp) <= 0)
-							value = fv;
-						else if (wcslen(ip) <= 0)
+
+						if (wcslen(ip) <= 0)
 							value = iv;
+						else if (wcslen(fp) <= 0)
+							value = fv;
 						else
 							value = value_name;
 					}
@@ -145,10 +146,10 @@ namespace karapo::event {
 						auto value_name = GetParam<std::wstring, true>(1);
 						auto [fv, fp] = ToDec<Dec>(value_name.c_str());
 						auto [iv, ip] = ToInt(value_name.c_str());
-						if (wcslen(fp) <= 0)
-							value = fv;
-						else if (wcslen(ip) <= 0)
+						if (wcslen(ip) <= 0)
 							value = iv;
+						else if (wcslen(fp) <= 0)
+							value = fv;
 						else
 							value = value_name;
 					}
