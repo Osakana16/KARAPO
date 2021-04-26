@@ -179,7 +179,7 @@ namespace karapo::event {
 				if (MustSearch()) {
 					value = GetParam<std::any>(0);
 				}
-				Program::Instance().event_manager.SetCondTarget(value);
+				Program::Instance().event_manager.NewCaseTarget(value);
 				StandardCommand::Execute();
 			}
 		};
@@ -675,7 +675,7 @@ namespace karapo::event {
 			if (cmd == nullptr)
 				return nullptr;
 
-			if (!cmd->IsUnnecessary() && (cmd->IgnoreCondition() || Program::Instance().event_manager.condition_manager.Can_Execute)) {
+			if (!cmd->IsUnnecessary() && (cmd->IgnoreCondition() || Program::Instance().event_manager.CanOfExecute())) {
 				cmd->Execute();
 				return std::move(cmd);
 			} else {
@@ -1727,10 +1727,10 @@ namespace karapo::event {
 						return {
 							.Result = [&]() -> CommandPtr {
 								const auto [Var, Var_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
-								if (Default_ProgramInterface.IsUndecidedType(Var_Type))
+								if (!Default_ProgramInterface.IsUndecidedType(Var_Type))
 									return std::make_unique<command::Case>(Var);
 								else
-									return std::make_unique<command::Case>(params[0]);
+									return std::make_unique<command::Case>(params);
 							},
 							.checkParamState  = [params]() -> KeywordInfo::ParamResult { 
 								switch (params.size()) {
@@ -1802,8 +1802,8 @@ namespace karapo::event {
 										return KeywordInfo::ParamResult::Excess;
 								}
 							},
-							.is_static = true,
-							.is_dynamic = false
+							.is_static = false,
+							.is_dynamic = true
 						};
 					};
 
@@ -2053,20 +2053,31 @@ namespace karapo::event {
 		}
 	}
 
-	void Manager::SetCondTarget(std::any tv) {
-		condition_manager.SetTarget(tv);
+	void Manager::NewCaseTarget(std::any tv) {
+		condition_manager.push_back(ConditionManager(tv));
+		condition_current = condition_manager.end() - 1;
 	}
 
 	void Manager::Evalute(const std::wstring& Sentence) {
-		condition_manager.Evalute(Sentence);
+		condition_current->Evalute(Sentence);
 	}
 
 	void Manager::FreeCase() {
-		condition_manager.FreeCase();
+		condition_current->FreeCase();
+		condition_manager.pop_back();
+		if (!condition_manager.empty())
+			condition_current = condition_manager.end() - 1;
 	}
 
 	void Manager::FreeOf() {
-		condition_manager.FreeOf();
+		condition_current->FreeOf();
+	}
+
+	bool Manager::CanOfExecute() const noexcept {
+		if (!condition_manager.empty() && condition_current != condition_manager.end()) {
+			return (condition_current->Can_Execute);
+		} else
+			return true;
 	}
 
 	void Manager::MakeEmptyEvent(const std::wstring& Event_Name) {

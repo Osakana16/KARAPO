@@ -41,12 +41,17 @@ namespace karapo::event {
 			std::any target_value;
 			bool can_execute = true;
 		public:
+			ConditionManager() = default;
+			ConditionManager(std::any& tv) { SetTarget(tv); }
 			void SetTarget(std::any& tv);
 			// ğŒ®‚ğ•]‰¿‚·‚é
 			void Evalute(const std::wstring& Sentence) noexcept;
 			void FreeCase(), FreeOf();
 			const bool& Can_Execute = can_execute;
-		} condition_manager;
+		};
+		
+		std::deque<ConditionManager> condition_manager;
+		decltype(condition_manager)::iterator condition_current;
 
 		std::unordered_map<std::wstring, Event> events;
 
@@ -66,9 +71,10 @@ namespace karapo::event {
 
 		void MakeEmptyEvent(const std::wstring&);
 
-		void SetCondTarget(std::any);
+		void NewCaseTarget(std::any);
 		void Evalute(const std::wstring& Sentence);
 		void FreeCase(), FreeOf();
+		bool CanOfExecute() const noexcept;
 
 		static Manager& Instance() noexcept {
 			static Manager manager;
