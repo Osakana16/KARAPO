@@ -2076,7 +2076,7 @@ namespace karapo::event {
 
 	bool Manager::CanOfExecute() const noexcept {
 		if (!condition_manager.empty() && condition_current != condition_manager.end()) {
-			return (condition_current->Can_Execute);
+			return (condition_current->CanExecute());
 		} else
 			return true;
 	}

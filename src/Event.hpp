@@ -47,7 +47,7 @@ namespace karapo::event {
 			// ğŒ®‚ğ•]‰¿‚·‚é
 			void Evalute(const std::wstring& Sentence) noexcept;
 			void FreeCase(), FreeOf();
-			const bool& Can_Execute = can_execute;
+			bool CanExecute() const noexcept { return can_execute; }
 		};
 		
 		std::deque<ConditionManager> condition_manager;
