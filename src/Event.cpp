@@ -631,6 +631,175 @@ namespace karapo::event {
 			};
 		}
 
+		namespace math {
+			DYNAMIC_COMMAND(MathCommand) {
+			public:
+				MathCommand(const std::vector<std::wstring>& Params) : DynamicCommand(Params){}
+
+				std::wstring var_name{};
+				std::any value[2]{};
+				void Extract() {
+					if (MustSearch()) {
+						var_name = GetParam<std::wstring, true>(0);
+						for (int i = 0; i < 2; i++) {
+							value[i] = GetParam<std::any>(i + 1);
+							if (value[i].type() == typeid(int))
+								value[i] = std::any_cast<int>(value[i]);
+							else if (value[i].type() == typeid(Dec))
+								value[i] = std::any_cast<Dec>(value[i]);
+							else {
+								value[i] = GetParam<std::wstring, true>(i + 1);
+								auto tmp = std::any_cast<std::wstring>(value[i]);
+								auto [iv, ip] = ToInt(tmp.c_str());
+								auto [fv, fp] = ToDec<Dec>(tmp.c_str());
+								if (wcslen(ip) <= 0)
+									value[i] = iv;
+								else
+									value[i] = fv;
+							}
+						}
+					}
+				}
+			};
+
+			// â¡éZ
+			class Sum final : public MathCommand {
+			public:
+				using MathCommand::MathCommand;
+
+				~Sum() final {}
+
+				void Execute() final {
+					Extract();
+					const bool Is_Only_Int = (value[0].type() == typeid(int) && value[1].type() == typeid(int));
+					union {
+						int i;
+						Dec d;
+					} cal;
+
+					if (Is_Only_Int) {
+						cal.i = std::any_cast<int>(value[0]) + std::any_cast<int>(value[1]);
+					} else {
+						cal.d = 0.0;
+						for (int i = 0; i < 2; i++) {
+							if (value[i].type() == typeid(int)) {
+								cal.d += std::any_cast<int>(value[i]);
+							} else {
+								cal.d += std::any_cast<Dec>(value[i]);
+							}
+						}
+					}
+					Program::Instance().var_manager.Get<false>(var_name) = (Is_Only_Int ? cal.i : cal.d);
+					StandardCommand::Execute();
+				}
+			};
+
+			// å∏éZ
+			class Sub final : public MathCommand {
+			public:
+				using MathCommand::MathCommand;
+				~Sub() final {}
+
+				void Execute() final {
+					Extract();
+					const bool Is_Only_Int = (value[0].type() == typeid(int) && value[1].type() == typeid(int));
+					union {
+						int i;
+						Dec d;
+					} cal;
+
+					if (Is_Only_Int) {
+						cal.i = std::any_cast<int>(value[0]) - std::any_cast<int>(value[1]);
+					} else {
+						cal.d = 0.0;
+						if (value[0].type() == typeid(int)) {
+							cal.d = std::any_cast<int>(value[0]);
+						} else {
+							cal.d = std::any_cast<Dec>(value[0]);
+						}
+
+						if (value[1].type() == typeid(int)) {
+							cal.d -= std::any_cast<int>(value[1]);
+						} else {
+							cal.d -= std::any_cast<Dec>(value[1]);
+						}
+					}
+					Program::Instance().var_manager.Get<false>(var_name) = (Is_Only_Int ? cal.i : cal.d);
+					StandardCommand::Execute();
+				}
+			};
+
+			// èÊéZ
+			class Mul final : public MathCommand {
+			public:
+				using MathCommand::MathCommand;
+				~Mul() final {}
+
+				void Execute() final {
+					Extract();
+					const bool Is_Only_Int = (value[0].type() == typeid(int) && value[1].type() == typeid(int));
+					union {
+						int i;
+						Dec d;
+					} cal;
+
+					if (Is_Only_Int) {
+						cal.i = std::any_cast<int>(value[0]) * std::any_cast<int>(value[1]);
+					} else {
+						cal.d = 0.0;
+						if (value[0].type() == typeid(int)) {
+							cal.d = std::any_cast<int>(value[0]);
+						} else {
+							cal.d = std::any_cast<Dec>(value[0]);
+						}
+
+						if (value[1].type() == typeid(int)) {
+							cal.d *= std::any_cast<int>(value[1]);
+						} else {
+							cal.d *= std::any_cast<Dec>(value[1]);
+						}
+					}
+					Program::Instance().var_manager.Get<false>(var_name) = (Is_Only_Int ? cal.i : cal.d);
+					StandardCommand::Execute();
+				}
+			};
+
+			// èôéZ
+			class Div final : public MathCommand {
+			public:
+				using MathCommand::MathCommand;
+				~Div() final {}
+
+				void Execute() final {
+					Extract();
+					const bool Is_Only_Int = (value[0].type() == typeid(int) && value[1].type() == typeid(int));
+					union {
+						int i;
+						Dec d;
+					} cal;
+
+					if (Is_Only_Int) {
+						cal.i = std::any_cast<int>(value[0]) / std::any_cast<int>(value[1]);
+					} else {
+						cal.d = 0.0;
+						if (value[0].type() == typeid(int)) {
+							cal.d = std::any_cast<int>(value[0]);
+						} else {
+							cal.d = std::any_cast<Dec>(value[0]);
+						}
+
+						if (value[1].type() == typeid(int)) {
+							cal.d /= std::any_cast<int>(value[1]);
+						} else {
+							cal.d /= std::any_cast<Dec>(value[1]);
+						}
+					}
+					Program::Instance().var_manager.Get<false>(var_name) = (Is_Only_Int ? cal.i : cal.d);
+					StandardCommand::Execute();
+				}
+			};
+		}
+
 		namespace hidden {
 			class EndOf final : public StandardCommand {
 				bool executed = false;
@@ -1816,6 +1985,94 @@ namespace karapo::event {
 							.checkParamState = [params]() -> KeywordInfo::ParamResult {
 								switch (params.size()) {
 									case 0:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"sum"] = words[L"â¡éZ"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() -> CommandPtr {
+								return std::make_unique<command::math::Sum>(params);
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+									case 1:
+									case 2:
+										return KeywordInfo::ParamResult::Lack;
+									case 3:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"sub"] = words[L"å∏éZ"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() -> CommandPtr {
+								return std::make_unique<command::math::Sub>(params);
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+									case 1:
+									case 2:
+										return KeywordInfo::ParamResult::Lack;
+									case 3:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"mul"] = words[L"èÊéZ"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() -> CommandPtr {
+								return std::make_unique<command::math::Mul>(params);
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+									case 1:
+									case 2:
+										return KeywordInfo::ParamResult::Lack;
+									case 3:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"div"] = words[L"èôéZ"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() -> CommandPtr {
+								return std::make_unique<command::math::Div>(params);
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+									case 1:
+									case 2:
+										return KeywordInfo::ParamResult::Lack;
+									case 3:
 										return KeywordInfo::ParamResult::Maximum;
 									default:
 										return KeywordInfo::ParamResult::Excess;
