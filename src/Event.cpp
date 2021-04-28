@@ -629,6 +629,46 @@ namespace karapo::event {
 					StandardCommand::Execute();
 				}
 			};
+
+			DYNAMIC_COMMAND(Show final) {
+				std::wstring name{};
+			public:
+				Show(const std::wstring &N) noexcept {
+					name = N;
+				}
+
+				DYNAMIC_COMMAND_CONSTRUCTOR(Show) {}
+
+				~Show() final {}
+
+				void Execute() final {
+					if (MustSearch()) {
+						name = GetParam<std::wstring>(0);
+					}
+					Program::Instance().canvas.Show(name);
+					StandardCommand::Execute();
+				}
+			};
+
+			DYNAMIC_COMMAND(Hide final) {
+				std::wstring name{};
+			public:
+				Hide(const std::wstring &N) noexcept {
+					name = N;
+				}
+
+				DYNAMIC_COMMAND_CONSTRUCTOR(Hide) {}
+
+				~Hide() final {}
+
+				void Execute() final {
+					if (MustSearch()) {
+						name = GetParam<std::wstring>(0);
+					}
+					Program::Instance().canvas.Hide(name);
+					StandardCommand::Execute();
+				}
+			};
 		}
 
 		namespace math {
@@ -1680,6 +1720,52 @@ namespace karapo::event {
 							.Result = [&]() noexcept -> CommandPtr {
 								const auto [Name, Name_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
 								return (Default_ProgramInterface.IsStringType(Name_Type) ? std::make_unique<command::layer::Delete>(Name) : nullptr);
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+										return KeywordInfo::ParamResult::Lack;
+									case 1:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"showlayer"] =
+						words[L"レイヤー表示"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() noexcept -> CommandPtr {
+								const auto [Name, Name_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								return (Default_ProgramInterface.IsStringType(Name_Type) ? 
+									std::make_unique<command::layer::Show>(Name) : std::make_unique<command::layer::Show>(params));
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+										return KeywordInfo::ParamResult::Lack;
+									case 1:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"hidelayer"] =
+						words[L"レイヤー非表示"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() noexcept -> CommandPtr {
+								const auto [Name, Name_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								return (Default_ProgramInterface.IsStringType(Name_Type) ?
+									std::make_unique<command::layer::Hide>(Name) : std::make_unique<command::layer::Hide>(params));
 							},
 							.checkParamState = [params]() -> KeywordInfo::ParamResult {
 								switch (params.size()) {

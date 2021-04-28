@@ -33,6 +33,7 @@ namespace karapo {
 
 	class ImageLayer : public Layer {
 		std::wstring name{};	// レイヤー名
+		bool hide = false;
 	protected:
 		std::vector<std::shared_ptr<Entity>> drawing;
 	public:
@@ -41,6 +42,9 @@ namespace karapo {
 		void Register(std::shared_ptr<Entity>);
 		bool IsRegistered(std::shared_ptr<Entity>) const noexcept;
 		inline auto Name() const noexcept { return name; }
+		void Show() noexcept { hide = true; }
+		void Hide() noexcept { hide = false; }
+		bool IsShowing() const noexcept { return !hide; }
 
 		virtual void Draw() = 0;
 	};
@@ -53,6 +57,8 @@ namespace karapo {
 		using Layers = std::vector<LayerPtr>;
 		// 管理中レイヤー
 		Layers layers;
+		std::vector<std::pair<int, LayerPtr>> hiding{};
+
 		// 操作対象のレイヤー
 		LayerPtr* selecting_layer{};
 	public:
@@ -71,6 +77,9 @@ namespace karapo {
 		void SetBasis(std::shared_ptr<Entity>&, const std::wstring&);
 
 		void ApplyFilter(const std::wstring&, const std::wstring&, const int);
+
+		void Show(const int) noexcept, Hide(const int) noexcept,
+			Show(const std::wstring&) noexcept, Hide(const std::wstring&) noexcept;
 
 		static Canvas& Instance() noexcept {
 			static Canvas canvas;

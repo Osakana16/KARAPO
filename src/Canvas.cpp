@@ -190,7 +190,7 @@ namespace karapo {
 namespace karapo {
 	void Canvas::Update() noexcept {
 		for (auto& layer : layers) {
-			layer->Execute();
+			if (layer->IsShowing()) layer->Execute();
 		}
 	}
 
@@ -242,6 +242,26 @@ namespace karapo {
 		static_cast<RelativeLayer*>(it->get())->SetBase(base);
 	}
 
+	void Canvas::Show(const int Index) noexcept {
+		layers[Index]->Show();
+	}
+
+	void Canvas::Hide(const int Index) noexcept {
+		layers[Index]->Hide();
+	}
+
+	void Canvas::Show(const std::wstring& Name) noexcept {
+		auto it = std::find_if(layers.begin(), layers.end(), [Name](std::unique_ptr<ImageLayer>& layer) { return layer->Name() == Name; });
+		if (it != layers.end())
+			(*it)->Show();
+	}
+
+	void Canvas::Hide(const std::wstring& Name) noexcept {
+		auto it = std::find_if(layers.begin(), layers.end(), [Name](std::unique_ptr<ImageLayer>& layer) { return layer->Name() == Name; });
+		if (it != layers.end())
+			(*it)->Hide();
+	}
+
 	void Canvas::ApplyFilter(const std::wstring& Name, const std::wstring& Filter_Name, const int Potency) {
 		FilterMaker filter_maker(Potency);
 		auto it = std::find_if(layers.begin(), layers.end(), [Name](std::unique_ptr<ImageLayer>& layer) { return layer->Name() == Name; });
@@ -256,7 +276,6 @@ namespace karapo {
 			if (!layers.empty() && (Index < 0 || Index >= layers.size()))
 				return false;
 		}
-
 		layers.insert(layers.begin() + Index, std::move(layer));
 		return true;
 	}
