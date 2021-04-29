@@ -706,6 +706,26 @@ namespace karapo::event {
 				}
 			};
 
+			DYNAMIC_COMMAND(Assign) {
+			public:
+				DYNAMIC_COMMAND_CONSTRUCTOR(Assign) {}
+				~Assign() final {}
+
+				void Execute() final {
+					auto var_name = GetParam<std::wstring, true>(0);
+					auto value = GetParam<std::wstring, true>(1);
+					auto [iv, ip] = ToInt(value.c_str());
+					auto [fv, fp] = ToDec<Dec>(value.c_str());
+					if (wcslen(ip) <= 0)
+						Program::Instance().var_manager.Get<false>(var_name) = iv;
+					else if (wcslen(fp) <= 0)
+						Program::Instance().var_manager.Get<false>(var_name) = fv;
+					else
+						Program::Instance().var_manager.Get<false>(var_name) = ip;
+					StandardCommand::Execute();
+				}
+			};
+
 			// ‰ÁŽZ
 			class Sum final : public MathCommand {
 			public:
@@ -2078,6 +2098,27 @@ namespace karapo::event {
 							.checkParamState = [params]() -> KeywordInfo::ParamResult {
 								switch (params.size()) {
 									case 0:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"assign"] = words[L"‘ã“ü"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() -> CommandPtr {
+								return std::make_unique<command::math::Assign>(params);
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+									case 1:
+										return KeywordInfo::ParamResult::Lack;
+									case 2:
 										return KeywordInfo::ParamResult::Maximum;
 									default:
 										return KeywordInfo::ParamResult::Excess;
