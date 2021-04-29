@@ -1724,7 +1724,6 @@ namespace karapo::event {
 									std::make_unique<command::layer::Select>(Name);
 								else
 									return std::make_unique<command::layer::Select>(params);
-								return (Default_ProgramInterface.IsStringType(Name_Type) ? std::make_unique<command::layer::Select>(Name) : nullptr);
 							},
 							.checkParamState = [params]() -> KeywordInfo::ParamResult {
 								switch (params.size()) {
@@ -1746,7 +1745,10 @@ namespace karapo::event {
 						return {
 							.Result = [&]() noexcept -> CommandPtr {
 								const auto [Name, Name_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
-								return (Default_ProgramInterface.IsStringType(Name_Type) ? std::make_unique<command::layer::Delete>(Name) : nullptr);
+								if (Default_ProgramInterface.IsStringType(Name_Type))
+									std::make_unique<command::layer::Delete>(Name);
+								else
+									return std::make_unique<command::layer::Delete>(params);
 							},
 							.checkParamState = [params]() -> KeywordInfo::ParamResult {
 								switch (params.size()) {
@@ -1883,7 +1885,8 @@ namespace karapo::event {
 						return {
 							.Result = [&]() -> CommandPtr {
 								const auto [Var, Type] = Default_ProgramInterface.GetParamInfo(params[0]);
-								return (Default_ProgramInterface.IsStringType(Type) ? std::make_unique<command::Attach>(Var) : nullptr);
+								return (Default_ProgramInterface.IsStringType(Type) ?
+									std::make_unique<command::Attach>(Var) : nullptr);
 							},
 							.checkParamState  = [params]() -> KeywordInfo::ParamResult { 
 								switch (params.size()) {
@@ -1906,7 +1909,8 @@ namespace karapo::event {
 						return {
 							.Result = [&]() -> CommandPtr {
 								const auto [Var, Type] = Default_ProgramInterface.GetParamInfo(params[0]);
-								return (Default_ProgramInterface.IsStringType(Type) ? std::make_unique<command::Detach>(Var) : nullptr);
+								return (Default_ProgramInterface.IsStringType(Type) ?
+									std::make_unique<command::Detach>(Var) : nullptr);
 							},
 							.checkParamState  = [params]() -> KeywordInfo::ParamResult { 
 								switch (params.size()) {
