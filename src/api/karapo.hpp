@@ -132,6 +132,9 @@ namespace karapo {
 			// コマンドを実行する。
 			virtual void Execute() = 0;
 
+			// コマンドの状態をリセットする。
+			virtual void Reset() noexcept = 0;
+
 			// 実行し終えたかどうか。
 			virtual bool Executed() const noexcept = 0;
 

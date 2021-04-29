@@ -33,6 +33,10 @@ namespace karapo::event {
 				executed = true;
 			}
 
+			void Reset() noexcept override {
+				executed = false;
+			}
+
 			bool Executed() const noexcept override {
 				return executed;
 			}
@@ -889,6 +893,7 @@ namespace karapo::event {
 				cmd->Execute();
 				return std::move(cmd);
 			} else {
+				cmd->Reset();
 				ended.push_back(std::move(cmd));
 				return nullptr;
 			}
@@ -905,8 +910,10 @@ namespace karapo::event {
 				CommandPtr recycled = Execute(std::move(commands.front()));
 				if (recycled == nullptr)
 					commands.pop_front();
-				else // ÄŠi”[‚·‚éB
+				else {
+					// ÄŠi”[‚·‚éB
 					commands.push_front(std::move(recycled));
+				}
 			}
 		}
 
