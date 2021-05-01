@@ -217,6 +217,52 @@ namespace karapo::entity {
 		can_delete = true;
 	}
 
+	Text::Text(const std::wstring& Name, const WorldVector& WV) noexcept {
+		name = Name;
+		origin = WV;
+	}
+
+	Text::~Text() noexcept {}
+
+	int Text::Main() {
+		text = std::any_cast<std::wstring>(Program::Instance().var_manager.Get<false>(name + L".text"));
+		return 0;
+	}
+
+	void Text::Draw(const WorldVector Base) {
+		Dec x, y;
+		if (Base[0] > .0 || Base[1] > .0) {
+			auto relative_origin = Origin() - Base;
+			relative_origin += { Program::Instance().WindowSize().first / 2.0, Program::Instance().WindowSize().second / 2.0 };
+			x = relative_origin[0];
+			y = relative_origin[1];
+		} else {
+			x = Origin()[0];
+			y = Origin()[1];
+		}
+		Program::Instance().engine.DrawSentence(text, ScreenVector{ (int)x, (int)y }, 30);
+	}
+
+	void Text::Print(const std::wstring& Message) {
+		Program::Instance().var_manager.Get<false>(name + L".text") = Message;
+	}
+
+	const wchar_t *Text::Name() const noexcept {
+		return name.c_str();
+	}
+
+	const wchar_t *Text::KindName() const noexcept {
+		return L"テキスト";
+	}
+
+	bool Text::CanDelete() const noexcept {
+		return can_delete;
+	}
+
+	void Text::Delete() {
+		can_delete = true;
+	}
+
 	Mouse::Mouse() noexcept {
 		Program::Instance().var_manager.MakeNew(L"マウスポインタ.左クリック") = 0;
 		Program::Instance().var_manager.MakeNew(L"マウスポインタ.右クリック") = 0;

@@ -50,6 +50,24 @@ namespace karapo::entity {
 		void Load(const std::wstring&);
 	};
 
+	class Text : public Object {
+		std::wstring text{}, name{};
+		bool can_delete = false;
+	public:
+		Text(const std::wstring&, const WorldVector&) noexcept;
+		~Text() noexcept;
+
+		int Main() override;
+		void Draw(WorldVector) override;
+
+		const wchar_t *Name() const noexcept override;
+		const wchar_t *KindName() const noexcept override;
+		bool CanDelete() const noexcept override;
+		void Delete() override;
+
+		void Print(const std::wstring&);
+	};
+
 	class Mouse : public Object {
 		bool can_delete{};
 	public:

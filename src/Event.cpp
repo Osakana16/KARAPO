@@ -339,6 +339,37 @@ namespace karapo::event {
 			}
 		};
 
+		// 文字出力
+		DYNAMIC_COMMAND(Print final) {
+			std::shared_ptr<karapo::entity::Text> text;
+		public:
+			Print(const std::wstring& Name, const WorldVector& Pos) noexcept {
+				auto name = Name;
+				auto pos = Pos;
+				text = std::make_shared<karapo::entity::Text>(name, pos);
+				Program::Instance().var_manager.MakeNew(name + L".text") = std::wstring(L"");
+			}
+
+			DYNAMIC_COMMAND_CONSTRUCTOR(Print) {}
+
+			~Print() noexcept final {}
+
+			void Execute() final {
+				if (MustSearch()) {
+					auto name = GetParam<std::wstring>(0);
+					auto x = GetParam<Dec>(1);
+					auto y = GetParam<Dec>(2);
+
+					auto ename =std::any_cast<std::wstring>(Program::Instance().var_manager.Get<false>(L"__実行中イベント"));
+					*(ename.end() - 1) = L'.';
+					Program::Instance().var_manager.MakeNew(ename + name + L".text") = std::wstring(L"");
+					text = std::make_shared<karapo::entity::Text>(ename + name, WorldVector{ x, y });
+				}
+				Program::Instance().entity_manager.Register(text);
+				StandardCommand::Execute();
+			}
+		};
+
 		namespace entity {
 			// Entityの移動
 			DYNAMIC_COMMAND(Teleport final) {
@@ -1447,6 +1478,42 @@ namespace karapo::event {
 					// ヒットさせる単語を登録する。
 
 					Program::Instance().dll_manager.RegisterExternalCommand(&words);
+
+					words[L"text"] =
+						words[L"文章"] = [](const std::vector<std::wstring>& params) -> KeywordInfo
+					{
+						return {
+							.Result = [&]() noexcept -> CommandPtr {
+								const auto [Name, Name_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								const auto [X, X_Type] = Default_ProgramInterface.GetParamInfo(params[1]);
+								const auto [Y, Y_Type] = Default_ProgramInterface.GetParamInfo(params[1]);
+								if (Default_ProgramInterface.IsStringType(Name_Type) &&
+									Default_ProgramInterface.IsStringType(X_Type) &&
+									Default_ProgramInterface.IsStringType(Y_Type)) 
+								{
+									auto [xv, xp] = ToDec<Dec>(X.c_str());
+									auto [yv, yp] = ToDec<Dec>(Y.c_str());
+									return std::make_unique<command::Print>(Name, WorldVector{ xv, yv });
+								}
+								else
+									return std::make_unique<command::Print>(params);
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+									case 1:
+									case 2:
+										return KeywordInfo::ParamResult::Lack;
+									case 3:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
 
 					words[L"music"] =
 						words[L"音楽"] =
