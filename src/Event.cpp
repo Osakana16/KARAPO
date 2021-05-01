@@ -748,14 +748,21 @@ namespace karapo::event {
 					auto [iv, ip] = ToInt(value.c_str());
 					auto [fv, fp] = ToDec<Dec>(value.c_str());
 
-					auto& v = Program::Instance().var_manager.Get<false>(var_name);
-					if (v.type() != typeid(std::nullptr_t)) {
+					auto* v = &Program::Instance().var_manager.Get<false>(var_name);
+					if (v->type() != typeid(std::nullptr_t)) {
+					reassign:
 						if (wcslen(ip) <= 0)
-							v = iv;
+							*v = iv;
 						else if (wcslen(fp) <= 0)
-							v = fv;
+							*v = fv;
 						else
-							v = std::wstring(ip);
+							*v = std::wstring(ip);
+					} else {
+						auto i = MessageBoxW(nullptr, (var_name + L"は存在しない変数なので代入できません。\n新しくこの変数を作成しますか?").c_str(), L"代入エラー", MB_YESNO | MB_ICONERROR);
+						if (i == IDYES) {
+							v = &Program::Instance().var_manager.MakeNew(var_name);
+							goto reassign;
+						}
 					}
 					StandardCommand::Execute();
 				}
@@ -789,9 +796,16 @@ namespace karapo::event {
 						}
 					}
 
-					auto& v = Program::Instance().var_manager.Get<false>(var_name);
-					if (v.type() != typeid(std::nullptr_t)) {
-						v = (Is_Only_Int ? cal.i : cal.d);
+					auto* v = &Program::Instance().var_manager.Get<false>(var_name);
+					if (v->type() != typeid(std::nullptr_t)) {
+					reassign:
+						*v = (Is_Only_Int ? cal.i : cal.d);
+					} else {
+						auto i = MessageBoxW(nullptr, (var_name + L"は存在しない変数なので加算結果を代入できません。\n新しくこの変数を作成しますか?").c_str(), L"加算エラー", MB_YESNO | MB_ICONERROR);
+						if (i == IDYES) {
+							v = &Program::Instance().var_manager.MakeNew(var_name);
+							goto reassign;
+						}
 					}
 					StandardCommand::Execute();
 				}
@@ -828,9 +842,16 @@ namespace karapo::event {
 						}
 					}
 
-					auto& v = Program::Instance().var_manager.Get<false>(var_name);
-					if (v.type() != typeid(std::nullptr_t)) {
-						v = (Is_Only_Int ? cal.i : cal.d);
+					auto* v = &Program::Instance().var_manager.Get<false>(var_name);
+					if (v->type() != typeid(std::nullptr_t)) {
+					reassign:
+						*v = (Is_Only_Int ? cal.i : cal.d);
+					} else {
+						auto i = MessageBoxW(nullptr, (var_name + L"は存在しない変数なので減算結果を代入できません。\n新しくこの変数を作成しますか?").c_str(), L"減算エラー", MB_YESNO | MB_ICONERROR);
+						if (i == IDYES) {
+							v = &Program::Instance().var_manager.MakeNew(var_name);
+							goto reassign;
+						}
 					}
 					StandardCommand::Execute();
 				}
@@ -867,9 +888,16 @@ namespace karapo::event {
 						}
 					}
 
-					auto& v = Program::Instance().var_manager.Get<false>(var_name);
-					if (v.type() != typeid(std::nullptr_t)) {
-						v = (Is_Only_Int ? cal.i : cal.d);
+					auto *v = &Program::Instance().var_manager.Get<false>(var_name);
+					if (v->type() != typeid(std::nullptr_t)) {
+					reassign:
+						*v = (Is_Only_Int ? cal.i : cal.d);
+					} else {
+						auto i = MessageBoxW(nullptr, (var_name + L"は存在しない変数なので乗算結果を代入できません。\n新しくこの変数を作成しますか?").c_str(), L"乗算エラー", MB_YESNO | MB_ICONERROR);
+						if (i == IDYES) {
+							v = &Program::Instance().var_manager.MakeNew(var_name);
+							goto reassign;
+						}
 					}
 					StandardCommand::Execute();
 				}
@@ -906,9 +934,16 @@ namespace karapo::event {
 						}
 					}
 
-					auto& v = Program::Instance().var_manager.Get<false>(var_name);
-					if (v.type() != typeid(std::nullptr_t)) {
-						v = (Is_Only_Int ? cal.i : cal.d);
+					auto* v = &Program::Instance().var_manager.Get<false>(var_name);
+					if (v->type() != typeid(std::nullptr_t)) {
+					reassign:
+						*v = (Is_Only_Int ? cal.i : cal.d);
+					} else {
+						auto i = MessageBoxW(nullptr, (var_name + L"は存在しない変数なので徐算結果を代入できません。\n新しくこの変数を作成しますか?").c_str(), L"徐算エラー", MB_YESNO | MB_ICONERROR);
+						if (i == IDYES) {
+							v = &Program::Instance().var_manager.MakeNew(var_name);
+							goto reassign;
+						}
 					}
 					StandardCommand::Execute();
 				}
