@@ -747,12 +747,16 @@ namespace karapo::event {
 					auto value = GetParam<std::wstring, true>(1);
 					auto [iv, ip] = ToInt(value.c_str());
 					auto [fv, fp] = ToDec<Dec>(value.c_str());
-					if (wcslen(ip) <= 0)
-						Program::Instance().var_manager.Get<false>(var_name) = iv;
-					else if (wcslen(fp) <= 0)
-						Program::Instance().var_manager.Get<false>(var_name) = fv;
-					else
-						Program::Instance().var_manager.Get<false>(var_name) = ip;
+
+					auto& v = Program::Instance().var_manager.Get<false>(var_name);
+					if (v.type() != typeid(std::nullptr_t)) {
+						if (wcslen(ip) <= 0)
+							v = iv;
+						else if (wcslen(fp) <= 0)
+							v = fv;
+						else
+							v = std::wstring(ip);
+					}
 					StandardCommand::Execute();
 				}
 			};
@@ -784,7 +788,11 @@ namespace karapo::event {
 							}
 						}
 					}
-					Program::Instance().var_manager.Get<false>(var_name) = (Is_Only_Int ? cal.i : cal.d);
+
+					auto& v = Program::Instance().var_manager.Get<false>(var_name);
+					if (v.type() != typeid(std::nullptr_t)) {
+						v = (Is_Only_Int ? cal.i : cal.d);
+					}
 					StandardCommand::Execute();
 				}
 			};
@@ -819,7 +827,11 @@ namespace karapo::event {
 							cal.d -= std::any_cast<Dec>(value[1]);
 						}
 					}
-					Program::Instance().var_manager.Get<false>(var_name) = (Is_Only_Int ? cal.i : cal.d);
+
+					auto& v = Program::Instance().var_manager.Get<false>(var_name);
+					if (v.type() != typeid(std::nullptr_t)) {
+						v = (Is_Only_Int ? cal.i : cal.d);
+					}
 					StandardCommand::Execute();
 				}
 			};
@@ -854,7 +866,11 @@ namespace karapo::event {
 							cal.d *= std::any_cast<Dec>(value[1]);
 						}
 					}
-					Program::Instance().var_manager.Get<false>(var_name) = (Is_Only_Int ? cal.i : cal.d);
+
+					auto& v = Program::Instance().var_manager.Get<false>(var_name);
+					if (v.type() != typeid(std::nullptr_t)) {
+						v = (Is_Only_Int ? cal.i : cal.d);
+					}
 					StandardCommand::Execute();
 				}
 			};
@@ -889,7 +905,11 @@ namespace karapo::event {
 							cal.d /= std::any_cast<Dec>(value[1]);
 						}
 					}
-					Program::Instance().var_manager.Get<false>(var_name) = (Is_Only_Int ? cal.i : cal.d);
+
+					auto& v = Program::Instance().var_manager.Get<false>(var_name);
+					if (v.type() != typeid(std::nullptr_t)) {
+						v = (Is_Only_Int ? cal.i : cal.d);
+					}
 					StandardCommand::Execute();
 				}
 			};
