@@ -243,7 +243,7 @@ namespace karapo::event {
 
 			void Execute() override {
 				if (MustSearch()) {
-					mode = GetParam<std::wstring>(0);
+					mode = GetParam<std::wstring, true>(0);
 					auto vname = GetParam<std::wstring, true>(1);
 					value = Program::Instance().var_manager.Get<false>(vname);
 					if (value.type() == typeid(std::nullptr_t)) {
@@ -2375,17 +2375,46 @@ namespace karapo::event {
 						words[L"•ªŠò"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
 						return {
 							.Result = [&]() -> CommandPtr {
-								const auto [Var, Type] = Default_ProgramInterface.GetParamInfo(params[0]);
-								if (!Default_ProgramInterface.IsNoType(Type))
-									return std::make_unique<command::Of>(Var);
-								else
-									return std::make_unique<command::Of>(params);
+								if (params.size() == 1) {
+									const auto [Var, Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+									if (Default_ProgramInterface.IsNumberType(Type)) {
+										auto [iv, ip] = ToInt(Var.c_str());
+										auto [fv, fp] = ToDec<Dec>(Var.c_str());
+
+										if (wcslen(ip) <= 0)
+											return std::make_unique<command::Of>(L"==", iv);
+										else
+											return std::make_unique<command::Of>(L"==", fv);
+									} else if (Default_ProgramInterface.IsStringType(Type)) {
+										return std::make_unique<command::Of>(L"==", Var);
+									} else {
+										return std::make_unique<command::Of>(std::vector<std::wstring>{ L"==", params[0] });
+									}
+								} else {
+									const auto [Mode, Mode_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+									const auto [Var, Type] = Default_ProgramInterface.GetParamInfo(params[1]);
+									if (Default_ProgramInterface.IsNumberType(Type)) {
+										auto [iv, ip] = ToInt(Var.c_str());
+										auto [fv, fp] = ToDec<Dec>(Var.c_str());
+
+										if (wcslen(ip) <= 0)
+											return std::make_unique<command::Of>(Mode, iv);
+										else
+											return std::make_unique<command::Of>(Mode, fv);
+									} else if (Default_ProgramInterface.IsStringType(Type)) {
+										return std::make_unique<command::Of>(Mode, Var);
+									} else {
+										return std::make_unique<command::Of>(params);
+									}
+								}
 							},
 							.checkParamState  = [params]() -> KeywordInfo::ParamResult { 
 								switch (params.size()) {
 									case 0:
 										return KeywordInfo::ParamResult::Lack;
 									case 1:
+										return KeywordInfo::ParamResult::Medium;
+									case 2:
 										return KeywordInfo::ParamResult::Maximum;
 									default:
 										return KeywordInfo::ParamResult::Excess;
