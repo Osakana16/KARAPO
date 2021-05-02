@@ -12,6 +12,12 @@
 #define DYNAMIC_COMMAND_CONSTRUCTOR(NAME) NAME(const std::vector<std::wstring>& Param) : DynamicCommand(Param)
 
 namespace karapo::event {
+	namespace {
+		constexpr uint32_t Variable_Available = 1 << 0;
+		constexpr uint32_t Event_Available = 1 << 1;
+		constexpr uint32_t Entity_Available = 1 << 2;
+	}
+
 	using Context = std::queue<std::wstring, std::list<std::wstring>>;
 
 	namespace command {
@@ -163,6 +169,44 @@ namespace karapo::event {
 			}
 		};
 		
+		// 変数/関数/Entityの存在確認
+		DYNAMIC_COMMAND(Exist final) {
+		public:
+			DYNAMIC_COMMAND_CONSTRUCTOR(Exist) {}
+
+			~Exist() noexcept final {}
+
+			void Execute() final {
+				std::wstring name[2]{ {}, {} };
+				for (int i = 0; i < 2; i++)
+					name[i] = GetParam<std::wstring, true>(i);
+
+				uint32_t result = 0;
+				if (Program::Instance().var_manager.Get<false>(name[0]).type() != typeid(std::nullptr_t)) {
+					result |= Variable_Available;
+				}
+				if (Program::Instance().event_manager.GetEvent(name[0]) != nullptr) {
+					result |= Event_Available;
+				}
+				if (Program::Instance().entity_manager.GetEntity(name[0]) != nullptr) {
+					result |= Entity_Available;
+				}
+
+				auto *v = &Program::Instance().var_manager.Get<false>(name[1]);
+				if (v->type() != typeid(std::nullptr_t)) {
+				reassign:
+					*v = static_cast<int>(result);
+				} else {
+					auto i = MessageBoxW(nullptr, (name[1] + L"は存在しない変数なので確認結果を代入できません。\n新しくこの変数を作成しますか?").c_str(), L"存在確認エラー", MB_YESNO | MB_ICONERROR);
+					if (i == IDYES) {
+						v = &Program::Instance().var_manager.MakeNew(name[1]);
+						goto reassign;
+					}
+				}
+				StandardCommand::Execute();
+			}
+		};
+
 		// 条件対象設定
 		DYNAMIC_COMMAND(Case final) {
 			std::any value;
@@ -2094,6 +2138,28 @@ namespace karapo::event {
 							},
 							.is_static = true,
 							.is_dynamic = false
+						};
+					};
+
+					words[L"exist"] = 
+						words[L"存在確認"] = [](const std::vector<std::wstring>& params)->KeywordInfo {
+						return {
+							.Result = [&]() -> CommandPtr {
+								return std::make_unique<command::Exist>(params);
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+									case 1:
+										return KeywordInfo::ParamResult::Lack;
+									case 2:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
 						};
 					};
 
