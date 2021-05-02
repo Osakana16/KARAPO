@@ -17,11 +17,19 @@ namespace karapo {
 				if constexpr (throw_except) {
 					return vars.at(Var_Name);
 				} else {
-					try {
-						return vars.at(Var_Name);
-					} catch (std::out_of_range&) {
-						return vars.at(L"null");
+					auto var = vars.find(Var_Name);
+					if (var == vars.end()) {
+						auto it = Var_Name.find(L'.');
+						if (it != Var_Name.npos) {
+							auto alternative = Var_Name.substr(it + 1);
+							var = vars.find(alternative);
+							if (var == vars.end())
+								var = vars.find(L"null");
+						} else {
+							var = vars.find(L"null");
+						}
 					}
+					return var->second;
 				}
 			}
 
