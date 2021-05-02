@@ -12,12 +12,6 @@
 #define DYNAMIC_COMMAND_CONSTRUCTOR(NAME) NAME(const std::vector<std::wstring>& Param) : DynamicCommand(Param)
 
 namespace karapo::event {
-	namespace {
-		constexpr uint32_t Variable_Available = 1 << 0;
-		constexpr uint32_t Event_Available = 1 << 1;
-		constexpr uint32_t Entity_Available = 1 << 2;
-	}
-
 	using Context = std::queue<std::wstring, std::list<std::wstring>>;
 
 	namespace command {
@@ -183,13 +177,13 @@ namespace karapo::event {
 
 				uint32_t result = 0;
 				if (Program::Instance().var_manager.Get<false>(name[0]).type() != typeid(std::nullptr_t)) {
-					result |= Variable_Available;
+					result |= std::any_cast<int>(Program::Instance().var_manager.Get<false>(L"__変数存在"));
 				}
 				if (Program::Instance().event_manager.GetEvent(name[0]) != nullptr) {
-					result |= Event_Available;
+					result |= std::any_cast<int>(Program::Instance().var_manager.Get<false>(L"__イベント存在"));
 				}
 				if (Program::Instance().entity_manager.GetEntity(name[0]) != nullptr) {
-					result |= Entity_Available;
+					result |= std::any_cast<int>(Program::Instance().var_manager.Get<false>(L"__キャラ存在"));
 				}
 
 				auto *v = &Program::Instance().var_manager.Get<false>(name[1]);
