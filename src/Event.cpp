@@ -229,10 +229,12 @@ namespace karapo::event {
 
 		// èåèéÆ
 		DYNAMIC_COMMAND(Of final) {
-			std::wstring condition_sentence;
+			std::wstring mode;
+			std::any value;
 		public:
-			Of(const std::wstring& Condition_Sentence) noexcept {
-				condition_sentence = Condition_Sentence;
+			Of(const std::wstring& Condition_Sentence, const std::any& V) noexcept {
+				mode = Condition_Sentence;
+				value = V;
 			}
 
 			DYNAMIC_COMMAND_CONSTRUCTOR(Of) {}
@@ -241,9 +243,21 @@ namespace karapo::event {
 
 			void Execute() override {
 				if (MustSearch()) {
-					condition_sentence = GetParam<std::wstring>(0);
+					mode = GetParam<std::wstring>(0);
+					auto vname = GetParam<std::wstring, true>(1);
+					value = Program::Instance().var_manager.Get<false>(vname);
+					if (value.type() == typeid(std::nullptr_t)) {
+						auto [iv, ip] = ToInt(vname.c_str());
+						auto [fv, fp] = ToDec<Dec>(vname.c_str());
+						if (wcslen(ip) <= 0)
+							value = iv;
+						else if (wcslen(fp) <= 0)
+							value = fv;
+						else
+							value = vname;
+					}
 				}
-				Program::Instance().event_manager.Evalute(condition_sentence);
+				Program::Instance().event_manager.Evalute(mode, value);
 				StandardCommand::Execute();
 			}
 		};
@@ -2787,15 +2801,52 @@ namespace karapo::event {
 	}
 
 	// èåèéÆÇï]âøÇ∑ÇÈ
-	void Manager::ConditionManager::Evalute(const std::wstring& Sentence) noexcept {
+	void Manager::ConditionManager::Evalute(const std::wstring& Mode, const std::any& Right_Value) noexcept {
 		can_execute = true;
-		auto& type = target_value.type();
-		if (type == typeid(int)) {
-			can_execute = std::any_cast<int>(target_value) == ToInt(Sentence.c_str(), nullptr);
-		} else if (type == typeid(Dec)) {
-			can_execute = std::any_cast<Dec>(target_value) == ToDec<Dec>(Sentence.c_str(), nullptr);
-		} else {
-			can_execute = std::any_cast<std::wstring>(target_value) == Sentence;
+		auto& target_type = target_value.type();
+		// ìØÇ∂å^ÇÃÇ›Çî‰ärÇ∑ÇÈÅB
+		if (target_type == Right_Value.type()) {
+			if (Mode == L"==") {
+				if (target_type == typeid(int)) {
+					can_execute = (std::any_cast<int>(target_value) == std::any_cast<int>(Right_Value));
+				} else if (target_type == typeid(Dec)) {
+					can_execute = (std::any_cast<Dec>(target_value) == std::any_cast<Dec>(Right_Value));
+				} else if (target_type == typeid(std::wstring)) {
+					can_execute = (std::any_cast<std::wstring>(target_value) == std::any_cast<std::wstring>(Right_Value));
+				}
+			} else if (Mode == L"!") {
+				if (target_type == typeid(int)) {
+					can_execute = (std::any_cast<int>(target_value) != std::any_cast<int>(Right_Value));
+				} else if (target_type == typeid(Dec)) {
+					can_execute = (std::any_cast<Dec>(target_value) != std::any_cast<Dec>(Right_Value));
+				} else if (target_type == typeid(std::wstring)) {
+					can_execute = (std::any_cast<std::wstring>(target_value) != std::any_cast<std::wstring>(Right_Value));
+				}
+			} else if (Mode == L"<=") {
+				if (target_type == typeid(int)) {
+					can_execute = (std::any_cast<int>(target_value) <= std::any_cast<int>(Right_Value));
+				} else if (target_type == typeid(Dec)) {
+					can_execute = (std::any_cast<Dec>(target_value) <= std::any_cast<Dec>(Right_Value));
+				}
+			} else if (Mode == L">=") {
+				if (target_type == typeid(int)) {
+					can_execute = (std::any_cast<int>(target_value) >= std::any_cast<int>(Right_Value));
+				} else if (target_type == typeid(Dec)) {
+					can_execute = (std::any_cast<Dec>(target_value) >= std::any_cast<Dec>(Right_Value));
+				}
+			} else if (Mode == L"<") {
+				if (target_type == typeid(int)) {
+					can_execute = (std::any_cast<int>(target_value) < std::any_cast<int>(Right_Value));
+				} else if (target_type == typeid(Dec)) {
+					can_execute = (std::any_cast<Dec>(target_value) < std::any_cast<Dec>(Right_Value));
+				}
+			} else if (Mode == L">") {
+				if (target_type == typeid(int)) {
+					can_execute = (std::any_cast<int>(target_value) > std::any_cast<int>(Right_Value));
+				} else if (target_type == typeid(Dec)) {
+					can_execute = (std::any_cast<Dec>(target_value) > std::any_cast<Dec>(Right_Value));
+				}
+			}
 		}
 	}
 
@@ -2868,8 +2919,8 @@ namespace karapo::event {
 		condition_current = condition_manager.end() - 1;
 	}
 
-	void Manager::Evalute(const std::wstring& Sentence) {
-		condition_current->Evalute(Sentence);
+	void Manager::Evalute(const std::wstring& Mode, const std::any& Right_Value) {
+		condition_current->Evalute(Mode, Right_Value);
 	}
 
 	void Manager::FreeCase() {
