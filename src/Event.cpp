@@ -992,6 +992,147 @@ namespace karapo::event {
 					StandardCommand::Execute();
 				}
 			};
+
+			// ビット論理和
+			class Or final : public MathCommand {
+			public:
+				using MathCommand::MathCommand;
+				~Or() final {}
+
+				void Execute() final {
+					Extract();
+					const bool Is_First_Int = (value[0].type() == typeid(int));
+					const bool Is_Second_Int = (value[1].type() == typeid(int));
+
+					if (Is_First_Int && Is_Second_Int) {
+						int result = std::any_cast<int>(value[0]) | std::any_cast<int>(value[1]);
+						auto* v = &Program::Instance().var_manager.Get<false>(var_name);
+						if (v->type() != typeid(std::nullptr_t)) {
+						reassign:
+							*v = result;
+						} else {
+							auto i = MessageBoxW(nullptr, (var_name + L"は存在しない変数なのでビット論理和を代入できません。\n新しくこの変数を作成しますか?").c_str(), L"ビット論理和エラー", MB_YESNO | MB_ICONERROR);
+							if (i == IDYES) {
+								v = &Program::Instance().var_manager.MakeNew(var_name);
+								goto reassign;
+							}
+						}
+					} else {
+						if (!Is_First_Int && !Is_Second_Int) {
+							MessageBoxW(nullptr, L"ビット論理和に用いる両方の変数の値が整数値ではありません。", L"ビット論理和エラー", MB_OK | MB_ICONERROR);
+						} else if (!Is_First_Int) {
+							MessageBoxW(nullptr, L"ビット論理和に用いる一つ目の変数の値が整数値ではありません。", L"ビット論理和エラー", MB_OK | MB_ICONERROR);
+						} else if (!Is_Second_Int) {
+							MessageBoxW(nullptr, L"ビット論理和に用いる二つ目の変数の値が整数値ではありません。", L"ビット論理和エラー", MB_OK | MB_ICONERROR);
+						}
+					}
+					StandardCommand::Execute();
+				}
+			};
+
+			// ビット論理積
+			class And final : public MathCommand {
+			public:
+				using MathCommand::MathCommand;
+				~And() final {}
+
+				void Execute() final {
+					Extract();
+					const bool Is_First_Int = (value[0].type() == typeid(int));
+					const bool Is_Second_Int = (value[1].type() == typeid(int));
+
+					if (Is_First_Int && Is_Second_Int) {
+						int result = std::any_cast<int>(value[0]) & std::any_cast<int>(value[1]);
+						auto* v = &Program::Instance().var_manager.Get<false>(var_name);
+						if (v->type() != typeid(std::nullptr_t)) {
+						reassign:
+							*v = result;
+						} else {
+							auto i = MessageBoxW(nullptr, (var_name + L"は存在しない変数なので徐算結果を代入できません。\n新しくこの変数を作成しますか?").c_str(), L"徐算エラー", MB_YESNO | MB_ICONERROR);
+							if (i == IDYES) {
+								v = &Program::Instance().var_manager.MakeNew(var_name);
+								goto reassign;
+							}
+						}
+					} else {
+						if (!Is_First_Int && !Is_Second_Int) {
+							MessageBoxW(nullptr, L"ビット論理積に用いる両方の変数の値が整数値ではありません。", L"ビット論理積エラー", MB_OK | MB_ICONERROR);
+						} else if (!Is_First_Int) {
+							MessageBoxW(nullptr, L"ビット論理積に用いる一つ目の変数の値が整数値ではありません。", L"ビット論理積エラー", MB_OK | MB_ICONERROR);
+						} else if (!Is_Second_Int) {
+							MessageBoxW(nullptr, L"ビット論理積に用いる二つ目の変数の値が整数値ではありません。", L"ビット論理積エラー", MB_OK | MB_ICONERROR);
+						}
+					}
+					StandardCommand::Execute();
+				}
+			};
+
+			// ビット排他的論理和
+			class Xor final : public MathCommand {
+			public:
+				using MathCommand::MathCommand;
+				~Xor() final {}
+
+				void Execute() final {
+					Extract();
+					const bool Is_First_Int = (value[0].type() == typeid(int));
+					const bool Is_Second_Int = (value[1].type() == typeid(int));
+
+					if (Is_First_Int && Is_Second_Int) {
+						int result = std::any_cast<int>(value[0]) ^ std::any_cast<int>(value[1]);
+						auto* v = &Program::Instance().var_manager.Get<false>(var_name);
+						if (v->type() != typeid(std::nullptr_t)) {
+						reassign:
+							*v = result;
+						} else {
+							auto i = MessageBoxW(nullptr, (var_name + L"は存在しない変数なので徐算結果を代入できません。\n新しくこの変数を作成しますか?").c_str(), L"徐算エラー", MB_YESNO | MB_ICONERROR);
+							if (i == IDYES) {
+								v = &Program::Instance().var_manager.MakeNew(var_name);
+								goto reassign;
+							}
+						}
+					} else {
+						if (!Is_First_Int && !Is_Second_Int) {
+							MessageBoxW(nullptr, L"ビット排他的論理和に用いる両方の変数の値が整数値ではありません。", L"ビット排他的論理和エラー", MB_OK | MB_ICONERROR);
+						} else if (!Is_First_Int) {
+							MessageBoxW(nullptr, L"ビット排他的論理和に用いる一つ目の変数の値が整数値ではありません。", L"ビット排他的論理和エラー", MB_OK | MB_ICONERROR);
+						} else if (!Is_Second_Int) {
+							MessageBoxW(nullptr, L"ビット排他的論理和に用いる二つ目の変数の値が整数値ではありません。", L"ビット排他的論理和エラー", MB_OK | MB_ICONERROR);
+						}
+					}
+					StandardCommand::Execute();
+				}
+			};
+
+			// ビット論理否定
+			DYNAMIC_COMMAND(Not) {
+			public:
+				DYNAMIC_COMMAND_CONSTRUCTOR(Not){}
+				~Not() final {}
+
+				void Execute() final {
+					std::wstring var_name{};
+					var_name = GetParam<std::wstring, true>(0);
+				
+					auto* v = &Program::Instance().var_manager.Get<false>(var_name);
+					if (v->type() != typeid(std::nullptr_t)) {
+					reassign:
+						auto value_name = GetParam<std::wstring, true>(1);
+						auto [iv, ip] = ToInt(value_name.c_str());
+						if (wcslen(ip) <= 0)
+							*v = ~iv;
+						else
+							MessageBoxW(nullptr, L"ビット論理否定に用いる一つ目の変数の値が整数値ではありません。", L"ビット論理否定エラー", MB_OK | MB_ICONERROR);
+					} else {
+						auto i = MessageBoxW(nullptr, (var_name + L"は存在しない変数なので徐算結果を代入できません。\n新しくこの変数を作成しますか?").c_str(), L"徐算エラー", MB_YESNO | MB_ICONERROR);
+						if (i == IDYES) {
+							v = &Program::Instance().var_manager.MakeNew(var_name);
+							goto reassign;
+						}
+					}
+					StandardCommand::Execute();
+				}
+			};
 		}
 
 		namespace hidden {
@@ -2399,6 +2540,97 @@ namespace karapo::event {
 									case 2:
 										return KeywordInfo::ParamResult::Lack;
 									case 3:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"or"] =
+						words[L"論理和"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() -> CommandPtr {
+								return std::make_unique<command::math::Or>(params);
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+									case 1:
+									case 2:
+										return KeywordInfo::ParamResult::Lack;
+									case 3:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"and"] =
+						words[L"論理積"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() -> CommandPtr {
+								return std::make_unique<command::math::And>(params);
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+									case 1:
+									case 2:
+										return KeywordInfo::ParamResult::Lack;
+									case 3:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"xor"] =
+						words[L"排他的論理和"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() -> CommandPtr {
+								return std::make_unique<command::math::Xor>(params);
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+									case 1:
+									case 2:
+										return KeywordInfo::ParamResult::Lack;
+									case 3:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"not"] =
+						words[L"論理否定"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() -> CommandPtr {
+								return std::make_unique<command::math::Not>(params);
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+									case 1:
+										return KeywordInfo::ParamResult::Lack;
+									case 2:
 										return KeywordInfo::ParamResult::Maximum;
 									default:
 										return KeywordInfo::ParamResult::Excess;
