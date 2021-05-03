@@ -1242,69 +1242,100 @@ namespace karapo::event {
 						text->clear();
 					};
 
-					// 読み込もうとした単語が、文字列として書かれているかを判定する為の変数
-					// 値がtrueの間、解析器はスペースを区切り文字として認識しなくなる。
-					bool is_string = false;
-					auto text = std::wstring(L"");
+					{
+						// 読み込もうとした単語が、文字列として書かれているかを判定する為の変数
+						// 値がtrueの間、解析器はスペースを区切り文字として認識しなくなる。
+						bool is_string = false;
+						auto text = std::wstring(L"");
 
-					for (auto c : Sentence) {
-						if (!is_string) {
-							// スペース判定
-							if (IsSpace(c) || c == L'\0' || c == L'\n') {
-								// 貯めこんだ文字を単語として格納
-								if (!text.empty()) {
-									PushWord(&context, &text);
-								}
-
-								if (c == L'\n') {
-									text = L'\n';
-									PushWord(&context, &text);
-								}
-								continue;
-							} else if (c == L'\r') {
-								// 復帰コードは無視。
-								continue;
-							}
-
-							// 演算子判定
-							switch (c) {
-								case L'\'':
-									is_string = true;
-									break;
-								case L'~':
-								case L']':
-								case L'[':
-								case L'>':
-								case L'<':
-								case L'(':
-								case L')':
-								case L',':
-								case L'{':
-								case L'}':
-								{
+						for (auto c : Sentence) {
+							if (!is_string) {
+								// スペース判定
+								if (IsSpace(c) || c == L'\0' || c == L'\n') {
 									// 貯めこんだ文字を単語として格納
 									if (!text.empty()) {
 										PushWord(&context, &text);
 									}
-									// 記号を代入
-									text = c;
-									PushWord(&context, &text);
+
+									if (c == L'\n') {
+										text = L'\n';
+										PushWord(&context, &text);
+									}
+									continue;
+								} else if (c == L'\r') {
+									// 復帰コードは無視。
 									continue;
 								}
-								break;
+
+								// 演算子判定
+								switch (c) {
+									case L'\'':
+										is_string = true;
+										break;
+									case L'~':
+									case L']':
+									case L'[':
+									case L'>':
+									case L'<':
+									case L'(':
+									case L')':
+									case L',':
+									case L'{':
+									case L'}':
+									{
+										// 貯めこんだ文字を単語として格納
+										if (!text.empty()) {
+											PushWord(&context, &text);
+										}
+										// 記号を代入
+										text = c;
+										PushWord(&context, &text);
+										continue;
+									}
+									break;
+								}
+							} else {
+								// 演算子判定
+								switch (c) {
+									case L'\'':
+										is_string = false;
+										text += c;
+										PushWord(&context, &text);
+										continue;
+								}
 							}
-						} else {
-							// 演算子判定
-							switch (c) {
-								case L'\'':
-									is_string = false;
-									text += c;
-									PushWord(&context, &text);
-									continue;
+							// 読み込んだ文字を付け加える
+							text += c;
+						}
+					}
+
+					{
+						// 文字の結合部
+						// >、=、<をそれぞれ結合する。
+
+						std::wstring tmp{};
+						Context::iterator it = context.begin();
+						while (it != context.end()) {
+							it = std::find_if(it, context.end(), [](std::wstring text) {
+								return text == L"<" || text == L"=" || text == L">";
+							});
+
+							if (it != context.end()) {
+								tmp += *it;
+								if (tmp.size() == 2) {
+									if (tmp == L"<=" || tmp == L"==" || tmp == L">=") {
+										// 結合
+										context.erase(it--);
+										context.insert(it, tmp);
+										context.erase(it++);
+									} else if (tmp == L"<>" || tmp == L"=>" || tmp == L"=<") {
+										// 扱う演算子ではないので一時保存用を末梢。
+										tmp.clear();
+									}
+								}
+								it++;
 							}
 						}
-						// 読み込んだ文字を付け加える
-						text += c;
 					}
 				}
 				auto Result() const noexcept {
