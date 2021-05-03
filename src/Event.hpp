@@ -54,12 +54,16 @@ namespace karapo::event {
 		decltype(condition_manager)::iterator condition_current;
 
 		std::unordered_map<std::wstring, Event> events;
+		// イベントを生成する。
+		std::unordered_map<std::wstring, Event> GenerateEvent(const std::wstring&) noexcept;
 
 		Manager() = default;
 		~Manager() = default;
 	public:
-		// イベントを読み込み、生成する。
+		// イベントを読み込み、新しく設定し直す。
 		void LoadEvent(const std::wstring Path) noexcept;
+		// イベントを読み込み、追加で設定する。
+		void ImportEvent(const std::wstring&) noexcept;
 		// 座標からイベントを実行する。
 		void ExecuteEvent(const WorldVector) noexcept;
 		// イベント名からイベントを実行する。

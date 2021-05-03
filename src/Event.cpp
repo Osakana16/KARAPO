@@ -610,6 +610,27 @@ namespace karapo::event {
 			}
 		};
 
+		// イベント追加読込
+		DYNAMIC_COMMAND(Import final) {
+			std::wstring file_name;
+		public:
+			Import(const std::wstring& File_Name) noexcept {
+				file_name = File_Name;
+			}
+
+			DYNAMIC_COMMAND_CONSTRUCTOR(Import) {}
+
+			~Import() noexcept final {}
+
+			void Execute() override {
+				if (MustSearch()) {
+					file_name = GetParam<std::wstring>(0);
+				}
+				Program::Instance().event_manager.ImportEvent(file_name);
+				StandardCommand::Execute();
+			}
+		};
+
 		namespace layer {
 			// レイヤー生成(指定位置)
 			DYNAMIC_COMMAND(Make final) {
@@ -2273,6 +2294,30 @@ namespace karapo::event {
 						};
 					};
 
+					// 外部イベントファイル読み込み
+					words[L"import"] =
+						words[L"取込"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() -> CommandPtr {
+								const auto [Path, Path_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								return (Default_ProgramInterface.IsStringType(Path_Type) ? 
+									std::make_unique<command::Import>(Path) : std::make_unique<command::Import>(params));
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+										return KeywordInfo::ParamResult::Lack;
+									case 1:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
 					words[L"call"] =
 						words[L"呼出"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
 						return {
@@ -2919,9 +2964,21 @@ namespace karapo::event {
 		can_execute = true;
 	}
 
+
+	std::unordered_map<std::wstring, Event> Manager::GenerateEvent(const std::wstring& Path) noexcept {
+		EventGenerator::Instance().Generate(Path);
+		return EventGenerator::Instance().Result();
+	}
+
 	void Manager::LoadEvent(const std::wstring path) noexcept {
-		EventGenerator::Instance().Generate(path);
-		events = std::move(EventGenerator::Instance().Result());
+		events = std::move(GenerateEvent(path));
+	}
+
+	void Manager::ImportEvent(const std::wstring& Path) noexcept {
+		auto additional = std::move(GenerateEvent(Path));
+		for (auto& e : additional) {
+			events[e.first] = std::move(e.second);
+		}
 	}
 
 	void Manager::Update() noexcept {
