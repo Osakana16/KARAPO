@@ -12,7 +12,7 @@
 #define DYNAMIC_COMMAND_CONSTRUCTOR(NAME) NAME(const std::vector<std::wstring>& Param) : DynamicCommand(Param)
 
 namespace karapo::event {
-	using Context = std::queue<std::wstring, std::list<std::wstring>>;
+	using Context = std::list<std::wstring>;
 
 	namespace command {
 		// Entity操作系コマンド
@@ -1238,7 +1238,7 @@ namespace karapo::event {
 				LexicalParser(const std::wstring Sentence) noexcept {
 					auto PushWord = [](Context  *const context, std::wstring *const text) noexcept {
 						wprintf_s(L"Pushed:%s\n", text->c_str());
-						context->push(*text);
+						context->push_back(*text);
 						text->clear();
 					};
 
@@ -1326,8 +1326,8 @@ namespace karapo::event {
 								word.erase(pos, 1);
 							}
 						}
-						compiled.push(std::move(word));
-						context.pop();
+						compiled.push_back(std::move(word));
+						context.pop_front();
 					}
 				}
 
@@ -1489,7 +1489,7 @@ namespace karapo::event {
 
 					enough_result |= result;
 
-					context->pop();
+					context->pop_front();
 					Interpret(context);
 				}
 			public:
@@ -1528,7 +1528,7 @@ namespace karapo::event {
 							param_names.push_back({});
 						}
 					}
-					context->pop();
+					context->pop_front();
 					Interpret(context);
 				}
 
@@ -1700,14 +1700,14 @@ namespace karapo::event {
 							assert(IsParsing());
 							EndParsing();
 							// '}' を削除。
-							context->pop();
+							context->pop_front();
 							return;
 						} else if (finish_sentence) {
 							liketoRun = nullptr;
 							parameters.clear();
 						}
 					}
-					context->pop();
+					context->pop_front();
 					Interpret(context);
 				}
 			public:
