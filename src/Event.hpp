@@ -36,6 +36,9 @@ namespace karapo::event {
 	// ワールド毎のイベント内容管理、文章解析、コマンド実行等を行う。
 	class Manager final : private Singleton {
 		class CommandExecuter;
+
+		// イベントを読み込む必要があるか否か。
+		std::wstring requesting_path{};
 	
 		class ConditionManager final {
 			std::any target_value;
@@ -62,6 +65,8 @@ namespace karapo::event {
 	public:
 		// イベントを読み込み、新しく設定し直す。
 		void LoadEvent(const std::wstring Path) noexcept;
+		// イベントの遅延読み込み。
+		void RequestEvent(const std::wstring&) noexcept;
 		// イベントを読み込み、追加で設定する。
 		void ImportEvent(const std::wstring&) noexcept;
 		// 座標からイベントを実行する。

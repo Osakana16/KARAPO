@@ -631,6 +631,27 @@ namespace karapo::event {
 			}
 		};
 
+		// イベント読込
+		DYNAMIC_COMMAND(Load final) {
+			std::wstring file_name;
+		public:
+			Load(const std::wstring & File_Name) noexcept {
+				file_name = File_Name;
+			}
+
+			DYNAMIC_COMMAND_CONSTRUCTOR(Load) {}
+
+			~Load() noexcept final {}
+
+			void Execute() override {
+				if (MustSearch()) {
+					file_name = GetParam<std::wstring>(0);
+				}
+				Program::Instance().event_manager.RequestEvent(file_name);
+				StandardCommand::Execute();
+			}
+		};
+
 		namespace layer {
 			// レイヤー生成(指定位置)
 			DYNAMIC_COMMAND(Make final) {
@@ -2295,6 +2316,30 @@ namespace karapo::event {
 					};
 
 					// 外部イベントファイル読み込み
+					words[L"load"] =
+						words[L"読込"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() -> CommandPtr {
+								const auto [Path, Path_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								return (Default_ProgramInterface.IsStringType(Path_Type) ?
+									std::make_unique<command::Load>(Path) : std::make_unique<command::Load>(params));
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+										return KeywordInfo::ParamResult::Lack;
+									case 1:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					// 外部イベントファイル読み込み
 					words[L"import"] =
 						words[L"取込"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
 						return {
@@ -2974,6 +3019,10 @@ namespace karapo::event {
 		events = std::move(GenerateEvent(path));
 	}
 
+	void Manager::RequestEvent(const std::wstring& Path) noexcept {
+		requesting_path = Path;
+	}
+
 	void Manager::ImportEvent(const std::wstring& Path) noexcept {
 		auto additional = std::move(GenerateEvent(Path));
 		for (auto& e : additional) {
@@ -2996,6 +3045,11 @@ namespace karapo::event {
 		while (!dead.empty()) {
 			events.erase(dead.front());
 			dead.pop();
+		}
+
+		if (!requesting_path.empty()) {
+			LoadEvent(requesting_path);
+			requesting_path.clear();
 		}
 	}
 
