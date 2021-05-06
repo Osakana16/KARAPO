@@ -92,6 +92,11 @@ namespace karapo {
 		filter = std::move(new_filter);
 	}
 
+	ImageLayer::ImageLayer(const std::wstring& lname) : Layer() { 
+		name = lname;
+		Program::Instance().var_manager.MakeNew(Name() + L".__ŠÇ—’†") = std::wstring(L"");
+	}
+
 	void ImageLayer::Execute() {
 		auto& p = Program::Instance();
 		{
@@ -104,6 +109,11 @@ namespace karapo {
 
 			for (auto ent : dels) {
 				drawing.erase(std::find(drawing.begin(), drawing.end(), ent));
+				auto& var = Program::Instance().var_manager.Get<false>(Name() + L".__ŠÇ—’†");
+				auto str = std::any_cast<std::wstring>(var);
+				auto it = str.find(ent->Name());
+				str.erase(it, it + wcslen(ent->Name()) + 1);
+				var = str;
 			}
 		}
 		Draw();
@@ -113,6 +123,10 @@ namespace karapo {
 		if (IsRegistered(d))
 			return;
 
+		auto& var = Program::Instance().var_manager.Get<false>(Name() + L".__ŠÇ—’†");
+		auto str = std::any_cast<std::wstring>(var);
+		str += std::wstring(d->Name()) + L'\n';
+		var = str;
 		drawing.push_back(d);
 	}
 
@@ -236,10 +250,13 @@ namespace karapo {
 	}
 
 	void Canvas::DeleteLayer(const std::wstring& Name) noexcept {
-		layers.erase(std::find_if(layers.begin(), layers.end(), [Name](std::unique_ptr<ImageLayer>& layer) { return layer->Name() == Name; }));
+		auto layer = std::find_if(layers.begin(), layers.end(), [Name](std::unique_ptr<ImageLayer>& layer) { return layer->Name() == Name; });
+		Program::Instance().var_manager.Delete((*layer)->Name() + L".__ŠÇ—’†");
+		layers.erase(layer);
 	}
 
 	void Canvas::DeleteLayer(const int Index) noexcept {
+		Program::Instance().var_manager.Delete(layers[Index]->Name() + L".__ŠÇ—’†");
 		layers.erase(layers.begin() + Index);
 	}
 

@@ -37,7 +37,7 @@ namespace karapo {
 	protected:
 		std::vector<std::shared_ptr<Entity>> drawing;
 	public:
-		ImageLayer(const std::wstring& lname) : Layer() { name = lname; }
+		ImageLayer(const std::wstring& lname);
 		virtual void Execute() override;
 		void Register(std::shared_ptr<Entity>);
 		bool IsRegistered(std::shared_ptr<Entity>) const noexcept;
@@ -81,6 +81,7 @@ namespace karapo {
 
 		void Show(const int) noexcept, Hide(const int) noexcept,
 			Show(const std::wstring&) noexcept, Hide(const std::wstring&) noexcept;
+
 
 		static Canvas& Instance() noexcept {
 			static Canvas canvas;
