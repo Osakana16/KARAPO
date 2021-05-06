@@ -47,6 +47,7 @@ namespace karapo {
 		bool IsShowing() const noexcept { return !hide; }
 
 		virtual void Draw() = 0;
+		virtual const wchar_t* KindName() const noexcept = 0;
 	};
 
 	// ƒLƒƒƒ“ƒoƒX

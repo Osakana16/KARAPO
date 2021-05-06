@@ -162,6 +162,10 @@ namespace karapo {
 			p.engine.ChangeTargetScreen(p.engine.GetBackScreen());
 			filter->Draw(Screen);
 		}
+
+		const wchar_t* KindName() const noexcept {
+			return L"ƒXƒNƒ[ƒ‹";
+		}
 	};
 
 	/**
@@ -183,6 +187,10 @@ namespace karapo {
 			}
 			p.engine.ChangeTargetScreen(p.engine.GetBackScreen());
 			filter->Draw(Screen);
+		}
+
+		const wchar_t* KindName() const noexcept {
+			return L"ŒÅ’è";
 		}
 	};
 }
