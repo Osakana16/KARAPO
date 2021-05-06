@@ -82,6 +82,7 @@ namespace karapo {
 		void Show(const int) noexcept, Hide(const int) noexcept,
 			Show(const std::wstring&) noexcept, Hide(const std::wstring&) noexcept;
 
+		std::wstring GetLayerInfo(const int);
 
 		static Canvas& Instance() noexcept {
 			static Canvas canvas;

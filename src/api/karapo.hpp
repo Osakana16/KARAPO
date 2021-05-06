@@ -205,7 +205,7 @@ namespace karapo {
 															InsertRelativeLayer;
 		std::function<void(const int)> DeleteLayerByIndex;
 		std::function<void(const std::wstring&)> DeleteLayerByName;
-
+		std::function<std::wstring(const int)> GetLayerInfo;
 
 		// - Entityån -
 

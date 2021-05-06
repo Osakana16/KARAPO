@@ -320,4 +320,16 @@ namespace karapo {
 	bool Canvas::CreateAbsoluteLayer(const std::wstring& Name, const int Index) {
 		return CreateLayer(std::make_unique<AbsoluteLayer>(Name), Index);
 	}
+
+	std::wstring Canvas::GetLayerInfo(const int Index) {
+		if (Index >= layers.size()) {
+			return L"";
+		}
+
+		std::wstring sen{};
+		sen += layers[Index]->Name() + L'=';						// –¼‘O
+		sen += std::wstring(layers[Index]->KindName()) + L':';		// Ží—Þ–¼
+		sen += std::to_wstring(Index);								// —v‘fˆÊ’u
+		return sen;
+	}
 }

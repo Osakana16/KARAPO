@@ -316,6 +316,7 @@ namespace karapo {
 		.InsertRelativeLayer = [](const std::wstring& Name, const int Index) { return Program::Instance().canvas.CreateRelativeLayer(Name, Index); },
 		.DeleteLayerByIndex = [](const int Index) { return Program::Instance().canvas.DeleteLayer(Index); },
 		.DeleteLayerByName = [](const std::wstring& Name) { return Program::Instance().canvas.DeleteLayer(Name); },
+		.GetLayerInfo = [](const int Index) { return Program::Instance().canvas.GetLayerInfo(Index); },
 		.RegisterEntity = [](std::shared_ptr<Entity> entity) { Program::Instance().entity_manager.Register(entity); },
 		.RegisterEntityByLayerName = [](std::shared_ptr<Entity> entity, const std::wstring& Layer_Name) { Program::Instance().entity_manager.Register(entity, Layer_Name); },
 		.KillEntity = [](const std::wstring& Name) { Program::Instance().entity_manager.Kill(Name); },
