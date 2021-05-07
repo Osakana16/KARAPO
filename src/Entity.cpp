@@ -80,8 +80,19 @@ namespace karapo::entity {
 				deadmen.push_back(&ent.first);
 		}
 
-		for (auto& dead : deadmen) {
-			entities.erase(entities.find(*dead));
+		if (!deadmen.empty()) {
+			auto& var = Program::Instance().var_manager.Get<false>(variable::Managing_Entity_Name);
+			auto str = std::any_cast<std::wstring>(var);
+			for (auto& dead : deadmen) {
+				auto pos = str.find(*dead);
+				if (pos != str.npos) {
+					auto name_begin = str.substr(0, pos - 1);
+					auto name_end = str.substr(pos + dead->size());
+					str = name_begin + name_end;
+				}
+				entities.erase(entities.find(*dead));
+			}
+			var = str;
 		}
 	}
 
