@@ -498,8 +498,6 @@ namespace karapo::event {
 		public:
 			Bind(const std::wstring& Key_Name, const std::wstring& Command_Sentence) noexcept {
 				key_name = Key_Name;
-				if (key_name[0] == L'+')
-					key_name.erase(key_name.begin());
 				command_sentence = Command_Sentence;
 			}
 
