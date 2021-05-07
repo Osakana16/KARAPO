@@ -146,7 +146,7 @@ namespace karapo {
 	}
 
 	bool Program::Engine::IsPressedKey(const value::Key Any_Key) const noexcept {
-		return (IsPressingKey(Any_Key) && keys_state[static_cast<int>(Any_Key)] <= 2);
+		return (IsPressingKey(Any_Key) && keys_state[static_cast<int>(Any_Key)] <= 1);
 	}
 
 	bool Program::Engine::IsPressingKey(const value::Key Any_Key) const noexcept {
@@ -154,7 +154,7 @@ namespace karapo {
 	}
 
 	bool Program::Engine::IsPressedMouse(const value::Key Any_Key) const noexcept {
-		return (IsPressingMouse(Any_Key) && mouse_state[static_cast<int>(Any_Key)] <= 2);
+		return (IsPressingMouse(Any_Key) && mouse_state[static_cast<int>(Any_Key)] <= 1);
 	}
 
 	bool Program::Engine::IsPressingMouse(const value::Key Any_Key) const noexcept {
