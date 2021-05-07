@@ -125,7 +125,7 @@ namespace karapo {
 
 		auto& var = Program::Instance().var_manager.Get<false>(Name() + L".__ŠÇ—’†");
 		auto str = std::any_cast<std::wstring>(var);
-		str += std::wstring(d->Name()) + L'\n';
+		str += std::wstring(d->Name()) + L'\\';
 		var = str;
 		drawing.push_back(d);
 	}
