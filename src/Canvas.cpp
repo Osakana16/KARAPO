@@ -136,23 +136,32 @@ namespace karapo {
 
 	/**
 	* 相対位置型レイヤー
-	* 座標base_originを中心とした相対位置による描写を行うレイヤー。
+	* baseを中心として周囲の描写を行うレイヤー。
 	*/
 	class RelativeLayer : public ImageLayer {
 		std::shared_ptr<Entity> base = nullptr;
 	public:
 		inline RelativeLayer(const std::wstring& lname) : ImageLayer(lname) {
 			SetFilter(std::make_unique<filter::None>());
+			Program::Instance().var_manager.MakeNew(lname + L".ベース") = std::wstring(L"");
+		}
+
+		~RelativeLayer() noexcept {
+			Program::Instance().var_manager.Delete(Name() + L".ベース");
 		}
 
 		void Execute() override {
 			ImageLayer::Execute();
-			if (base != nullptr && base->CanDelete())
+			if (base != nullptr && base->CanDelete()) {
+				Program::Instance().var_manager.Get<false>(Name() + L".ベース") = std::wstring(L"");
 				base = nullptr;
+			}
 		}
 
+		// 中心となるEntityを設定する。
 		void SetBase(std::shared_ptr<Entity>& ent) noexcept {
 			base = ent;
+			Program::Instance().var_manager.Get<false>(Name() + L".ベース") = std::wstring(base->Name());
 		}
 
 		/**
