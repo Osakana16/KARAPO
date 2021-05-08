@@ -75,6 +75,8 @@ namespace karapo {
 			vars[Managing_Entity_Name] = std::wstring(L"");		// 管理中のEntityの名前
 			vars[Executing_Event_Name] = std::wstring(L"");
 
+			vars[L"__生成中イベント"] = std::wstring(L"");
+
 			vars[L"__変数存在"] = 1 << 0;					// 
 			vars[L"__イベント存在"] = 1 << 1;				// 
 			vars[L"__キャラ存在"] = 1 << 2;					// 
