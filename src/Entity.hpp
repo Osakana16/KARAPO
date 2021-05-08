@@ -19,6 +19,7 @@ namespace karapo::entity {
 		std::wstring path{};
 	protected:
 		WorldVector length{};
+		const decltype(path)& Path() const noexcept;
 	public:
 		Image(const WorldVector&, const WorldVector&);
 		inline int Main() override { return 0; }
@@ -86,6 +87,7 @@ namespace karapo::entity {
 		std::wstring name{};
 		bool collided_enough{};
 
+		void Update();
 		// Õ“Ë‚Ìˆ—
 		void Collide() noexcept;
 	public:

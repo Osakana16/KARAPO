@@ -142,11 +142,22 @@ namespace karapo::entity {
 
 	void Image::Load(const std::wstring& Path) {
 		path = Path;
+
+		auto& var = Program::Instance().var_manager.Get<false>(std::wstring(Name()) + L".path");
+		if (var.type() != typeid(std::nullptr_t)) {
+			var = path;
+		} else {
+			Program::Instance().var_manager.MakeNew(std::wstring(Name()) + L".path") = path;
+		}
 		image = Program::Instance().engine.LoadImage(Path);
 	}
 
 	WorldVector Image::Length() const noexcept {
 		return length;
+	}
+
+	const decltype(Image::path)& Image::Path() const noexcept {
+		return path;
 	}
 
 	void Image::Draw(WorldVector base) {
@@ -304,11 +315,25 @@ namespace karapo::entity {
 
 	Button::Button(const std::wstring& N, const WorldVector& O, const WorldVector& S) noexcept : Image(O, S) {
 		name = N;
+
+		Program::Instance().var_manager.MakeNew(std::wstring(name) + L".w") = S[0];
+		Program::Instance().var_manager.MakeNew(std::wstring(name) + L".h") = S[1];
 	}
 
 	int Button::Main() {
+		Update();
 		Collide();
 		return 0;
+	}
+
+	void Button::Update() {
+		auto path_var = std::any_cast<std::wstring>(Program::Instance().var_manager.Get<false>(std::wstring(name) + L".path"));
+		if (path_var != Path()) {
+			Load(path_var);
+		}
+
+		length[0] = std::any_cast<Dec>(Program::Instance().var_manager.Get<false>(std::wstring(name) + L".w"));
+		length[1] = std::any_cast<Dec>(Program::Instance().var_manager.Get<false>(std::wstring(name) + L".h"));
 	}
 
 	void Button::Collide() noexcept {
