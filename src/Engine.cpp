@@ -97,29 +97,27 @@ namespace karapo {
 	}
 
 	resource::Resource Program::Engine::LoadImage(const std::wstring& Path) noexcept {
-		resource::Resource r;
-		try {
-			r = resources.at(Path);
-		} catch (std::out_of_range&) {
-			r = static_cast<resource::Resource>(LoadGraph(Path.c_str()));
-			if (r != resource::Resource::Invalid) {
-				resources[Path] = r;
+		if (auto r = resources.find(Path); r != resources.end()) {
+			return r->second;
+		} else {
+			auto i = static_cast<resource::Resource>(LoadGraph(Path.c_str()));
+			if (i != resource::Resource::Invalid) {
+				resources[Path] = i;
 			}
+			return i;
 		}
-		return r;
 	}
 
 	resource::Resource Program::Engine::LoadSound(const std::wstring& Path) noexcept {
-		resource::Resource r;
-		try {
-			r = resources.at(Path);
-		} catch (std::out_of_range&) {
-			r = static_cast<resource::Resource>(LoadSoundMem(Path.c_str()));
-			if (r != resource::Resource::Invalid) {
-				resources[Path] = r;
+		if (auto r = resources.find(Path); r != resources.end()) {
+			return r->second;
+		} else {
+			auto i = static_cast<resource::Resource>(LoadSoundMem(Path.c_str()));
+			if (i != resource::Resource::Invalid) {
+				resources[Path] = i;
 			}
+			return i;
 		}
-		return r;
 	}
 
 	void Program::Engine::GetString(const ScreenVector& Position, wchar_t* to, const size_t Length) {
