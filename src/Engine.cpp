@@ -122,6 +122,10 @@ namespace karapo {
 		return r;
 	}
 
+	void Program::Engine::GetString(const ScreenVector& Position, wchar_t* to, const size_t Length) {
+		DxLib::KeyInputString(Position[0], Position[1], Length, to, 1);
+	}
+
 	void Program::Engine::UpdateKeys() noexcept {
 		char chs[256];
 		DxLib::GetHitKeyStateAll(chs);

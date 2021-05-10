@@ -119,6 +119,8 @@ namespace karapo {
 			TargetRender GetFrontScreen() const noexcept, GetBackScreen() const noexcept;
 			void ClearScreen(), FlipScreen();
 
+			void GetString(const ScreenVector&, wchar_t*, const size_t = 0u);
+
 			void UpdateKeys() noexcept;
 			bool IsPressingKey(const value::Key) const noexcept, IsPressedKey(const value::Key) const noexcept;
 			bool IsPressedMouse(const value::Key) const noexcept, IsPressingMouse(const value::Key) const noexcept;
