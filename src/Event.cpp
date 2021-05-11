@@ -380,9 +380,12 @@ namespace karapo::event {
 					auto name = GetParam<std::wstring>(0);
 					auto x = GetParam<Dec>(1);
 					auto y = GetParam<Dec>(2);
-					auto w = GetParam<Dec>(3);
-					auto h = GetParam<Dec>(4);
-					path = GetParam<std::wstring>(5);
+					Dec w{}, h{};
+					if (GetParam<std::any>(3).type() != typeid(std::nullptr_t)) {
+						w = GetParam<Dec>(3);
+						h = GetParam<Dec>(4);
+						path = GetParam<std::wstring>(5);
+					}
 					button = std::make_shared<karapo::entity::Button>(name, WorldVector{ x, y }, WorldVector{ w, h });
 				}
 				button->Load(path);
@@ -1964,27 +1967,53 @@ namespace karapo::event {
 						words[L"ƒ{ƒ^ƒ“"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
 						return {
 							.Result = [&]() noexcept -> CommandPtr {
-								const auto [Name, Name_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
-								const auto [VX, VX_Type] = Default_ProgramInterface.GetParamInfo(params[1]);
-								const auto [VY, VY_Type] = Default_ProgramInterface.GetParamInfo(params[2]);
-								const auto [Img, Img_Type] = Default_ProgramInterface.GetParamInfo(params[3]);
-								const auto [SX, SX_Type] = Default_ProgramInterface.GetParamInfo(params[4]);
-								const auto [SY, SY_Type] = Default_ProgramInterface.GetParamInfo(params[5]);
-								if (Default_ProgramInterface.IsStringType(Name_Type) &&
-									Default_ProgramInterface.IsNumberType(VX_Type) &&
-									Default_ProgramInterface.IsNumberType(VY_Type) &&
-									Default_ProgramInterface.IsStringType(Img_Type) &&
-									Default_ProgramInterface.IsNumberType(SX_Type) &&
-									Default_ProgramInterface.IsNumberType(SY_Type))
-								{
-									return std::make_unique<command::Button>(
-										Name,
-										WorldVector{ ToDec<Dec>(VX.c_str(), nullptr), ToDec<Dec>(VY.c_str(), nullptr) },
-										Img,
-										WorldVector{ ToDec<Dec>(SX.c_str(), nullptr), ToDec<Dec>(SY.c_str(), nullptr) }
-									);
-								} else {
-									return std::make_unique<command::Button>(params);
+								switch (params.size()) {
+									case 3:
+									{
+										const auto [Name, Name_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+										const auto [VX, VX_Type] = Default_ProgramInterface.GetParamInfo(params[1]);
+										const auto [VY, VY_Type] = Default_ProgramInterface.GetParamInfo(params[2]);
+										if (Default_ProgramInterface.IsStringType(Name_Type) &&
+											Default_ProgramInterface.IsNumberType(VX_Type) &&
+											Default_ProgramInterface.IsNumberType(VY_Type))
+										{
+											return std::make_unique<command::Button>(
+												Name,
+												WorldVector{ ToDec<Dec>(VX.c_str(), nullptr), ToDec<Dec>(VY.c_str(), nullptr) },
+												L"",
+												WorldVector{ 0.0, 0.0 }
+											);
+										} else {
+											return std::make_unique<command::Button>(params);
+										}
+										break;
+									}
+									case 6:
+									{
+										const auto [Name, Name_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+										const auto [VX, VX_Type] = Default_ProgramInterface.GetParamInfo(params[1]);
+										const auto [VY, VY_Type] = Default_ProgramInterface.GetParamInfo(params[2]);
+										const auto [SX, SX_Type] = Default_ProgramInterface.GetParamInfo(params[3]);
+										const auto [SY, SY_Type] = Default_ProgramInterface.GetParamInfo(params[4]);
+										const auto [Img, Img_Type] = Default_ProgramInterface.GetParamInfo(params[5]);
+										if (Default_ProgramInterface.IsStringType(Name_Type) &&
+											Default_ProgramInterface.IsNumberType(VX_Type) &&
+											Default_ProgramInterface.IsNumberType(VY_Type) &&
+											Default_ProgramInterface.IsStringType(Img_Type) &&
+											Default_ProgramInterface.IsNumberType(SX_Type) &&
+											Default_ProgramInterface.IsNumberType(SY_Type))
+										{
+											return std::make_unique<command::Button>(
+												Name,
+												WorldVector{ ToDec<Dec>(VX.c_str(), nullptr), ToDec<Dec>(VY.c_str(), nullptr) },
+												Img,
+												WorldVector{ ToDec<Dec>(SX.c_str(), nullptr), ToDec<Dec>(SY.c_str(), nullptr) }
+											);
+										} else {
+											return std::make_unique<command::Button>(params);
+										}
+										break;
+									}
 								}
 							},
 							.checkParamState = [params]() -> KeywordInfo::ParamResult {
@@ -1992,7 +2021,9 @@ namespace karapo::event {
 									case 0:
 									case 1:
 									case 2:
+										return KeywordInfo::ParamResult::Lack;
 									case 3:
+										return KeywordInfo::ParamResult::Medium;
 									case 4:
 									case 5:
 										return KeywordInfo::ParamResult::Lack;
