@@ -422,6 +422,30 @@ namespace karapo::event {
 			}
 		};
 
+		// •¶Žš“ü—Í
+		DYNAMIC_COMMAND(Input final) {
+			size_t length = 10000;
+			ScreenVector pos{ 0, 0 };
+			std::any *var{};
+		public:
+			DYNAMIC_COMMAND_CONSTRUCTOR(Input) {}
+
+			~Input() noexcept final {}
+
+			void Execute()final {
+				if (MustSearch()) {
+					var = &Program::Instance().var_manager.Get<false>(GetParam<std::wstring, true>(0));
+					pos[0] = GetParam<int>(1);
+					pos[1] = GetParam<int>(2);
+					length = GetParam<int>(3);
+				}
+				wchar_t str[10000];
+				Program::Instance().engine.GetString(pos, str, length);
+				*var = std::wstring(str);
+				StandardCommand::Execute();
+			}
+		};
+
 		namespace entity {
 			// Entity‚ÌˆÚ“®
 			DYNAMIC_COMMAND(Teleport final) {
@@ -1979,6 +2003,30 @@ namespace karapo::event {
 							},
 							.is_static = false,
 							.is_dynamic = true
+						};
+					};
+
+					words[L"input"] =
+						words[L"“ü—Í"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+								.Result = [&]() noexcept -> CommandPtr {
+									return std::make_unique<command::Input>(params);
+								},
+								.checkParamState = [params]() -> KeywordInfo::ParamResult {
+									switch (params.size()) {
+										case 0:
+										case 1:
+										case 2:
+										case 3:
+											return KeywordInfo::ParamResult::Lack;
+										case 4:
+											return KeywordInfo::ParamResult::Maximum;
+										default:
+											return KeywordInfo::ParamResult::Excess;
+									}
+								},
+								.is_static = false,
+								.is_dynamic = true
 						};
 					};
 
