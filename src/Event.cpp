@@ -116,7 +116,8 @@ namespace karapo::event {
 		};
 
 		// 変数
-		DYNAMIC_COMMAND(Variable final) {
+		DYNAMIC_COMMAND(Variable) {
+		protected:
 			std::wstring varname;
 			std::any value;
 		public:
@@ -140,9 +141,9 @@ namespace karapo::event {
 
 			DYNAMIC_COMMAND_CONSTRUCTOR(Variable) {}
 
-			~Variable() noexcept final {}
+			~Variable() noexcept {}
 
-			void Execute() override {
+			void CheckParams() noexcept {
 				if (MustSearch()) {
 					varname = GetParam<std::wstring, true>(0);
 					value = GetParam<std::any>(1);
@@ -158,8 +159,29 @@ namespace karapo::event {
 							value = value_name;
 					}
 				}
+			}
+
+			void Execute(const std::wstring& Var_Name) noexcept {
 				Program::Instance().var_manager.MakeNew(varname) = value;
 				StandardCommand::Execute();
+			}
+
+			void Execute() override {
+				CheckParams();
+				Program::Instance().var_manager.MakeNew(varname) = value;
+				StandardCommand::Execute();
+			}
+		};
+
+		// グローバル変数
+		class Global final : public Variable {
+		public:
+			using Variable::Variable;
+
+			void Execute() override {
+				CheckParams();
+				varname = varname.substr(varname.find(L'.') + 1);
+				Variable::Execute(varname);
 			}
 		};
 		
@@ -1767,7 +1789,10 @@ namespace karapo::event {
 									try {
 										CheckArgs(text);			// 引数確認。
 									} catch (std::out_of_range& e) {
-										const bool Is_Variable = (generating_command_name == L"var" || generating_command_name == L"変数");
+										const bool Is_Variable = (generating_command_name == L"var" || 
+											generating_command_name == L"変数" || 
+											generating_command_name == L"global" || 
+											generating_command_name == L"大域");
 										// 主にCheckArgsからの例外をここで捕捉。
 										if (Is_Variable) {
 											// 変数コマンドの引数だった場合は変数名として引数に積む。
@@ -2483,6 +2508,33 @@ namespace karapo::event {
 									default:
 										return KeywordInfo::ParamResult::Excess;
 								}  
+							},
+							.is_static = true,
+							.is_dynamic = false
+						};
+					};
+
+					words[L"global"] =
+						words[L"大域"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() -> CommandPtr {
+								const auto [Var, Var_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								const auto [Value, Value_Type] = Default_ProgramInterface.GetParamInfo(params[1]);
+								if (Var_Type == L"")
+									return std::make_unique<command::Global>(Var, Value);
+								else
+									return std::make_unique<command::Global>(params);
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+									case 1:
+										return KeywordInfo::ParamResult::Lack;
+									case 2:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
 							},
 							.is_static = true,
 							.is_dynamic = false
