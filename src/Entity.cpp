@@ -316,8 +316,8 @@ namespace karapo::entity {
 	Button::Button(const std::wstring& N, const WorldVector& O, const WorldVector& S) noexcept : Image(O, S) {
 		name = N;
 
-		Program::Instance().var_manager.MakeNew(std::wstring(name) + L".w") = S[0];
-		Program::Instance().var_manager.MakeNew(std::wstring(name) + L".h") = S[1];
+		Program::Instance().var_manager.MakeNew(std::wstring(name) + L".w") = (int)std::lround(S[0]);
+		Program::Instance().var_manager.MakeNew(std::wstring(name) + L".h") = (int)std::lround(S[1]);
 	}
 
 	int Button::Main() {
@@ -332,8 +332,8 @@ namespace karapo::entity {
 			Load(path_var);
 		}
 
-		length[0] = std::any_cast<Dec>(Program::Instance().var_manager.Get<false>(std::wstring(name) + L".w"));
-		length[1] = std::any_cast<Dec>(Program::Instance().var_manager.Get<false>(std::wstring(name) + L".h"));
+		length[0] = std::any_cast<int>(Program::Instance().var_manager.Get<false>(std::wstring(name) + L".w"));
+		length[1] = std::any_cast<int>(Program::Instance().var_manager.Get<false>(std::wstring(name) + L".h"));
 	}
 
 	void Button::Collide() noexcept {
