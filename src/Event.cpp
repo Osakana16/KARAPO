@@ -679,7 +679,18 @@ namespace karapo::event {
 			DYNAMIC_COMMAND(Make final) {
 				std::wstring kind_name{}, layer_name{};
 				int index = 0;
-				std::unordered_map<std::wstring, bool (Canvas::*)(const std::wstring&, const int)> create{};
+				inline static const std::unordered_map<std::wstring, bool (Canvas::*)(const std::wstring&, const int)> Create{
+					// 相対位置レイヤー
+					{ L"scroll",  &Canvas::CreateRelativeLayer },
+					{ L"スクロール",  &Canvas::CreateRelativeLayer },
+					{ L"relative",  &Canvas::CreateRelativeLayer },
+					{ L"相対位置",  &Canvas::CreateRelativeLayer },
+					// 絶対位置レイヤー
+					{ L"fixed",  &Canvas::CreateAbsoluteLayer },
+					{ L"固定",  &Canvas::CreateAbsoluteLayer },
+					{ L"absolute",  &Canvas::CreateAbsoluteLayer },
+					{ L"絶対位置",  &Canvas::CreateAbsoluteLayer }
+				};
 			public:
 				Make(const int Index, const std::wstring & KN, const std::wstring & LN) noexcept : Make(std::vector<std::wstring>{}) {
 					index = Index;
@@ -687,17 +698,7 @@ namespace karapo::event {
 					layer_name = LN;
 				}
 
-				DYNAMIC_COMMAND_CONSTRUCTOR(Make) {
-					create[L"scroll"] =
-						create[L"スクロール"] =
-						create[L"relative"] =
-						create[L"相対位置"] = &Canvas::CreateRelativeLayer;
-
-					create[L"fixed"] =
-						create[L"固定"] =
-						create[L"absolute"] =
-						create[L"絶対位置"] = &Canvas::CreateAbsoluteLayer;
-				}
+				DYNAMIC_COMMAND_CONSTRUCTOR(Make) {}
 
 				~Make() final {}
 
@@ -707,8 +708,8 @@ namespace karapo::event {
 						kind_name = GetParam<std::wstring>(1);
 						layer_name = GetParam<std::wstring>(2);
 					}
-					auto it = create.find(kind_name);
-					if (it != create.end()) {
+					auto it = Create.find(kind_name);
+					if (it != Create.end()) {
 						(Program::Instance().canvas.*it->second)(layer_name, index);
 					}
 					StandardCommand::Execute();
