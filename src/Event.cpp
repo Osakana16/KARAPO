@@ -588,6 +588,7 @@ namespace karapo::event {
 						for (const auto& name : names) {
 							Program::Instance().entity_manager.Kill(name.substr(0, name.find(L'=')));
 						}
+						Program::Instance().entity_manager.Register(std::make_shared<karapo::entity::Mouse>());
 					} else {
 						Program::Instance().entity_manager.Kill(entity_name);
 					}
