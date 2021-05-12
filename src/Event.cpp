@@ -12,6 +12,44 @@
 #define DYNAMIC_COMMAND_CONSTRUCTOR(NAME) NAME(const std::vector<std::wstring>& Param) : DynamicCommand(Param)
 
 namespace karapo::event {
+	namespace {
+		// 文字列中の{}で指定された部分に変数の値で置換する。
+		void ReplaceFormat(std::wstring* const sentence) noexcept {
+			size_t pos = 0;
+			for (;;) {
+				pos = sentence->find(L'{', pos);
+				if (pos == sentence->npos)
+					break;
+				auto epos = sentence->find('}', pos);
+
+				auto begin = sentence->substr(0, pos);
+				auto str = sentence->substr(pos + 1, epos - pos - 1);
+				auto end = sentence->substr(epos + 1);
+				if (begin == L"{")
+					begin.clear();
+				if (end == L"}")
+					end.clear();
+
+				auto executing_name = std::any_cast<std::wstring>(
+					Program::Instance().var_manager.Get<false>(variable::Executing_Event_Name)
+				);
+				executing_name.pop_back();
+				if (auto pos = executing_name.rfind(L'\n'); pos != executing_name.npos)
+					executing_name = executing_name.substr(pos);
+				auto var = Program::Instance().var_manager.Get<false>(executing_name + L'.' + str);
+				if (var.type() == typeid(std::wstring)) {
+					*sentence = begin + std::any_cast<std::wstring>(var) + end;
+				} else if (var.type() == typeid(int)) {
+					*sentence = begin + std::to_wstring(std::any_cast<int>(var)) + end;
+				} else if (var.type() == typeid(Dec)) {
+					*sentence = begin + std::to_wstring(std::any_cast<Dec>(var)) + end;
+				} else {
+					*sentence = begin + end;
+				}
+				pos++;
+			}
+		}
+	}
 	using Context = std::list<std::wstring>;
 
 	namespace command {
@@ -134,7 +172,9 @@ namespace karapo::event {
 					try {
 						value = Program::Instance().var_manager.Get<true>(VName);
 					} catch (std::out_of_range&) {
-						value = Any_Value;
+						auto str = Any_Value;
+						ReplaceFormat(&str);
+						value = str;
 					}
 				}
 			}
@@ -155,8 +195,10 @@ namespace karapo::event {
 							value = iv;
 						else if (wcslen(fp) <= 0)
 							value = fv;
-						else
+						else {
+							ReplaceFormat(&value_name);
 							value = value_name;
+						}
 					}
 				}
 			}
@@ -275,8 +317,10 @@ namespace karapo::event {
 							value = iv;
 						else if (wcslen(fp) <= 0)
 							value = fv;
-						else
+						else {
+							ReplaceFormat(&vname);
 							value = vname;
+						}
 					}
 				}
 				Program::Instance().event_manager.Evalute(mode, value);
@@ -347,6 +391,7 @@ namespace karapo::event {
 				if (MustSearch()) {
 					path = GetParam<std::wstring>(0);
 				}
+				ReplaceFormat(&path);
 				music->Load(path);
 				Program::Instance().entity_manager.Register(music);
 				StandardCommand::Execute();
@@ -373,6 +418,7 @@ namespace karapo::event {
 					auto y = GetParam<Dec>(2);
 					sound = std::make_shared<karapo::entity::Sound>(WorldVector{ x, y });
 				}
+				ReplaceFormat(&path);
 				sound->Load(path);
 				Program::Instance().entity_manager.Register(sound);
 				StandardCommand::Execute();
@@ -389,7 +435,9 @@ namespace karapo::event {
 				const std::wstring& Image_Path,
 				const WorldVector& Size) noexcept
 			{
-				button = std::make_shared<karapo::entity::Button>(Name, WV, Size);
+				auto name = Name;
+				ReplaceFormat(&name);
+				button = std::make_shared<karapo::entity::Button>(name, WV, Size);
 				path = Image_Path;
 			}
 
@@ -408,8 +456,10 @@ namespace karapo::event {
 						h = GetParam<Dec>(4);
 						path = GetParam<std::wstring>(5);
 					}
+					ReplaceFormat(&name);
 					button = std::make_shared<karapo::entity::Button>(name, WorldVector{ x, y }, WorldVector{ w, h });
 				}
+				ReplaceFormat(&path);
 				button->Load(path);
 				Program::Instance().entity_manager.Register(button);
 				StandardCommand::Execute();
@@ -423,6 +473,7 @@ namespace karapo::event {
 			Print(const std::wstring& Name, const WorldVector& Pos) noexcept {
 				auto name = Name;
 				auto pos = Pos;
+				ReplaceFormat(&name);
 				text = std::make_shared<karapo::entity::Text>(name, pos);
 				Program::Instance().var_manager.MakeNew(name + L".text") = std::wstring(L"");
 			}
@@ -436,6 +487,7 @@ namespace karapo::event {
 					auto name = GetParam<std::wstring>(0);
 					auto x = GetParam<Dec>(1);
 					auto y = GetParam<Dec>(2);
+					ReplaceFormat(&name);
 
 					auto ename =std::any_cast<std::wstring>(Program::Instance().var_manager.Get<false>(L"__実行中イベント"));
 					*(ename.end() - 1) = L'.';
@@ -493,6 +545,7 @@ namespace karapo::event {
 						auto y = GetParam<Dec>(2);
 						move = { x, y };
 					}
+					ReplaceFormat(&entity_name);
 					auto ent = Program::Instance().entity_manager.GetEntity(entity_name);
 					ent->Teleport(move);
 					StandardCommand::Execute();
@@ -515,6 +568,8 @@ namespace karapo::event {
 					if (MustSearch()) {
 						entity_name = GetParam<std::wstring>(0);
 					}
+
+					ReplaceFormat(&entity_name);
 					if (entity_name == L"__all" || entity_name == L"__全員") {
 						std::vector<std::wstring> names{};
 						auto sen = std::any_cast<std::wstring>(Program::Instance().var_manager.Get<false>(variable::Managing_Entity_Name));
@@ -587,6 +642,8 @@ namespace karapo::event {
 					kind_name = GetParam<std::wstring>(0);
 					potency = GetParam<int>(2);
 				}
+				ReplaceFormat(&layer_name);
+				ReplaceFormat(&kind_name);
 				Program::Instance().canvas.ApplyFilter(layer_name, kind_name, potency);
 				StandardCommand::Execute();
 			}
@@ -638,7 +695,7 @@ namespace karapo::event {
 				if (MustSearch()) {
 					event_name = std::any_cast<std::wstring>(params[0]);
 				}
-
+				ReplaceFormat(&event_name);
 				Event* e = Program::Instance().event_manager.GetEvent(event_name);
 				if (!params.empty()) {
 					for (int i = 0; i < e->param_names.size(); i++) {
@@ -673,6 +730,7 @@ namespace karapo::event {
 				if (MustSearch()) {
 					file_name = GetParam<std::wstring>(0);
 				}
+				ReplaceFormat(&file_name);
 				Program::Instance().event_manager.ImportEvent(file_name);
 				StandardCommand::Execute();
 			}
@@ -694,6 +752,7 @@ namespace karapo::event {
 				if (MustSearch()) {
 					file_name = GetParam<std::wstring>(0);
 				}
+				ReplaceFormat(&file_name);
 				Program::Instance().event_manager.RequestEvent(file_name);
 				StandardCommand::Execute();
 			}
@@ -733,6 +792,8 @@ namespace karapo::event {
 						kind_name = GetParam<std::wstring>(1);
 						layer_name = GetParam<std::wstring>(2);
 					}
+					ReplaceFormat(&kind_name);
+					ReplaceFormat(&layer_name);
 					auto it = Create.find(kind_name);
 					if (it != Create.end()) {
 						(Program::Instance().canvas.*it->second)(layer_name, index);
@@ -757,6 +818,7 @@ namespace karapo::event {
 					if (MustSearch()) {
 						layer_name = GetParam<std::wstring>(0);
 					}
+					ReplaceFormat(&layer_name);
 					Program::Instance().canvas.SelectLayer(layer_name);
 					StandardCommand::Execute();
 				}
@@ -780,6 +842,8 @@ namespace karapo::event {
 						entity_name = GetParam<std::wstring>(0);
 						layer_name = GetParam<std::wstring>(1);
 					}
+					ReplaceFormat(&entity_name);
+					ReplaceFormat(&layer_name);
 					auto ent = Program::Instance().entity_manager.GetEntity(entity_name);
 					Program::Instance().canvas.SetBasis(ent, layer_name);
 					StandardCommand::Execute();
@@ -822,6 +886,7 @@ namespace karapo::event {
 					if (MustSearch()) {
 						name = GetParam<std::wstring>(0);
 					}
+					ReplaceFormat(&name);
 					Program::Instance().canvas.Show(name);
 					StandardCommand::Execute();
 				}
@@ -842,6 +907,7 @@ namespace karapo::event {
 					if (MustSearch()) {
 						name = GetParam<std::wstring>(0);
 					}
+					ReplaceFormat(&name);
 					Program::Instance().canvas.Hide(name);
 					StandardCommand::Execute();
 				}
@@ -897,8 +963,11 @@ namespace karapo::event {
 							*v = iv;
 						else if (wcslen(fp) <= 0)
 							*v = fv;
-						else
-							*v = std::wstring(ip);
+						else {
+							std::wstring sen = std::wstring(ip);
+							ReplaceFormat(&sen);
+							*v = sen;
+						}
 					} else {
 						auto i = MessageBoxW(nullptr, (var_name + L"は存在しない変数なので代入できません。\n新しくこの変数を作成しますか?").c_str(), L"代入エラー", MB_YESNO | MB_ICONERROR);
 						if (i == IDYES) {
