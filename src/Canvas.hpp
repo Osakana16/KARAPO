@@ -72,7 +72,7 @@ namespace karapo {
 		bool CreateRelativeLayer(const std::wstring&), CreateAbsoluteLayer(const std::wstring&);
 		bool CreateRelativeLayer(const std::wstring&, const int), CreateAbsoluteLayer(const std::wstring&, const int);
 		bool CreateLayer(std::unique_ptr<ImageLayer>, const int);
-		void DeleteLayer(const std::wstring&) noexcept, DeleteLayer(const int) noexcept;
+		bool DeleteLayer(const std::wstring&) noexcept, DeleteLayer(const int) noexcept;
 		// 操作対象のレイヤーを選択する。
 		void SelectLayer(const int) noexcept, SelectLayer(const std::wstring&) noexcept;
 		void SetBasis(std::shared_ptr<Entity>&, const std::wstring&);

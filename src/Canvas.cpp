@@ -258,15 +258,23 @@ namespace karapo {
 		}
 	}
 
-	void Canvas::DeleteLayer(const std::wstring& Name) noexcept {
+	bool Canvas::DeleteLayer(const std::wstring& Name) noexcept {
 		auto layer = std::find_if(layers.begin(), layers.end(), [Name](std::unique_ptr<ImageLayer>& layer) { return layer->Name() == Name; });
+		if (layer == layers.end())
+			return false;
+
 		Program::Instance().var_manager.Delete((*layer)->Name() + L".__ŠÇ—’†");
 		layers.erase(layer);
+		return true;
 	}
 
-	void Canvas::DeleteLayer(const int Index) noexcept {
+	bool Canvas::DeleteLayer(const int Index) noexcept {
+		if (Index < 0 || Index >= layers.size())
+			return false;
+
 		Program::Instance().var_manager.Delete(layers[Index]->Name() + L".__ŠÇ—’†");
 		layers.erase(layers.begin() + Index);
+		return true;
 	}
 
 	void Canvas::SetBasis(std::shared_ptr<Entity>& base, const std::wstring& Layer_Name) {
