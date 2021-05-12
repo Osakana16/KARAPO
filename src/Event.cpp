@@ -1405,53 +1405,68 @@ namespace karapo::event {
 						// 読み込もうとした単語が、文字列として書かれているかを判定する為の変数
 						// 値がtrueの間、解析器はスペースを区切り文字として認識しなくなる。
 						bool is_string = false;
+						bool need_skip = false;
 						auto text = std::wstring(L"");
 
 						for (auto c : Sentence) {
 							if (!is_string) {
-								// スペース判定
-								if (IsSpace(c) || c == L'\0' || c == L'\n') {
-									// 貯めこんだ文字を単語として格納
-									if (!text.empty()) {
-										PushWord(&context, &text);
-									}
-
-									if (c == L'\n') {
-										text = L'\n';
-										PushWord(&context, &text);
-									}
-									continue;
-								} else if (c == L'\r') {
-									// 復帰コードは無視。
-									continue;
+								if (auto it = context.cend(); context.size() >= 2 && *(--it) == L"/" && *(--it) == L"/") {
+									for (int i = 0; i < 2; i++)
+										context.pop_back();
+									need_skip = true;
 								}
 
-								// 演算子判定
-								switch (c) {
-									case L'\'':
-										is_string = true;
-										break;
-									case L'~':
-									case L']':
-									case L'[':
-									case L'>':
-									case L'<':
-									case L'(':
-									case L')':
-									case L',':
-									case L'{':
-									case L'}':
-									{
+								if (!need_skip) {
+									// スペース判定
+									if (IsSpace(c) || c == L'\0' || c == L'\n') {
 										// 貯めこんだ文字を単語として格納
 										if (!text.empty()) {
 											PushWord(&context, &text);
 										}
-										// 記号を代入
-										text = c;
-										PushWord(&context, &text);
+
+										if (c == L'\n') {
+											text = L'\n';
+											PushWord(&context, &text);
+										}
+										continue;
+									} else if (c == L'\r') {
+										// 復帰コードは無視。
 										continue;
 									}
-									break;
+
+									// 演算子判定
+									switch (c) {
+										case L'\'':
+											is_string = true;
+											break;
+										case '/':
+										case L'~':
+										case L']':
+										case L'[':
+										case L'>':
+										case L'<':
+										case L'(':
+										case L')':
+										case L',':
+										case L'{':
+										case L'}':
+										{
+											// 貯めこんだ文字を単語として格納
+											if (!text.empty()) {
+												PushWord(&context, &text);
+											}
+											// 記号を代入
+											text = c;
+											PushWord(&context, &text);
+											continue;
+										}
+										break;
+									}
+								} else {
+									if (c == L'\n') {
+										need_skip = false;
+									}
+									continue;
 								}
 							} else {
 								// 演算子判定
@@ -1497,6 +1512,7 @@ namespace karapo::event {
 						}
 					}
 				}
+
 				auto Result() const noexcept {
 					return context;
 				}
