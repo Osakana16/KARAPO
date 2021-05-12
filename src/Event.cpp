@@ -639,7 +639,7 @@ namespace karapo::event {
 			void Execute() final {
 				if (MustSearch()) {
 					layer_name = GetParam<std::wstring>(0);
-					kind_name = GetParam<std::wstring>(0);
+					kind_name = GetParam<std::wstring>(1);
 					potency = GetParam<int>(2);
 				}
 				ReplaceFormat(&layer_name);
