@@ -2305,7 +2305,7 @@ namespace karapo::event {
 							.Result = [&]() noexcept -> CommandPtr {
 								const auto [Name, Name_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
 								if (Default_ProgramInterface.IsStringType(Name_Type))
-									std::make_unique<command::layer::Select>(Name);
+									return std::make_unique<command::layer::Select>(Name);
 								else
 									return std::make_unique<command::layer::Select>(params);
 							},
@@ -2330,7 +2330,7 @@ namespace karapo::event {
 							.Result = [&]() noexcept -> CommandPtr {
 								const auto [Name, Name_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
 								if (Default_ProgramInterface.IsStringType(Name_Type))
-									std::make_unique<command::layer::Delete>(Name);
+									return std::make_unique<command::layer::Delete>(Name);
 								else
 									return std::make_unique<command::layer::Delete>(params);
 							},
