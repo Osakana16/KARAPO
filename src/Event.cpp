@@ -867,7 +867,14 @@ namespace karapo::event {
 					if (MustSearch()) {
 						name = GetParam<std::wstring>(0);
 					}
-					Program::Instance().canvas.DeleteLayer(name);
+					ReplaceFormat(&name);
+					if (name == L"__all" || name == L"__全部") {
+						for (int i = 0; Program::Instance().canvas.DeleteLayer(i););
+						Program::Instance().canvas.CreateAbsoluteLayer(L"デフォルトレイヤー");
+						Program::Instance().canvas.SelectLayer(L"デフォルトレイヤー");
+					} else {
+						Program::Instance().canvas.DeleteLayer(name);
+					}
 					StandardCommand::Execute();
 				}
 			};
