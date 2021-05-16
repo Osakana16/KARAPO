@@ -226,7 +226,7 @@ namespace karapo {
 	}
 
 	void Canvas::Register(std::shared_ptr<Entity>& d) {
-		if (selecting_layer == nullptr)
+		if (selecting_layer == layers.end())
 			return;
 
 		(*selecting_layer)->Register(d);
@@ -248,13 +248,13 @@ namespace karapo {
 	}
 
 	void Canvas::SelectLayer(const int Index) noexcept {
-		selecting_layer = &layers[Index];
+		selecting_layer = layers.begin() + Index;
 	}
 
 	void Canvas::SelectLayer(const std::wstring& Name) noexcept {
 		auto it = std::find_if(layers.begin(), layers.end(), [Name](std::unique_ptr<ImageLayer>& layer) { return layer->Name() == Name; });
 		if (it != layers.end()) {
-			selecting_layer = &*it;
+			selecting_layer = it;
 		}
 	}
 
@@ -263,17 +263,27 @@ namespace karapo {
 		if (layer == layers.end())
 			return false;
 
+		if (selecting_layer != layers.end() && (*selecting_layer)->Name() == Name)
+			selecting_layer = layers.end();
+
 		Program::Instance().var_manager.Delete((*layer)->Name() + L".__ä«óùíÜ");
 		layers.erase(layer);
 		return true;
 	}
 
 	bool Canvas::DeleteLayer(const int Index) noexcept {
-		if (Index < 0 || Index >= layers.size())
+		if (layers.empty() || Index < 0 || Index >= layers.size())
 			return false;
 
+		if (selecting_layer != layers.end() && (*selecting_layer)->Name() == (*(layers.begin() + Index))->Name())
+			selecting_layer = layers.end();
+
 		Program::Instance().var_manager.Delete(layers[Index]->Name() + L".__ä«óùíÜ");
+		auto len = selecting_layer - layers.begin();
+		const bool Was_After = (selecting_layer > layers.begin() + Index && selecting_layer != layers.end());
 		layers.erase(layers.begin() + Index);
+		if (Was_After)
+			selecting_layer = layers.begin() + (len - 1);
 		return true;
 	}
 

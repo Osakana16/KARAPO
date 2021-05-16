@@ -61,7 +61,7 @@ namespace karapo {
 		std::vector<std::pair<int, LayerPtr>> hiding{};
 
 		// ‘€ì‘ÎÛ‚ÌƒŒƒCƒ„[
-		LayerPtr* selecting_layer{};
+		Layers::iterator selecting_layer{};
 	public:
 		void Update() noexcept;
 		void Register(std::shared_ptr<Entity>&),
