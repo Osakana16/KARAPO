@@ -489,10 +489,8 @@ namespace karapo::event {
 					auto y = GetParam<Dec>(2);
 					ReplaceFormat(&name);
 
-					auto ename =std::any_cast<std::wstring>(Program::Instance().var_manager.Get<false>(L"__実行中イベント"));
-					*(ename.end() - 1) = L'.';
-					Program::Instance().var_manager.MakeNew(ename + name + L".text") = std::wstring(L"");
-					text = std::make_shared<karapo::entity::Text>(ename + name, WorldVector{ x, y });
+					Program::Instance().var_manager.MakeNew(name + L".text") = std::wstring(L"");
+					text = std::make_shared<karapo::entity::Text>(name, WorldVector{ x, y });
 				}
 				Program::Instance().entity_manager.Register(text);
 				StandardCommand::Execute();
