@@ -3256,7 +3256,7 @@ namespace karapo::event {
 		std::queue<std::wstring> dead;
 		for (auto& e : events) {
 			auto& event = e.second;
-			if (event.trigger_type == TriggerType::Load) {
+			if (event.trigger_type == TriggerType::Load || event.trigger_type == TriggerType::Auto) {
 				Call(e.first);
 				if (event.commands.empty()) {
 					dead.push(e.first);
@@ -3296,7 +3296,8 @@ namespace karapo::event {
 			cmd_executer.Execute();
 
 			candidate->second.commands = std::move(cmd_executer.Result());
-			candidate->second.trigger_type = TriggerType::None;
+			if (candidate->second.trigger_type == TriggerType::Load)
+				candidate->second.trigger_type = TriggerType::None;
 			event_name.erase(event_name.find(EName + L"\n"));
 
 			Program::Instance().var_manager.Get<false>(variable::Executing_Event_Name) = event_name;
