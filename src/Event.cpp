@@ -3253,10 +3253,16 @@ namespace karapo::event {
 	}
 
 	void Manager::Update() noexcept {
+		for (auto& e : events) {
+			if (e.second.trigger_type == TriggerType::Load) {
+				Call(e.first);
+			}
+		}
+
 		std::queue<std::wstring> dead;
 		for (auto& e : events) {
 			auto& event = e.second;
-			if (event.trigger_type == TriggerType::Load || event.trigger_type == TriggerType::Auto) {
+			if (event.trigger_type == TriggerType::Auto) {
 				Call(e.first);
 				if (event.commands.empty()) {
 					dead.push(e.first);
