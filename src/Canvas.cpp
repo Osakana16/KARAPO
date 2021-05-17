@@ -267,7 +267,10 @@ namespace karapo {
 			selecting_layer = layers.end();
 
 		Program::Instance().var_manager.Delete((*layer)->Name() + L".__ŠÇ—’†");
+		const std::wstring&& Selecting_Name = (selecting_layer != layers.end() ? (*selecting_layer)->Name() : L"");
 		layers.erase(layer);
+		if (!Selecting_Name.empty())
+			selecting_layer = std::find_if(layers.begin(), layers.end(), [&Selecting_Name](std::unique_ptr<ImageLayer>& candidate) { return Selecting_Name == candidate->Name(); });
 		return true;
 	}
 
@@ -279,11 +282,11 @@ namespace karapo {
 			selecting_layer = layers.end();
 
 		Program::Instance().var_manager.Delete(layers[Index]->Name() + L".__ŠÇ—’†");
-		auto len = selecting_layer - layers.begin();
-		const bool Was_After = (selecting_layer > layers.begin() + Index && selecting_layer != layers.end());
+
+		const std::wstring&& Selecting_Name = (selecting_layer != layers.end() ? (*selecting_layer)->Name() : L"");
 		layers.erase(layers.begin() + Index);
-		if (Was_After)
-			selecting_layer = layers.begin() + (len - 1);
+		if (!Selecting_Name.empty())
+			selecting_layer = std::find_if(layers.begin(), layers.end(), [&Selecting_Name](std::unique_ptr<ImageLayer>& candidate) { return Selecting_Name == candidate->Name(); });
 		return true;
 	}
 
@@ -328,7 +331,10 @@ namespace karapo {
 			if (!layers.empty() && (Index < 0 || Index >= layers.size()))
 				return false;
 		}
+		const std::wstring&& Selecting_Name = (!layers.empty() && selecting_layer != layers.end() ? (*selecting_layer)->Name() : L"");
 		layers.insert(layers.begin() + Index, std::move(layer));
+		if (!Selecting_Name.empty())
+			selecting_layer = std::find_if(layers.begin(), layers.end(), [&Selecting_Name](std::unique_ptr<ImageLayer>& candidate) { return Selecting_Name == candidate->Name(); });
 		return true;
 	}
 
