@@ -17,7 +17,7 @@ namespace karapo::event {
 		Invalid,				// 不正
 		None,					// 何もしない(call用)
 		Load,					// ロード後実行
-		Auto,					// 並列実行
+		Auto,					// 自動実行
 		Trigger,				// 触れている間に実行
 		Button					// 決定キー
 	};

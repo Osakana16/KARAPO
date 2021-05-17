@@ -1610,6 +1610,7 @@ namespace karapo::event {
 					const std::unordered_map<std::wstring, TriggerType> Trigger_Map{
 						{ L"n", TriggerType::None },
 						{ L"t", TriggerType::Trigger },
+						{ L"a", TriggerType::Auto },
 						{ L"b", TriggerType::Button },
 						{ L"l", TriggerType::Load }
 					};
@@ -3388,6 +3389,8 @@ namespace karapo::event {
 			targeting->trigger_type = TriggerType::None;
 		else if (TSentence == L"b")
 			targeting->trigger_type = TriggerType::Button;
+		else if (TSentence == L"a")
+			targeting->trigger_type = TriggerType::Auto;
 		else if (TSentence == L"t")
 			targeting->trigger_type = TriggerType::Trigger;
 	}
