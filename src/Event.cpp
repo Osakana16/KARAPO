@@ -1548,6 +1548,7 @@ namespace karapo::event {
 			template<wchar_t SC, wchar_t EC>
 			class RangeParser {
 				bool parsing = false;
+				bool need_abort{};
 			protected:
 				// âêÕíÜÇ©Ç«Ç§Ç©ÅB
 				bool IsParsing() const noexcept { return parsing; }
@@ -1563,12 +1564,20 @@ namespace karapo::event {
 					MYGAME_ASSERT(parsing);
 					parsing = false;
 				}
+
+				void AbortParsing() noexcept {
+					need_abort = true;
+				}
 			public:
 				static constexpr bool IsValidToStart(const wchar_t Ch) noexcept { return SC == Ch; }
 				static constexpr bool IsValidToEnd(const wchar_t Ch) noexcept { return EC == Ch; }
 
 				~RangeParser() noexcept {
 					MYGAME_ASSERT(!parsing);
+				}
+
+				bool IsAborted() const noexcept {
+					return need_abort;
 				}
 			};
 
@@ -1590,8 +1599,9 @@ namespace karapo::event {
 								return true;
 							}
 						}
-						if (IsParsing())
+						if (IsParsing()) {
 							name = Sentence;
+						}
 						return false;
 					}
 
