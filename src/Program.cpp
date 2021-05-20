@@ -38,6 +38,7 @@ namespace karapo {
 			event_manager.Update();
 			entity_manager.Update();
 			engine.FlipScreen();
+			error::UserErrorHandler::ShowGlobalError(4);
 		}
 		return 0;
 	}
