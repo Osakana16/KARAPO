@@ -1525,7 +1525,7 @@ namespace karapo::event {
 				TypeDeterminer(Context& context) {
 					while (!context.empty()) {
 						auto&& word = std::move(context.front());
-						if (iswdigit(word[0])) {
+						if (iswdigit(word[0]) || word[0] == L'-') {
 							word += std::wstring(L":") + innertype::Number;
 						} else if (word[0] == L'\'') {
 							word += std::wstring(L":") + innertype::String;
