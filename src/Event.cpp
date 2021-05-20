@@ -1619,7 +1619,15 @@ namespace karapo::event {
 					Dec miny{}, maxy{};
 					// 解析結果格納用ポインタ
 					Dec *current = &minx;
+
+					inline static error::ErrorContent* not_condition_warning{};
 				public:
+					ConditionParser() noexcept {
+						if (not_condition_warning == nullptr) {
+							not_condition_warning = error::UserErrorHandler::MakeError(event::Manager::Instance().error_class, L"指定されたイベント発生タイプが存在しなかった為、\n発生タイプ無し(n)として設定しました。", MB_OK | MB_ICONWARNING, 2);
+						}
+					}
+
 					[[nodiscard]] auto Interpret(const std::wstring& Sentence) noexcept {
 						if (Sentence.size() == 1) {
 							if (IsValidToStart(Sentence[0])) {
@@ -1637,6 +1645,13 @@ namespace karapo::event {
 								auto it = Trigger_Map.find(Sentence);
 								if (it != Trigger_Map.end()) {
 									tt = it->second;
+								} else {
+									const auto Event_Name = std::any_cast<std::wstring>(Program::Instance().var_manager.Get<false>(L"__生成中イベント"));
+
+									auto sub_message = L"該当イベント: " + Event_Name + L'\n';
+									sub_message += L"指定された発生タイプ: " + Sentence;
+									event::Manager::Instance().error_handler.SendLocalError(not_condition_warning, sub_message);
+									tt = TriggerType::None;
 								}
 							} else if (tt != TriggerType::None && tt != TriggerType::Auto && tt != TriggerType::Load) {
 								if (Sentence == L"~") {
