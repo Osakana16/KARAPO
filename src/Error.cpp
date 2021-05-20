@@ -40,7 +40,7 @@ namespace karapo::error {
 	}
 
 	bool UserErrorHandler::ShowError(ErrorElement* error_elements, const unsigned Error_Level) {
-		const bool Any_Errors = !error_elements->empty();
+		bool any_errors = false;
 		while (!error_elements->empty()) {
 			auto [content, extra, func] = *error_elements->begin();
 			int box_result = 0;
@@ -48,9 +48,11 @@ namespace karapo::error {
 				box_result = MessageBoxW(nullptr, (content->message + L'\n' + extra).c_str(), content->parent->title.c_str(), content->mb);
 			if (func != nullptr)
 				func(box_result);
+			if (content->mb & MB_ICONERROR)
+				any_errors = true;
 			error_elements->pop_front();
 		}
-		return Any_Errors;
+		return any_errors;
 	}
 
 	bool UserErrorHandler::ShowGlobalError(const unsigned Error_Level) {
