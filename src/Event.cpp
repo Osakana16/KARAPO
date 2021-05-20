@@ -229,8 +229,12 @@ namespace karapo::event {
 		
 		// 変数/関数/Entityの存在確認
 		DYNAMIC_COMMAND(Exist final) {
+			inline static error::ErrorContent *assign_error{};
 		public:
-			DYNAMIC_COMMAND_CONSTRUCTOR(Exist) {}
+			DYNAMIC_COMMAND_CONSTRUCTOR(Exist) {
+				if (assign_error == nullptr)
+					assign_error = error::UserErrorHandler::MakeError(event::Manager::Instance().error_class, L"代入先の変数が存在しません。\n新しく個の変数を作成しますか?", MB_YESNO | MB_ICONERROR, 2);
+			}
 
 			~Exist() noexcept final {}
 
@@ -252,14 +256,27 @@ namespace karapo::event {
 
 				auto *v = &Program::Instance().var_manager.Get<false>(name[1]);
 				if (v->type() != typeid(std::nullptr_t)) {
-				reassign:
 					*v = static_cast<int>(result);
 				} else {
-					auto i = MessageBoxW(nullptr, (name[1] + L"は存在しない変数なので確認結果を代入できません。\n新しくこの変数を作成しますか?").c_str(), L"存在確認エラー", MB_YESNO | MB_ICONERROR);
-					if (i == IDYES) {
-						v = &Program::Instance().var_manager.MakeNew(name[1]);
-						goto reassign;
-					}
+					event::Manager::Instance().error_handler.SendLocalError(assign_error, L"変数: " + name[1], [](const int Result) {
+						switch (Result) {
+							case IDYES:
+							{
+								auto& var = Program::Instance().var_manager.Get<false>(L"__assignable");
+								auto& value = Program::Instance().var_manager.Get<false>(L"__calculated");
+								Program::Instance().var_manager.MakeNew(std::any_cast<std::wstring>(var)) = std::any_cast<int>(value);
+								break;
+							}
+							case IDNO:
+								break;
+							default:
+								MYGAME_ASSERT(0);
+						}
+						Program::Instance().var_manager.Delete(L"__assignable");
+						Program::Instance().var_manager.Delete(L"__calculated");
+					});
+					Program::Instance().var_manager.MakeNew(L"__assignable") = name[1];
+					Program::Instance().var_manager.MakeNew(L"__calculated") = result;
 				}
 				StandardCommand::Execute();
 			}
@@ -921,16 +938,89 @@ namespace karapo::event {
 		}
 
 		namespace math {
+#define MATH_COMMAND_CALCULATE(OPERATION) \
+	if (Is_Only_Int) { \
+		cal.i = std::any_cast<int>(value[0]) OPERATION std::any_cast<int>(value[1]); \
+	} else { \
+		cal.d = 0.0; \
+		if (value[0].type() == typeid(int)) { \
+			cal.d = std::any_cast<int>(value[0]); \
+		} else { \
+			cal.d = std::any_cast<Dec>(value[0]); \
+		} \
+ \
+		if (value[1].type() == typeid(int)) { \
+			\
+			cal.d OPERATION= std::any_cast<int>(value[1]); \
+		} else { \
+			cal.d OPERATION= std::any_cast<Dec>(value[1]); \
+		} \
+	}
+
 			DYNAMIC_COMMAND(MathCommand) {
+			protected:
+				inline static error::ErrorClass* operation_error_class{};
+				inline static error::ErrorContent* assign_error{};
+
+				static void Reassign(const int Result) {
+					switch (Result) {
+						case IDYES:
+						{
+							auto& var = Program::Instance().var_manager.Get<false>(L"__assignable");
+							auto& value = Program::Instance().var_manager.Get<false>(L"__calculated");
+							if (value.type() == typeid(Dec))
+								Program::Instance().var_manager.MakeNew(std::any_cast<std::wstring>(var)) = std::any_cast<Dec>(value);
+							else if (value.type() == typeid(int))
+								Program::Instance().var_manager.MakeNew(std::any_cast<std::wstring>(var)) = std::any_cast<int>(value);
+							else if (value.type() == typeid(std::wstring))
+								Program::Instance().var_manager.MakeNew(std::any_cast<std::wstring>(var)) = std::any_cast<std::wstring>(value);
+							break;
+						}
+						case IDNO:
+							break;
+						default:
+							MYGAME_ASSERT(0);
+					}
+					Program::Instance().var_manager.Delete(L"__assignable");
+					Program::Instance().var_manager.Delete(L"__calculated");
+				}
+
+				union CalculateValue {
+					int i;
+					Dec d;
+				};
+
+				void SendAssignError(const std::any& Value) {
+					event::Manager::Instance().error_handler.SendLocalError(assign_error, (L"変数: " + var_name).c_str(), &MathCommand::Reassign);
+					Program::Instance().var_manager.MakeNew(L"__assignable") = var_name;
+					if (Value.type() == typeid(int))
+						Program::Instance().var_manager.MakeNew(L"__calculated") = std::any_cast<int>(Value);
+					else if (Value.type() == typeid(Dec))
+						Program::Instance().var_manager.MakeNew(L"__calculated") = std::any_cast<Dec>(Value);
+					else if (Value.type() == typeid(std::wstring))
+						Program::Instance().var_manager.MakeNew(L"__calculated") = std::any_cast<std::wstring>(Value);
+
+				}
+
+				void SendAssignError(const bool Is_Only_Int, const CalculateValue Cal_Value) {
+					event::Manager::Instance().error_handler.SendLocalError(assign_error, (L"変数: " + var_name).c_str(), &MathCommand::Reassign);
+					Program::Instance().var_manager.MakeNew(L"__assignable") = var_name;
+					Program::Instance().var_manager.MakeNew(L"__calculated") = (Is_Only_Int ? Cal_Value.i : Cal_Value.d);
+				}
 			public:
-				MathCommand(const std::vector<std::wstring>& Params) : DynamicCommand(Params){}
+				MathCommand(const std::vector<std::wstring>& Params) : DynamicCommand(Params) {
+					if (operation_error_class == nullptr)
+						operation_error_class = error::UserErrorHandler::MakeErrorClass(L"演算エラー");
+					if (assign_error == nullptr)
+						assign_error = error::UserErrorHandler::MakeError(operation_error_class, L"代入先の変数が存在しません。\n新しくこの変数を作成しますか?", MB_YESNO | MB_ICONERROR, 2);
+				}
 
 				std::wstring var_name{};
 				std::any value[2]{};
-				void Extract() {
+				void Extract(const int Length) {
 					if (MustSearch()) {
 						var_name = GetParam<std::wstring, true>(0);
-						for (int i = 0; i < 2; i++) {
+						for (int i = 0; i < Length; i++) {
 							value[i] = GetParam<std::any>(i + 1);
 							if (value[i].type() == typeid(int))
 								value[i] = std::any_cast<int>(value[i]);
@@ -951,35 +1041,25 @@ namespace karapo::event {
 				}
 			};
 
-			DYNAMIC_COMMAND(Assign) {
+			class Assign final : public MathCommand {
 			public:
-				DYNAMIC_COMMAND_CONSTRUCTOR(Assign) {}
+				using MathCommand::MathCommand;
 				~Assign() final {}
 
 				void Execute() final {
+					Extract(1);
 					auto var_name = GetParam<std::wstring, true>(0);
-					auto value = GetParam<std::wstring, true>(1);
-					auto [iv, ip] = ToInt(value.c_str());
-					auto [fv, fp] = ToDec<Dec>(value.c_str());
 
 					auto* v = &Program::Instance().var_manager.Get<false>(var_name);
 					if (v->type() != typeid(std::nullptr_t)) {
-					reassign:
-						if (wcslen(ip) <= 0)
-							*v = iv;
-						else if (wcslen(fp) <= 0)
-							*v = fv;
-						else {
-							std::wstring sen = std::wstring(ip);
-							ReplaceFormat(&sen);
-							*v = sen;
-						}
+						if (value[0].type() == typeid(int))
+							*v = std::any_cast<int>(value[0]);
+						else if (value[0].type() == typeid(Dec))
+							*v = std::any_cast<Dec>(value[0]);
+						else if (value[0].type() == typeid(std::wstring))
+							*v = std::any_cast<std::wstring>(value[0]);
 					} else {
-						auto i = MessageBoxW(nullptr, (var_name + L"は存在しない変数なので代入できません。\n新しくこの変数を作成しますか?").c_str(), L"代入エラー", MB_YESNO | MB_ICONERROR);
-						if (i == IDYES) {
-							v = &Program::Instance().var_manager.MakeNew(var_name);
-							goto reassign;
-						}
+						SendAssignError(value[0]);
 					}
 					StandardCommand::Execute();
 				}
@@ -993,36 +1073,17 @@ namespace karapo::event {
 				~Sum() final {}
 
 				void Execute() final {
-					Extract();
+					Extract(2);
 					const bool Is_Only_Int = (value[0].type() == typeid(int) && value[1].type() == typeid(int));
-					union {
-						int i;
-						Dec d;
-					} cal;
-
-					if (Is_Only_Int) {
-						cal.i = std::any_cast<int>(value[0]) + std::any_cast<int>(value[1]);
-					} else {
-						cal.d = 0.0;
-						for (int i = 0; i < 2; i++) {
-							if (value[i].type() == typeid(int)) {
-								cal.d += std::any_cast<int>(value[i]);
-							} else {
-								cal.d += std::any_cast<Dec>(value[i]);
-							}
-						}
-					}
+					
+					CalculateValue cal;
+					MATH_COMMAND_CALCULATE(+);
 
 					auto* v = &Program::Instance().var_manager.Get<false>(var_name);
 					if (v->type() != typeid(std::nullptr_t)) {
-					reassign:
 						*v = (Is_Only_Int ? cal.i : cal.d);
 					} else {
-						auto i = MessageBoxW(nullptr, (var_name + L"は存在しない変数なので加算結果を代入できません。\n新しくこの変数を作成しますか?").c_str(), L"加算エラー", MB_YESNO | MB_ICONERROR);
-						if (i == IDYES) {
-							v = &Program::Instance().var_manager.MakeNew(var_name);
-							goto reassign;
-						}
+						SendAssignError(Is_Only_Int, cal);
 					}
 					StandardCommand::Execute();
 				}
@@ -1035,40 +1096,17 @@ namespace karapo::event {
 				~Sub() final {}
 
 				void Execute() final {
-					Extract();
+					Extract(2);
 					const bool Is_Only_Int = (value[0].type() == typeid(int) && value[1].type() == typeid(int));
-					union {
-						int i;
-						Dec d;
-					} cal;
 
-					if (Is_Only_Int) {
-						cal.i = std::any_cast<int>(value[0]) - std::any_cast<int>(value[1]);
-					} else {
-						cal.d = 0.0;
-						if (value[0].type() == typeid(int)) {
-							cal.d = std::any_cast<int>(value[0]);
-						} else {
-							cal.d = std::any_cast<Dec>(value[0]);
-						}
-
-						if (value[1].type() == typeid(int)) {
-							cal.d -= std::any_cast<int>(value[1]);
-						} else {
-							cal.d -= std::any_cast<Dec>(value[1]);
-						}
-					}
+					CalculateValue cal;
+					MATH_COMMAND_CALCULATE(-);
 
 					auto* v = &Program::Instance().var_manager.Get<false>(var_name);
 					if (v->type() != typeid(std::nullptr_t)) {
-					reassign:
 						*v = (Is_Only_Int ? cal.i : cal.d);
 					} else {
-						auto i = MessageBoxW(nullptr, (var_name + L"は存在しない変数なので減算結果を代入できません。\n新しくこの変数を作成しますか?").c_str(), L"減算エラー", MB_YESNO | MB_ICONERROR);
-						if (i == IDYES) {
-							v = &Program::Instance().var_manager.MakeNew(var_name);
-							goto reassign;
-						}
+						SendAssignError(Is_Only_Int, cal);
 					}
 					StandardCommand::Execute();
 				}
@@ -1081,40 +1119,17 @@ namespace karapo::event {
 				~Mul() final {}
 
 				void Execute() final {
-					Extract();
+					Extract(2);
 					const bool Is_Only_Int = (value[0].type() == typeid(int) && value[1].type() == typeid(int));
-					union {
-						int i;
-						Dec d;
-					} cal;
 
-					if (Is_Only_Int) {
-						cal.i = std::any_cast<int>(value[0]) * std::any_cast<int>(value[1]);
-					} else {
-						cal.d = 0.0;
-						if (value[0].type() == typeid(int)) {
-							cal.d = std::any_cast<int>(value[0]);
-						} else {
-							cal.d = std::any_cast<Dec>(value[0]);
-						}
-
-						if (value[1].type() == typeid(int)) {
-							cal.d *= std::any_cast<int>(value[1]);
-						} else {
-							cal.d *= std::any_cast<Dec>(value[1]);
-						}
-					}
+					CalculateValue cal;
+					MATH_COMMAND_CALCULATE(*);
 
 					auto *v = &Program::Instance().var_manager.Get<false>(var_name);
 					if (v->type() != typeid(std::nullptr_t)) {
-					reassign:
 						*v = (Is_Only_Int ? cal.i : cal.d);
 					} else {
-						auto i = MessageBoxW(nullptr, (var_name + L"は存在しない変数なので乗算結果を代入できません。\n新しくこの変数を作成しますか?").c_str(), L"乗算エラー", MB_YESNO | MB_ICONERROR);
-						if (i == IDYES) {
-							v = &Program::Instance().var_manager.MakeNew(var_name);
-							goto reassign;
-						}
+						SendAssignError(Is_Only_Int, cal);
 					}
 					StandardCommand::Execute();
 				}
@@ -1127,181 +1142,160 @@ namespace karapo::event {
 				~Div() final {}
 
 				void Execute() final {
-					Extract();
+					Extract(2);
 					const bool Is_Only_Int = (value[0].type() == typeid(int) && value[1].type() == typeid(int));
-					union {
-						int i;
-						Dec d;
-					} cal;
 
-					if (Is_Only_Int) {
-						cal.i = std::any_cast<int>(value[0]) / std::any_cast<int>(value[1]);
-					} else {
-						cal.d = 0.0;
-						if (value[0].type() == typeid(int)) {
-							cal.d = std::any_cast<int>(value[0]);
-						} else {
-							cal.d = std::any_cast<Dec>(value[0]);
-						}
-
-						if (value[1].type() == typeid(int)) {
-							cal.d /= std::any_cast<int>(value[1]);
-						} else {
-							cal.d /= std::any_cast<Dec>(value[1]);
-						}
-					}
+					CalculateValue cal;
+					MATH_COMMAND_CALCULATE(/);
 
 					auto* v = &Program::Instance().var_manager.Get<false>(var_name);
 					if (v->type() != typeid(std::nullptr_t)) {
-					reassign:
 						*v = (Is_Only_Int ? cal.i : cal.d);
 					} else {
-						auto i = MessageBoxW(nullptr, (var_name + L"は存在しない変数なので徐算結果を代入できません。\n新しくこの変数を作成しますか?").c_str(), L"徐算エラー", MB_YESNO | MB_ICONERROR);
-						if (i == IDYES) {
-							v = &Program::Instance().var_manager.MakeNew(var_name);
-							goto reassign;
-						}
+						SendAssignError(Is_Only_Int, cal);
 					}
 					StandardCommand::Execute();
 				}
 			};
 
-			// ビット論理和
-			class Or final : public MathCommand {
+			class BitCommand : public MathCommand {
+			protected:
+				inline static error::ErrorClass* logic_operation_error_class{};
+				inline static error::ErrorContent* not_integer_error{};
+
+				auto AddTypeName(std::wstring* extra_message, const int Index) noexcept {
+					auto source_name = value[Index].type().name();
+					auto converted_name = new(std::nothrow) wchar_t[strlen(source_name) + 1]{};
+					if (converted_name != nullptr) {
+						mbstowcs(converted_name, source_name, strlen(source_name) + 1);
+						*extra_message += GetParam<std::wstring, true>(Index) + std::wstring(L": ") + converted_name + L'\n';
+						delete[] converted_name;
+					}
+				}
+
+				std::pair<bool, bool> CheckValueType() const noexcept {
+					const bool Is_First_Int = (value[0].type() == typeid(int));
+					const bool Is_Second_Int = (value[1].type() == typeid(int));
+					return { Is_First_Int, Is_Second_Int };
+				}
+
+				void SendBitLogicError(std::wstring extra_message, const std::pair<bool, bool>& Is_Int) {
+					if (!Is_Int.first)
+						AddTypeName(&extra_message, 0);
+					if (!Is_Int.second)
+						AddTypeName(&extra_message, 1);
+					event::Manager::Instance().error_handler.SendLocalError(not_integer_error, extra_message);
+				}
 			public:
-				using MathCommand::MathCommand;
+				BitCommand(const std::vector<std::wstring>& Params) : MathCommand(Params) {
+					if (logic_operation_error_class == nullptr)
+						logic_operation_error_class = error::UserErrorHandler::MakeErrorClass(L"論理演算エラー");
+					if (not_integer_error == nullptr)
+						not_integer_error = error::UserErrorHandler::MakeError(logic_operation_error_class, L"ビット演算に用いる変数の値が整数値ではありません。", MB_OK | MB_ICONERROR, 2);
+				}
+
+				~BitCommand() override {}
+			};
+
+			// ビット論理和
+			class Or final : public BitCommand {
+			public:
+				using BitCommand::BitCommand;
 				~Or() final {}
 
 				void Execute() final {
-					Extract();
-					const bool Is_First_Int = (value[0].type() == typeid(int));
-					const bool Is_Second_Int = (value[1].type() == typeid(int));
+					Extract(2);
+					const auto Is_Int = CheckValueType();
 
-					if (Is_First_Int && Is_Second_Int) {
-						int result = std::any_cast<int>(value[0]) | std::any_cast<int>(value[1]);
+					if (Is_Int.first && Is_Int.second) {
+						CalculateValue cal;
+						cal.i = std::any_cast<int>(value[0]) | std::any_cast<int>(value[1]);
 						auto* v = &Program::Instance().var_manager.Get<false>(var_name);
 						if (v->type() != typeid(std::nullptr_t)) {
-						reassign:
-							*v = result;
+							*v = cal.i;
 						} else {
-							auto i = MessageBoxW(nullptr, (var_name + L"は存在しない変数なのでビット論理和を代入できません。\n新しくこの変数を作成しますか?").c_str(), L"ビット論理和エラー", MB_YESNO | MB_ICONERROR);
-							if (i == IDYES) {
-								v = &Program::Instance().var_manager.MakeNew(var_name);
-								goto reassign;
-							}
+							SendAssignError(true, cal);
 						}
 					} else {
-						if (!Is_First_Int && !Is_Second_Int) {
-							MessageBoxW(nullptr, L"ビット論理和に用いる両方の変数の値が整数値ではありません。", L"ビット論理和エラー", MB_OK | MB_ICONERROR);
-						} else if (!Is_First_Int) {
-							MessageBoxW(nullptr, L"ビット論理和に用いる一つ目の変数の値が整数値ではありません。", L"ビット論理和エラー", MB_OK | MB_ICONERROR);
-						} else if (!Is_Second_Int) {
-							MessageBoxW(nullptr, L"ビット論理和に用いる二つ目の変数の値が整数値ではありません。", L"ビット論理和エラー", MB_OK | MB_ICONERROR);
-						}
+						SendBitLogicError(L"演算: ビット論理和\n", Is_Int);
 					}
 					StandardCommand::Execute();
 				}
 			};
 
 			// ビット論理積
-			class And final : public MathCommand {
+			class And final : public BitCommand {
 			public:
-				using MathCommand::MathCommand;
+				using BitCommand::BitCommand;
 				~And() final {}
 
 				void Execute() final {
-					Extract();
-					const bool Is_First_Int = (value[0].type() == typeid(int));
-					const bool Is_Second_Int = (value[1].type() == typeid(int));
-
-					if (Is_First_Int && Is_Second_Int) {
-						int result = std::any_cast<int>(value[0]) & std::any_cast<int>(value[1]);
+					Extract(2);
+					const auto Is_Int = CheckValueType();
+					if (Is_Int.first && Is_Int.second) {
+						CalculateValue cal;
+						cal.i = std::any_cast<int>(value[0]) & std::any_cast<int>(value[1]);
 						auto* v = &Program::Instance().var_manager.Get<false>(var_name);
 						if (v->type() != typeid(std::nullptr_t)) {
-						reassign:
-							*v = result;
+							*v = cal.i;
 						} else {
-							auto i = MessageBoxW(nullptr, (var_name + L"は存在しない変数なので徐算結果を代入できません。\n新しくこの変数を作成しますか?").c_str(), L"徐算エラー", MB_YESNO | MB_ICONERROR);
-							if (i == IDYES) {
-								v = &Program::Instance().var_manager.MakeNew(var_name);
-								goto reassign;
-							}
+							SendAssignError(true, cal);
 						}
 					} else {
-						if (!Is_First_Int && !Is_Second_Int) {
-							MessageBoxW(nullptr, L"ビット論理積に用いる両方の変数の値が整数値ではありません。", L"ビット論理積エラー", MB_OK | MB_ICONERROR);
-						} else if (!Is_First_Int) {
-							MessageBoxW(nullptr, L"ビット論理積に用いる一つ目の変数の値が整数値ではありません。", L"ビット論理積エラー", MB_OK | MB_ICONERROR);
-						} else if (!Is_Second_Int) {
-							MessageBoxW(nullptr, L"ビット論理積に用いる二つ目の変数の値が整数値ではありません。", L"ビット論理積エラー", MB_OK | MB_ICONERROR);
-						}
+						SendBitLogicError(L"演算: ビット論理積\n", Is_Int);
 					}
 					StandardCommand::Execute();
 				}
 			};
 
 			// ビット排他的論理和
-			class Xor final : public MathCommand {
+			class Xor final : public BitCommand {
 			public:
-				using MathCommand::MathCommand;
+				using BitCommand::BitCommand;
 				~Xor() final {}
 
 				void Execute() final {
-					Extract();
-					const bool Is_First_Int = (value[0].type() == typeid(int));
-					const bool Is_Second_Int = (value[1].type() == typeid(int));
+					Extract(2);
+					const auto Is_Int = CheckValueType();
 
-					if (Is_First_Int && Is_Second_Int) {
-						int result = std::any_cast<int>(value[0]) ^ std::any_cast<int>(value[1]);
+					if (Is_Int.first && Is_Int.second) {
+						CalculateValue cal;
+						cal.i = std::any_cast<int>(value[0]) ^ std::any_cast<int>(value[1]);
 						auto* v = &Program::Instance().var_manager.Get<false>(var_name);
 						if (v->type() != typeid(std::nullptr_t)) {
-						reassign:
-							*v = result;
+							*v = cal.i;
 						} else {
-							auto i = MessageBoxW(nullptr, (var_name + L"は存在しない変数なので徐算結果を代入できません。\n新しくこの変数を作成しますか?").c_str(), L"徐算エラー", MB_YESNO | MB_ICONERROR);
-							if (i == IDYES) {
-								v = &Program::Instance().var_manager.MakeNew(var_name);
-								goto reassign;
-							}
+							SendAssignError(true, cal);
 						}
 					} else {
-						if (!Is_First_Int && !Is_Second_Int) {
-							MessageBoxW(nullptr, L"ビット排他的論理和に用いる両方の変数の値が整数値ではありません。", L"ビット排他的論理和エラー", MB_OK | MB_ICONERROR);
-						} else if (!Is_First_Int) {
-							MessageBoxW(nullptr, L"ビット排他的論理和に用いる一つ目の変数の値が整数値ではありません。", L"ビット排他的論理和エラー", MB_OK | MB_ICONERROR);
-						} else if (!Is_Second_Int) {
-							MessageBoxW(nullptr, L"ビット排他的論理和に用いる二つ目の変数の値が整数値ではありません。", L"ビット排他的論理和エラー", MB_OK | MB_ICONERROR);
-						}
+						SendBitLogicError(L"演算: ビット排他的論理和\n", Is_Int);
 					}
 					StandardCommand::Execute();
 				}
 			};
 
 			// ビット論理否定
-			DYNAMIC_COMMAND(Not) {
+			class Not final : public BitCommand {
 			public:
-				DYNAMIC_COMMAND_CONSTRUCTOR(Not){}
+				using BitCommand::BitCommand;
 				~Not() final {}
 
 				void Execute() final {
+					Extract(1);
 					std::wstring var_name{};
 					var_name = GetParam<std::wstring, true>(0);
 				
-					auto* v = &Program::Instance().var_manager.Get<false>(var_name);
-					if (v->type() != typeid(std::nullptr_t)) {
-					reassign:
-						auto value_name = GetParam<std::wstring, true>(1);
-						auto [iv, ip] = ToInt(value_name.c_str());
-						if (wcslen(ip) <= 0)
-							*v = ~iv;
-						else
-							MessageBoxW(nullptr, L"ビット論理否定に用いる一つ目の変数の値が整数値ではありません。", L"ビット論理否定エラー", MB_OK | MB_ICONERROR);
-					} else {
-						auto i = MessageBoxW(nullptr, (var_name + L"は存在しない変数なので徐算結果を代入できません。\n新しくこの変数を作成しますか?").c_str(), L"徐算エラー", MB_YESNO | MB_ICONERROR);
-						if (i == IDYES) {
-							v = &Program::Instance().var_manager.MakeNew(var_name);
-							goto reassign;
+					if (value[0].type() == typeid(int)) {
+						auto* v = &Program::Instance().var_manager.Get<false>(var_name);
+						CalculateValue cal;
+						cal.i = ~std::any_cast<int>(value[0]);
+						if (v->type() != typeid(std::nullptr_t)) {
+							*v = cal.i;
+						} else {
+							SendAssignError(true, cal);
 						}
+					} else {
+						SendBitLogicError(L"演算: ビット論理否定\n", { false, true });
 					}
 					StandardCommand::Execute();
 				}
@@ -1378,6 +1372,7 @@ namespace karapo::event {
 					// 再格納する。
 					commands.push_front(std::move(recycled));
 				}
+				event::Manager::Instance().error_handler.ShowLocalError(4);
 			}
 		}
 
@@ -1756,6 +1751,8 @@ namespace karapo::event {
 
 			std::unordered_map<std::wstring, Event> events;
 			std::wstring ename;
+
+			error::ErrorContent *parser_abortion_error{};
 		public:
 			// コマンド解析クラス
 			// 単語に基づくコマンドの生成と、それの結果を排出する。
@@ -3065,9 +3062,12 @@ namespace karapo::event {
 				return std::move(cmdparser.Result());
 			}
 
-			Parser() = default;
+			Parser() {
+				if (parser_abortion_error == nullptr)
+					parser_abortion_error = error::UserErrorHandler::MakeError(event::Manager::Instance().error_class, L"イベント解析を強制終了しました。", MB_OK | MB_ICONERROR, 1);
+			}
 
-			Parser(const std::wstring& Sentence) noexcept {
+			Parser(const std::wstring& Sentence) noexcept : Parser() {
 				auto context = ParseBasic(Sentence);
 				bool aborted = false;
 
@@ -3083,7 +3083,7 @@ namespace karapo::event {
 				}
 
 				if (aborted) {
-					MessageBoxW(nullptr, L"イベント解析を強制終了しました。", L"エラー", MB_OK | MB_ICONERROR);
+					error::UserErrorHandler::SendGlobalError(parser_abortion_error);
 					events.clear();
 				}
 			}
@@ -3231,6 +3231,10 @@ namespace karapo::event {
 		can_execute = true;
 	}
 
+	Manager::Manager() {
+		error_class = error_handler.MakeErrorClass(L"イベントエラー");
+		call_error = error_handler.MakeError(error_class, L"指定されたイベントが見つかりません。", MB_OK | MB_ICONERROR, 2);
+	}
 
 	std::unordered_map<std::wstring, Event> Manager::GenerateEvent(const std::wstring& Path) noexcept {
 		EventGenerator::Instance().Generate(Path);
@@ -3308,8 +3312,7 @@ namespace karapo::event {
 
 			Program::Instance().var_manager.Get<false>(variable::Executing_Event_Name) = event_name;
 		} else {
-			std::wstring message = L"イベント名「" + EName + L"」が見つからなかったので実行できません。";
-			MessageBoxW(nullptr, message.c_str(), L"イベントエラー", MB_OK | MB_ICONERROR);
+			error_handler.SendLocalError(call_error, L"イベント名: " + EName);
 			return;
 		}
 	}

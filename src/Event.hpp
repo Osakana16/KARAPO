@@ -60,7 +60,9 @@ namespace karapo::event {
 		// イベントを生成する。
 		std::unordered_map<std::wstring, Event> GenerateEvent(const std::wstring&) noexcept;
 
-		Manager() = default;
+		error::ErrorContent *call_error{};
+
+		Manager();
 		~Manager() = default;
 	public:
 		// イベントを読み込み、新しく設定し直す。
@@ -89,6 +91,9 @@ namespace karapo::event {
 			static Manager manager;
 			return manager;
 		}
+
+		error::UserErrorHandler error_handler{};
+		error::ErrorClass *error_class{};
 	};
 
 	// イベント編集クラス
