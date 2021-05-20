@@ -243,7 +243,7 @@ namespace karapo::event {
 				for (int i = 0; i < 2; i++)
 					name[i] = GetParam<std::wstring, true>(i);
 
-				uint32_t result = 0;
+				int result = 0;
 				if (Program::Instance().var_manager.Get<false>(name[0]).type() != typeid(std::nullptr_t)) {
 					result |= std::any_cast<int>(Program::Instance().var_manager.Get<false>(L"__•Ï”‘¶İ"));
 				}
