@@ -1546,13 +1546,8 @@ namespace karapo::event {
 			// SCからECまでの範囲の文章を解析する解析器。
 			// それ以外には、解析中かどうかを表現するための関数群を持つ。
 			template<wchar_t SC, wchar_t EC>
-			struct SubParser {
-				static constexpr bool IsValidToStart(const wchar_t Ch) noexcept { return SC == Ch; }
-				static constexpr bool IsValidToEnd(const wchar_t Ch) noexcept { return EC == Ch; }
-
-				~SubParser() noexcept {
-					MYGAME_ASSERT(!parsing);
-				}
+			class RangeParser {
+				bool parsing = false;
 			protected:
 				// 解析中かどうか。
 				bool IsParsing() const noexcept { return parsing; }
@@ -1568,8 +1563,13 @@ namespace karapo::event {
 					MYGAME_ASSERT(parsing);
 					parsing = false;
 				}
-			private:
-				bool parsing = false;
+			public:
+				static constexpr bool IsValidToStart(const wchar_t Ch) noexcept { return SC == Ch; }
+				static constexpr bool IsValidToEnd(const wchar_t Ch) noexcept { return EC == Ch; }
+
+				~RangeParser() noexcept {
+					MYGAME_ASSERT(!parsing);
+				}
 			};
 
 			// イベント情報を解析器。
@@ -1577,7 +1577,7 @@ namespace karapo::event {
 			// 結果を適切な型に変換して排出する。
 			class InformationParser final {
 				// イベント名の解析と変換を行うクラス 
-				class NameParser final : public SubParser<L'[', L']'> {
+				class NameParser final : public RangeParser<L'[', L']'> {
 					std::wstring name;
 				public:
 					[[nodiscard]] auto Interpret(const std::wstring& Sentence) noexcept {
@@ -1601,7 +1601,7 @@ namespace karapo::event {
 				} nparser;
 
 				// イベント発生タイプ及び位置の解析と変換を行うクラス
-				class ConditionParser final : public SubParser<L'<', L'>'> {
+				class ConditionParser final : public RangeParser<L'<', L'>'> {
 					const std::unordered_map<std::wstring, TriggerType> Trigger_Map{
 						{ L"n", TriggerType::None },
 						{ L"t", TriggerType::Trigger },
@@ -1726,7 +1726,7 @@ namespace karapo::event {
 			};
 
 			// イベントの引数を解析するクラス
-			class ParamParser final : public SubParser<L'(', L')'> {
+			class ParamParser final : public RangeParser<L'(', L')'> {
 				std::vector<std::wstring> param_names{};
 			public:
 				auto Interpret(Context *const context) noexcept {
@@ -1771,7 +1771,7 @@ namespace karapo::event {
 		public:
 			// コマンド解析クラス
 			// 単語に基づくコマンドの生成と、それの結果を排出する。
-			class CommandParser final : public SubParser<L'{', L'}'> {
+			class CommandParser final : public RangeParser<L'{', L'}'> {
 				// 予約語
 				std::unordered_map<std::wstring, GenerateFunc> words;
 
