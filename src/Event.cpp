@@ -1590,6 +1590,12 @@ namespace karapo::event {
 					std::wstring name;
 				public:
 					[[nodiscard]] auto Interpret(const std::wstring& Sentence) noexcept {
+						if (IsAborted()) {
+							if (IsParsing())
+								EndParsing();
+							return true;
+						}
+
 						if (Sentence.size() == 1) {
 							if (IsValidToStart(Sentence[0])) {
 								StartParsing();
@@ -1599,8 +1605,12 @@ namespace karapo::event {
 								return true;
 							}
 						}
+
 						if (IsParsing()) {
-							name = Sentence;
+							if (!Sentence.empty())
+								name = Sentence;
+							else
+								AbortParsing();
 						}
 						return false;
 					}
@@ -1639,6 +1649,12 @@ namespace karapo::event {
 					}
 
 					[[nodiscard]] auto Interpret(const std::wstring& Sentence) noexcept {
+						if (IsAborted()) {
+							if (IsParsing())
+								EndParsing();
+							return true;
+						}
+
 						if (Sentence.size() == 1) {
 							if (IsValidToStart(Sentence[0])) {
 								StartParsing();
@@ -1650,27 +1666,31 @@ namespace karapo::event {
 						}
 
 						if (IsParsing()) {
-							if (tt == TriggerType::Invalid) {
-								// 発生タイプ解析
-								auto it = Trigger_Map.find(Sentence);
-								if (it != Trigger_Map.end()) {
-									tt = it->second;
-								} else {
-									const auto Event_Name = std::any_cast<std::wstring>(Program::Instance().var_manager.Get<false>(L"__生成中イベント"));
+							if (current < &minx || current > &maxy) {
+								AbortParsing();
+							} else {
+								if (tt == TriggerType::Invalid) {
+									// 発生タイプ解析
+									auto it = Trigger_Map.find(Sentence);
+									if (it != Trigger_Map.end()) {
+										tt = it->second;
+									} else {
+										const auto Event_Name = std::any_cast<std::wstring>(Program::Instance().var_manager.Get<false>(L"__生成中イベント"));
 
-									auto sub_message = L"該当イベント: " + Event_Name + L'\n';
-									sub_message += L"指定された発生タイプ: " + Sentence;
-									event::Manager::Instance().error_handler.SendLocalError(not_condition_warning, sub_message);
-									tt = TriggerType::None;
+										auto sub_message = L"該当イベント: " + Event_Name + L'\n';
+										sub_message += L"指定された発生タイプ: " + Sentence;
+										event::Manager::Instance().error_handler.SendLocalError(not_condition_warning, sub_message);
+										tt = TriggerType::None;
+									}
+								} else if (tt != TriggerType::None && tt != TriggerType::Auto && tt != TriggerType::Load) {
+									if (Sentence == L"~") {
+										if (current + 1 <= &maxy)
+											current++;
+									} else if (Sentence == L",") {
+										current = &miny;
+									}
+									*current = ToDec<Dec>(Sentence.c_str(), nullptr);
 								}
-							} else if (tt != TriggerType::None && tt != TriggerType::Auto && tt != TriggerType::Load) {
-								if (Sentence == L"~") {
-									if (current + 1 <= &maxy)
-										current++;
-								} else if (Sentence == L",") {
-									current = &miny;
-								}
-								*current = ToDec<Dec>(Sentence.c_str(), nullptr);
 							}
 						}
 						return false;
@@ -1740,6 +1760,16 @@ namespace karapo::event {
 				std::vector<std::wstring> param_names{};
 			public:
 				auto Interpret(Context *const context) noexcept {
+					if (IsAborted()) {
+						if (IsParsing()) {
+							while (!IsValidToEnd(context->front()[0])) {
+								context->pop_front();
+							}
+							EndParsing();
+						}
+						return;
+					}
+
 					const auto Sentence = context->front();
 					if (IsParsing()) {
 						if (IsValidToEnd(Sentence[0])) {
@@ -1752,7 +1782,10 @@ namespace karapo::event {
 							if (Sentence != L",") {
 								param_names.back() = Sentence;
 							} else {
-								param_names.push_back({});
+								if (!param_names.empty() && param_names.back().empty()) {
+									AbortParsing();
+								} else
+									param_names.push_back({});
 							}
 						}
 					} else {
