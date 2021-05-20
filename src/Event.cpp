@@ -1740,7 +1740,7 @@ namespace karapo::event {
 							return;
 						} else {
 							if (Sentence != L",") {
-								*(param_names.end() - 1) = Sentence;
+								param_names.back() = Sentence;
 							} else {
 								param_names.push_back({});
 							}
