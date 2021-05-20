@@ -1548,7 +1548,7 @@ namespace karapo::event {
 			template<wchar_t SC, wchar_t EC>
 			class RangeParser {
 				bool parsing = false;
-				bool need_abort{};
+				error::ErrorContent* abort_error{};
 			protected:
 				// 解析中かどうか。
 				bool IsParsing() const noexcept { return parsing; }
@@ -1565,8 +1565,8 @@ namespace karapo::event {
 					parsing = false;
 				}
 
-				void AbortParsing() noexcept {
-					need_abort = true;
+				void AbortParsing(error::ErrorContent* error) noexcept {
+					abort_error = error;
 				}
 			public:
 				static constexpr bool IsValidToStart(const wchar_t Ch) noexcept { return SC == Ch; }
@@ -1576,8 +1576,8 @@ namespace karapo::event {
 					MYGAME_ASSERT(!parsing);
 				}
 
-				bool IsAborted() const noexcept {
-					return need_abort;
+				error::ErrorContent* AbortedReason() const noexcept {
+					return abort_error;
 				}
 			};
 
@@ -1588,9 +1588,15 @@ namespace karapo::event {
 				// イベント名の解析と変換を行うクラス 
 				class NameParser final : public RangeParser<L'[', L']'> {
 					std::wstring name;
+					inline static error::ErrorContent *empty_name_error{};
 				public:
+					NameParser() noexcept {
+						if (empty_name_error == nullptr)
+							empty_name_error = error::UserErrorHandler::MakeError(event::Manager::Instance().error_class, L"イベント名を空にすることはできません。", MB_OK | MB_ICONERROR, 1);
+					}
+
 					[[nodiscard]] auto Interpret(const std::wstring& Sentence) noexcept {
-						if (IsAborted()) {
+						if (AbortedReason() != nullptr) {
 							if (IsParsing())
 								EndParsing();
 							return true;
@@ -1610,7 +1616,7 @@ namespace karapo::event {
 							if (!Sentence.empty())
 								name = Sentence;
 							else
-								AbortParsing();
+								AbortParsing(empty_name_error);
 						}
 						return false;
 					}
@@ -1641,15 +1647,20 @@ namespace karapo::event {
 					Dec *current = &minx;
 
 					inline static error::ErrorContent* not_condition_warning{};
+					inline static error::ErrorContent* too_many_positions_error{};
 				public:
 					ConditionParser() noexcept {
 						if (not_condition_warning == nullptr) {
 							not_condition_warning = error::UserErrorHandler::MakeError(event::Manager::Instance().error_class, L"指定されたイベント発生タイプが存在しなかった為、\n発生タイプ無し(n)として設定しました。", MB_OK | MB_ICONWARNING, 2);
 						}
+
+						if (too_many_positions_error == nullptr) {
+							too_many_positions_error = error::UserErrorHandler::MakeError(event::Manager::Instance().error_class, L"指定座標が多すぎます。", MB_OK | MB_ICONERROR, 1);
+						}
 					}
 
 					[[nodiscard]] auto Interpret(const std::wstring& Sentence) noexcept {
-						if (IsAborted()) {
+						if (AbortedReason() != nullptr) {
 							if (IsParsing())
 								EndParsing();
 							return true;
@@ -1667,7 +1678,7 @@ namespace karapo::event {
 
 						if (IsParsing()) {
 							if (current < &minx || current > &maxy) {
-								AbortParsing();
+								AbortParsing(too_many_positions_error);
 							} else {
 								if (tt == TriggerType::Invalid) {
 									// 発生タイプ解析
@@ -1758,9 +1769,15 @@ namespace karapo::event {
 			// イベントの引数を解析するクラス
 			class ParamParser final : public RangeParser<L'(', L')'> {
 				std::vector<std::wstring> param_names{};
+				error::ErrorContent* empty_param_name_error{};
 			public:
+				ParamParser() {
+					if (empty_param_name_error == nullptr)
+						empty_param_name_error = error::UserErrorHandler::MakeError(event::Manager::Instance().error_class, L"引数名を空にすることはできません。", MB_OK | MB_ICONERROR, 1);
+				}
+
 				auto Interpret(Context *const context) noexcept {
-					if (IsAborted()) {
+					if (AbortedReason() != nullptr) {
 						if (IsParsing()) {
 							while (!IsValidToEnd(context->front()[0])) {
 								context->pop_front();
@@ -1783,7 +1800,7 @@ namespace karapo::event {
 								param_names.back() = Sentence;
 							} else {
 								if (!param_names.empty() && param_names.back().empty()) {
-									AbortParsing();
+									AbortParsing(empty_param_name_error);
 								} else
 									param_names.push_back({});
 							}
