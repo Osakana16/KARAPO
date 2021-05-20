@@ -39,7 +39,8 @@ namespace karapo::error {
 		local_errors.push_front({ eclass, External_Sentence, Func });
 	}
 
-	void UserErrorHandler::ShowError(ErrorElement* error_elements, const unsigned Error_Level) {
+	bool UserErrorHandler::ShowError(ErrorElement* error_elements, const unsigned Error_Level) {
+		const bool Any_Errors = !error_elements->empty();
 		while (!error_elements->empty()) {
 			auto [content, extra, func] = *error_elements->begin();
 			int box_result = 0;
@@ -49,13 +50,14 @@ namespace karapo::error {
 				func(box_result);
 			error_elements->pop_front();
 		}
+		return Any_Errors;
 	}
 
-	void UserErrorHandler::ShowGlobalError(const unsigned Error_Level) {
-		ShowError(&global_errors, Error_Level);
+	bool UserErrorHandler::ShowGlobalError(const unsigned Error_Level) {
+		return ShowError(&global_errors, Error_Level);
 	}
 
-	void UserErrorHandler::ShowLocalError(const unsigned Error_Level) {
-		ShowError(&local_errors, Error_Level);
+	bool UserErrorHandler::ShowLocalError(const unsigned Error_Level) {
+		return ShowError(&local_errors, Error_Level);
 	}
 }

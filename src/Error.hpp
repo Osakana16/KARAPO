@@ -16,10 +16,12 @@ namespace karapo::error {
 		// ゲームの特定のエラー群。
 		ErrorElement local_errors{};
 
-		static void ShowError(ErrorElement*, const unsigned Error_Level);
+		static bool ShowError(ErrorElement*, const unsigned Error_Level);
 	public:
-		static void SendGlobalError(ErrorContent*, const std::wstring& = L"", void(*)(const int) = nullptr), ShowGlobalError(const unsigned Error_Level);
-		void SendLocalError(ErrorContent*, const std::wstring& = L"", void(*)(const int) = nullptr), ShowLocalError(const unsigned Error_Level);
+		static void SendGlobalError(ErrorContent*, const std::wstring & = L"", void(*)(const int) = nullptr);
+		static bool ShowGlobalError(const unsigned Error_Level);
+		void SendLocalError(ErrorContent*, const std::wstring & = L"", void(*)(const int) = nullptr);
+		bool ShowLocalError(const unsigned Error_Level);
 		
 		// 新たなエラーのグループを作成する。
 		static ErrorClass* MakeErrorClass(const wchar_t* Error_Title);
