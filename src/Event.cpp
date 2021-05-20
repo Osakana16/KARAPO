@@ -1596,27 +1596,24 @@ namespace karapo::event {
 					}
 
 					[[nodiscard]] auto Interpret(const std::wstring& Sentence) noexcept {
-						if (AbortedReason() != nullptr) {
-							if (IsParsing())
-								EndParsing();
-							return true;
-						}
-
 						if (Sentence.size() == 1) {
 							if (IsValidToStart(Sentence[0])) {
 								StartParsing();
 								return false;
 							} else if (IsValidToEnd(Sentence[0])) {
-								EndParsing();
-								return true;
+								if (name.empty()) {
+									AbortParsing(empty_name_error);
+									EndParsing();
+									return false;
+								} else {
+									EndParsing();
+									return true;
+								}
 							}
 						}
 
 						if (IsParsing()) {
-							if (!Sentence.empty())
-								name = Sentence;
-							else
-								AbortParsing(empty_name_error);
+							name = Sentence;
 						}
 						return false;
 					}
@@ -1663,7 +1660,7 @@ namespace karapo::event {
 						if (AbortedReason() != nullptr) {
 							if (IsParsing())
 								EndParsing();
-							return true;
+							return false;
 						}
 
 						if (Sentence.size() == 1) {
