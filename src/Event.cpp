@@ -1657,6 +1657,12 @@ namespace karapo::event {
 								StartParsing();
 								return false;
 							} else if (IsValidToEnd(Sentence[0])) {
+								if (tt == TriggerType::Invalid) {
+									const auto Event_Name = std::any_cast<std::wstring>(Program::Instance().var_manager.Get<false>(L"__生成中イベント"));
+									auto sub_message = L"該当イベント: " + Event_Name + L'\n';
+									event::Manager::Instance().error_handler.SendLocalError(not_condition_warning, sub_message);
+									tt = TriggerType::None;
+								}
 								EndParsing();
 								return true;
 							}
