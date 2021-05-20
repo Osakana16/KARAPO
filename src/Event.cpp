@@ -1644,25 +1644,14 @@ namespace karapo::event {
 					Dec *current = &minx;
 
 					inline static error::ErrorContent* not_condition_warning{};
-					inline static error::ErrorContent* too_many_positions_error{};
 				public:
 					ConditionParser() noexcept {
 						if (not_condition_warning == nullptr) {
 							not_condition_warning = error::UserErrorHandler::MakeError(event::Manager::Instance().error_class, L"指定されたイベント発生タイプが存在しなかった為、\n発生タイプ無し(n)として設定しました。", MB_OK | MB_ICONWARNING, 2);
 						}
-
-						if (too_many_positions_error == nullptr) {
-							too_many_positions_error = error::UserErrorHandler::MakeError(event::Manager::Instance().error_class, L"指定座標が多すぎます。", MB_OK | MB_ICONERROR, 1);
-						}
 					}
 
 					[[nodiscard]] auto Interpret(const std::wstring& Sentence) noexcept {
-						if (AbortedReason() != nullptr) {
-							if (IsParsing())
-								EndParsing();
-							return false;
-						}
-
 						if (Sentence.size() == 1) {
 							if (IsValidToStart(Sentence[0])) {
 								StartParsing();
@@ -1674,31 +1663,28 @@ namespace karapo::event {
 						}
 
 						if (IsParsing()) {
-							if (current < &minx || current > &maxy) {
-								AbortParsing(too_many_positions_error);
-							} else {
-								if (tt == TriggerType::Invalid) {
-									// 発生タイプ解析
-									auto it = Trigger_Map.find(Sentence);
-									if (it != Trigger_Map.end()) {
-										tt = it->second;
-									} else {
-										const auto Event_Name = std::any_cast<std::wstring>(Program::Instance().var_manager.Get<false>(L"__生成中イベント"));
+							if (tt == TriggerType::Invalid) {
+								// 発生タイプ解析
+								auto it = Trigger_Map.find(Sentence);
+								if (it != Trigger_Map.end()) {
+									tt = it->second;
+								} else {
+									const auto Event_Name = std::any_cast<std::wstring>(Program::Instance().var_manager.Get<false>(L"__生成中イベント"));
 
-										auto sub_message = L"該当イベント: " + Event_Name + L'\n';
-										sub_message += L"指定された発生タイプ: " + Sentence;
-										event::Manager::Instance().error_handler.SendLocalError(not_condition_warning, sub_message);
-										tt = TriggerType::None;
-									}
-								} else if (tt != TriggerType::None && tt != TriggerType::Auto && tt != TriggerType::Load) {
-									if (Sentence == L"~") {
-										if (current + 1 <= &maxy)
-											current++;
-									} else if (Sentence == L",") {
-										current = &miny;
-									}
-									*current = ToDec<Dec>(Sentence.c_str(), nullptr);
+									auto sub_message = L"該当イベント: " + Event_Name + L'\n';
+									sub_message += L"指定された発生タイプ: " + Sentence;
+									event::Manager::Instance().error_handler.SendLocalError(not_condition_warning, sub_message);
+									tt = TriggerType::None;
 								}
+							} else if (tt != TriggerType::None && tt != TriggerType::Auto && tt != TriggerType::Load) {
+								if (Sentence == L"~") {
+									// 余分な座標は無視。
+									if (current + 1 <= &maxy)
+										current++;
+								} else if (Sentence == L",") {
+									current = &miny;
+								}
+								*current = ToDec<Dec>(Sentence.c_str(), nullptr);
 							}
 						}
 						return false;
