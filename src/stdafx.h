@@ -23,5 +23,6 @@
 
 #include "api/karapo.hpp"
 #include "Util.hpp"
+#include "Error.hpp"
 #include "Entity.hpp"
 #include "Event.hpp"
