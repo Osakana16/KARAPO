@@ -3153,6 +3153,9 @@ namespace karapo::event {
 					auto params = ParseArgs(&context);
 					Event::Commands commands = ParseCommand(&context, &aborted);
 
+					if (event::Manager::Instance().error_handler.ShowLocalError(4))
+						break;
+
 					Event event{ .commands = std::move(commands), .trigger_type = trigger, .origin{ min, max }, .param_names=std::move(params) };
 					events[name] = std::move(event);
 				}
