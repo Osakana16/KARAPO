@@ -1552,10 +1552,15 @@ namespace karapo::event {
 						Context::iterator it = context.begin();
 						while (it != context.end()) {
 							it = std::find_if(it, context.end(), [](std::wstring text) {
-								return text == L"<" || text == L"=" || text == L">";
+								return text == L"<" || text == L"=" || text == L">" || text == L"\n";
 							});
 
 							if (it != context.end()) {
+								if (*it == L"\n") {
+									tmp.clear();
+									it++;
+									continue;
+								}
 								tmp += *it;
 								if (tmp.size() == 2) {
 									if (tmp == L"<=" || tmp == L"==" || tmp == L">=") {
