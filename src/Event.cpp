@@ -1159,6 +1159,43 @@ namespace karapo::event {
 				}
 			};
 
+			class Mod final : public MathCommand {
+			public:
+				using MathCommand::MathCommand;
+				~Mod() final {}
+
+				void Execute() final {
+					Extract(2);
+					const bool Is_Only_Int = (value[0].type() == typeid(int) && value[1].type() == typeid(int));
+
+					CalculateValue cal;
+					if (Is_Only_Int) {
+						cal.i = std::any_cast<int>(value[0]) % std::any_cast<int>(value[1]);
+					} else {
+						cal.d = 0.0;
+						if (value[0].type() == typeid(int)) {
+							cal.d = std::any_cast<int>(value[0]);
+						} else {
+							cal.d = std::any_cast<Dec>(value[0]);
+						}
+
+						if (value[1].type() == typeid(int)) {
+							cal.d = fmod(cal.d, std::any_cast<int>(value[1]));
+						} else {
+							cal.d = fmod(cal.d, std::any_cast<int>(value[1]));
+						}
+					}
+
+					auto* v = &Program::Instance().var_manager.Get<false>(var_name);
+					if (v->type() != typeid(std::nullptr_t)) {
+						*v = (Is_Only_Int ? cal.i : cal.d);
+					} else {
+						SendAssignError(Is_Only_Int, cal);
+					}
+					StandardCommand::Execute();
+				}
+			};
+
 			class BitCommand : public MathCommand {
 			protected:
 				inline static error::ErrorClass* logic_operation_error_class{};
@@ -2978,6 +3015,28 @@ namespace karapo::event {
 						return {
 							.Result = [&]() -> CommandPtr {
 								return std::make_unique<command::math::Div>(params);
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+									case 1:
+									case 2:
+										return KeywordInfo::ParamResult::Lack;
+									case 3:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"mod"] = words[L"èËó]"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() -> CommandPtr {
+								return std::make_unique<command::math::Mod>(params);
 							},
 							.checkParamState = [params]() -> KeywordInfo::ParamResult {
 								switch (params.size()) {
