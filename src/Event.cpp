@@ -1033,8 +1033,10 @@ namespace karapo::event {
 								auto [fv, fp] = ToDec<Dec>(tmp.c_str());
 								if (wcslen(ip) <= 0)
 									value[i] = iv;
-								else
+								else if (wcslen(fp) <= 0)
 									value[i] = fv;
+								else
+									value[i] = tmp;
 							}
 						}
 					}
@@ -1049,7 +1051,6 @@ namespace karapo::event {
 				void Execute() final {
 					Extract(1);
 					auto var_name = GetParam<std::wstring, true>(0);
-
 					auto* v = &Program::Instance().var_manager.Get<false>(var_name);
 					if (v->type() != typeid(std::nullptr_t)) {
 						if (value[0].type() == typeid(int))
