@@ -1082,7 +1082,10 @@ namespace karapo::event {
 
 					auto* v = &Program::Instance().var_manager.Get<false>(var_name);
 					if (v->type() != typeid(std::nullptr_t)) {
-						*v = (Is_Only_Int ? cal.i : cal.d);
+						if (Is_Only_Int)
+							*v = cal.i;
+						else
+							*v = cal.d;
 					} else {
 						SendAssignError(Is_Only_Int, cal);
 					}
@@ -1105,7 +1108,10 @@ namespace karapo::event {
 
 					auto* v = &Program::Instance().var_manager.Get<false>(var_name);
 					if (v->type() != typeid(std::nullptr_t)) {
-						*v = (Is_Only_Int ? cal.i : cal.d);
+						if (Is_Only_Int)
+							*v = cal.i;
+						else
+							*v = cal.d;
 					} else {
 						SendAssignError(Is_Only_Int, cal);
 					}
@@ -1128,7 +1134,10 @@ namespace karapo::event {
 
 					auto *v = &Program::Instance().var_manager.Get<false>(var_name);
 					if (v->type() != typeid(std::nullptr_t)) {
-						*v = (Is_Only_Int ? cal.i : cal.d);
+						if (Is_Only_Int)
+							*v = cal.i;
+						else
+							*v = cal.d;
 					} else {
 						SendAssignError(Is_Only_Int, cal);
 					}
@@ -1151,7 +1160,10 @@ namespace karapo::event {
 
 					auto* v = &Program::Instance().var_manager.Get<false>(var_name);
 					if (v->type() != typeid(std::nullptr_t)) {
-						*v = (Is_Only_Int ? cal.i : cal.d);
+						if (Is_Only_Int)
+							*v = cal.i;
+						else
+							*v = cal.d;
 					} else {
 						SendAssignError(Is_Only_Int, cal);
 					}
@@ -1188,7 +1200,10 @@ namespace karapo::event {
 
 					auto* v = &Program::Instance().var_manager.Get<false>(var_name);
 					if (v->type() != typeid(std::nullptr_t)) {
-						*v = (Is_Only_Int ? cal.i : cal.d);
+						if (Is_Only_Int)
+							*v = cal.i;
+						else
+							*v = cal.d;
 					} else {
 						SendAssignError(Is_Only_Int, cal);
 					}
