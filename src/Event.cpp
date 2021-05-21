@@ -3577,7 +3577,7 @@ namespace karapo::event {
 		editor->MakeNewEvent(Event_Name);
 		editor->ChangeTriggerType(L"n");
 		editor->ChangeRange({ 0, 0 }, { 0, 0 });
-		editor->AddCommand(L'{' + command_sentence + L'}', 0);
+		editor->AddCommand(L"{\n" + command_sentence + L"\n}", 0);
 		Program::Instance().FreeEventEditor(editor);
 
 
