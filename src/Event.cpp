@@ -1061,8 +1061,11 @@ namespace karapo::event {
 							*v = std::any_cast<int>(value[0]);
 						else if (value[0].type() == typeid(Dec))
 							*v = std::any_cast<Dec>(value[0]);
-						else if (value[0].type() == typeid(std::wstring))
-							*v = std::any_cast<std::wstring>(value[0]);
+						else if (value[0].type() == typeid(std::wstring)) {
+							auto txt = std::any_cast<std::wstring>(value[0]);
+							ReplaceFormat(&txt);
+							*v = txt;
+						}
 					} else {
 						SendAssignError(value[0]);
 					}
