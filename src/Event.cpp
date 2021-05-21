@@ -1963,7 +1963,7 @@ namespace karapo::event {
 									if (f.is_dynamic) {
 										// 動的コマンドはイベントのコマンドに追加。
 										commands.push_back(std::move(result));
-										if (generating_command_name == L"of") {
+										if (generating_command_name == L"of" || generating_command_name == L"分岐") {
 											auto endof = words.at(L"__endof")({}).Result();
 											commands.insert(commands.end() - 1, std::move(endof));
 										} else if (generating_command_name == L"kill") {
