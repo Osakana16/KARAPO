@@ -357,6 +357,10 @@ namespace karapo::event {
 				Program::Instance().event_manager.FreeCase();
 				StandardCommand::Execute();
 			}
+
+			bool IgnoreCondition() const noexcept final {
+				return true;
+			}
 		};
 
 		// ‰æ‘œ‚ğ“Ç‚İ‚İA•\¦‚³‚¹‚éB
