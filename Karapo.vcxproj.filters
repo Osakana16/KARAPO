@@ -42,6 +42,9 @@
     <ClCompile Include="src\api\kio.cpp">
       <Filter>src\api</Filter>
     </ClCompile>
+    <ClCompile Include="src\Error.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Animation.hpp">
@@ -73,6 +76,9 @@
     </ClInclude>
     <ClInclude Include="src\api\kio.hpp">
       <Filter>src\api</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Error.hpp">
+      <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

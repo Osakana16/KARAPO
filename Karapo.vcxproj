@@ -25,6 +25,7 @@
     <ClCompile Include="src\Canvas.cpp" />
     <ClCompile Include="src\Engine.cpp" />
     <ClCompile Include="src\Entity.cpp" />
+    <ClCompile Include="src\Error.cpp" />
     <ClCompile Include="src\Event.cpp" />
     <ClCompile Include="src\Phase.cpp" />
     <ClCompile Include="src\Program.cpp" />
@@ -43,6 +44,7 @@
     <ClInclude Include="src\Canvas.hpp" />
     <ClInclude Include="src\Engine.hpp" />
     <ClInclude Include="src\Entity.hpp" />
+    <ClInclude Include="src\Error.hpp" />
     <ClInclude Include="src\Event.hpp" />
     <ClInclude Include="src\Phase.hpp" />
     <ClInclude Include="src\stdafx.h" />
