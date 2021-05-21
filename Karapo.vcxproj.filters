@@ -24,9 +24,6 @@
     <ClCompile Include="src\Event.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="src\Phase.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="src\Program.cpp">
       <Filter>src</Filter>
     </ClCompile>
@@ -57,9 +54,6 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\Event.hpp">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Phase.hpp">
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\stdafx.h">
