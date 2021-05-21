@@ -1782,6 +1782,10 @@ namespace karapo::event {
 							if (param_names[0] == L"") {
 								param_names.clear();
 							}
+
+							if (!param_names.empty() && param_names.back().empty()) {
+								AbortParsing(empty_param_name_error);
+							}
 							EndParsing();
 							return;
 						} else {
