@@ -2864,18 +2864,19 @@ namespace karapo::event {
 										return std::make_unique<command::Of>(std::vector<std::wstring>{ L"==", params[0] });
 									}
 								} else {
-									const auto [Mode, Mode_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+									auto [mode, mode_type] = Default_ProgramInterface.GetParamInfo(params[0]);
 									const auto [Var, Type] = Default_ProgramInterface.GetParamInfo(params[1]);
+
+									mode = mode.substr(mode.find(L'.') + 1);
 									if (Default_ProgramInterface.IsNumberType(Type)) {
 										auto [iv, ip] = ToInt(Var.c_str());
 										auto [fv, fp] = ToDec<Dec>(Var.c_str());
-
 										if (wcslen(ip) <= 0)
-											return std::make_unique<command::Of>(Mode, iv);
+											return std::make_unique<command::Of>(mode, iv);
 										else
-											return std::make_unique<command::Of>(Mode, fv);
+											return std::make_unique<command::Of>(mode, fv);
 									} else if (Default_ProgramInterface.IsStringType(Type)) {
-										return std::make_unique<command::Of>(Mode, Var);
+										return std::make_unique<command::Of>(mode, Var);
 									} else {
 										return std::make_unique<command::Of>(params);
 									}
