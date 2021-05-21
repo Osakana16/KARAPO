@@ -342,3 +342,5 @@ healthchecksdb
 # Ignore lib files
 lib/
 /DLL
+Data/
+kaction.ini
