@@ -1450,6 +1450,12 @@ namespace karapo::event {
 	public:
 		// 解析クラス
 		class Parser final {
+			// 構文木
+			struct Syntax final {
+				std::wstring text{};
+				Syntax* parent{};
+			};
+
 			// 一文字ずつの解析器。
 			// 空白を基準とする単語単位の解析結果をcontextとして排出。
 			class LexicalParser final {
@@ -1485,7 +1491,7 @@ namespace karapo::event {
 											PushWord(&context, &text);
 										}
 
-										if (c == L'\n') {
+										if (c == L'\n' && context.back() != L"\n") {
 											text = L'\n';
 											PushWord(&context, &text);
 										}
@@ -1605,6 +1611,76 @@ namespace karapo::event {
 
 				auto Result() noexcept {
 					return std::move(compiled);
+				}
+			};
+
+			// 構文木解析
+			class SyntaxParser final {
+				std::list<Syntax> tree{};
+			public:
+				SyntaxParser(Context* lexical_context) noexcept {
+					tree.push_front({});
+					tree.push_front(Syntax{ .parent = &tree.front() });
+					auto operator_iterator = tree.end();
+					auto tree_iterator = tree.begin();
+
+					while (!lexical_context->empty()) {
+						auto str = lexical_context->front();
+						switch (str[0]) {
+							case L'{':
+							case L'}':
+							case L'[':
+							case L']':
+							case L'<':
+							case L'>':
+							case L'(':
+							case L')':
+							{
+								if (str.size() > 1)
+									goto not_operator;
+								auto old = tree_iterator;
+								if (operator_iterator == tree.end()) {
+									tree_iterator++;
+									operator_iterator = tree_iterator;
+								} else
+									tree_iterator = operator_iterator;
+
+								tree_iterator->text += str[0];
+								tree_iterator = old;
+								break;
+							}
+							case L'\n':
+							{
+								if (operator_iterator->text != L"{") {
+									operator_iterator = tree.end();
+									tree_iterator->parent = nullptr;
+									tree.push_front(Syntax{ .parent = &(*tree_iterator) });
+								} else {
+									// コマンド文は複数行の文で構成される。
+									// ({}を親とする構文木が複数存在する。)
+									// 
+									// その為、常に{}を親として設定。
+									tree_iterator->parent = &(*operator_iterator);
+								}
+								tree_iterator = tree.begin();
+								break;
+							}
+							case L',':
+								// カンマは無視。
+								break;
+							default:
+							not_operator:
+								tree_iterator->text = str;
+								tree.push_front(Syntax{ .parent = &(*tree_iterator) });
+								tree_iterator = tree.begin();
+								break;
+						}
+						lexical_context->pop_front();
+					}
+				}
+
+				auto& Result() noexcept {
+					return tree;
 				}
 			};
 
