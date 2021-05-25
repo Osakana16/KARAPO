@@ -1456,6 +1456,13 @@ namespace karapo::event {
 				Syntax* parent{};
 			};
 
+			struct ParsingEvent final {
+				std::list<CommandTree> command_tree;			// コマンド
+				TriggerType trigger_type;				// イベント発生タイプ
+				WorldVector origin[2];
+				std::vector<std::wstring> param_names{};		// 引数名
+			};
+
 			// 一文字ずつの解析器。
 			// 空白を基準とする単語単位の解析結果をcontextとして排出。
 			class LexicalParser final {
@@ -1681,6 +1688,1221 @@ namespace karapo::event {
 
 				auto& Result() noexcept {
 					return tree;
+				}
+			};
+
+			// 意味解析
+			class SemanticParser final {
+				std::list<Syntax*> visited{}, queue{};
+				std::list<std::wstring> stack{};
+
+				std::unordered_map<std::wstring, ParsingEvent> parsing_events{};
+
+				CommandTree* parent = nullptr;
+				WorldVector origin[2]{ { -1, -1 }, { -1, -1 } };
+				TriggerType trigger_type;
+				std::wstring event_name;
+				std::vector<std::wstring> params{};
+				std::list<CommandTree> commands{};
+				std::vector<std::wstring> command_parameters{};
+				std::unordered_map<std::wstring, GenerateFunc> words{};
+			public:
+				SemanticParser() noexcept {
+					words[L"text"] =
+						words[L"文章"] = [](const std::vector<std::wstring>& params) -> KeywordInfo
+					{
+						return {
+							.Result = [&]() noexcept -> CommandPtr {
+								const auto [Name, Name_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								const auto [X, X_Type] = Default_ProgramInterface.GetParamInfo(params[1]);
+								const auto [Y, Y_Type] = Default_ProgramInterface.GetParamInfo(params[1]);
+								if (Default_ProgramInterface.IsStringType(Name_Type) &&
+									Default_ProgramInterface.IsStringType(X_Type) &&
+									Default_ProgramInterface.IsStringType(Y_Type))
+								{
+									auto [xv, xp] = ToDec<Dec>(X.c_str());
+									auto [yv, yp] = ToDec<Dec>(Y.c_str());
+									return std::make_unique<command::Print>(Name, WorldVector{ xv, yv });
+								} else
+									return std::make_unique<command::Print>(params);
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+									case 1:
+									case 2:
+										return KeywordInfo::ParamResult::Lack;
+									case 3:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"music"] =
+						words[L"音楽"] =
+						words[L"BGM"] = [](const std::vector<std::wstring>& params) -> KeywordInfo
+					{
+						return {
+							.Result = [&]() noexcept -> CommandPtr {
+								const auto [Var, Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								if (Default_ProgramInterface.IsStringType(Type))
+									return std::make_unique<command::Music>(Var);
+								else
+									return std::make_unique<command::Music>(params);
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 1:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Lack;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"sound"] =
+						words[L"効果音"] =
+						words[L"音"] = [](const std::vector<std::wstring>& params) -> KeywordInfo
+					{
+						return {
+							.Result = [&]() noexcept -> CommandPtr {
+								const auto [File_Path, Path_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								const auto [Vec_X, X_Type] = Default_ProgramInterface.GetParamInfo(params[1]);
+								const auto [Vec_Y, Y_Type] = Default_ProgramInterface.GetParamInfo(params[2]);
+								if (Default_ProgramInterface.IsStringType(Path_Type) && Default_ProgramInterface.IsNumberType(X_Type) && Default_ProgramInterface.IsNumberType(Y_Type)) {
+									return std::make_unique<command::Sound>(File_Path, WorldVector{ ToDec<Dec>(Vec_X.c_str(), nullptr), ToDec<Dec>(Vec_Y.c_str(), nullptr) });
+								} else {
+									return std::make_unique<command::Sound>(params);
+								}
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+									case 1:
+									case 2:
+										return KeywordInfo::ParamResult::Lack;
+									case 3:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"image"] =
+						words[L"画像"] =
+						words[L"絵"] = [](const std::vector<std::wstring>& params) -> KeywordInfo
+					{
+						return {
+							.Result = [&]() noexcept -> CommandPtr {
+								const auto [File_Path, Path_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								const auto [Vec_X, VX_Type] = Default_ProgramInterface.GetParamInfo(params[1]);
+								const auto [Vec_Y, VY_Type] = Default_ProgramInterface.GetParamInfo(params[2]);
+								const auto [Len_X, LX_Type] = Default_ProgramInterface.GetParamInfo(params[3]);
+								const auto [Len_Y, LY_Type] = Default_ProgramInterface.GetParamInfo(params[4]);
+
+								if (Default_ProgramInterface.IsStringType(Path_Type) &&
+									Default_ProgramInterface.IsNumberType(VX_Type) &&
+									Default_ProgramInterface.IsNumberType(VY_Type) &&
+									Default_ProgramInterface.IsNumberType(LX_Type) &&
+									Default_ProgramInterface.IsNumberType(LY_Type))
+								{
+									return std::make_unique<command::Image>(File_Path,
+										WorldVector{ ToDec<Dec>(Vec_X.c_str(), nullptr), ToDec<Dec>(Vec_Y.c_str(), nullptr) },
+										WorldVector{ ToDec<Dec>(Len_X.c_str(), nullptr), ToDec<Dec>(Len_Y.c_str(), nullptr) });
+								} else {
+									return std::make_unique<command::Image>(params);
+								}
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+									case 1:
+									case 2:
+									case 3:
+									case 4:
+										return KeywordInfo::ParamResult::Lack;
+									case 5:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"button"] =
+						words[L"ボタン"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() noexcept -> CommandPtr {
+								switch (params.size()) {
+									case 3:
+									{
+										const auto [Name, Name_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+										const auto [VX, VX_Type] = Default_ProgramInterface.GetParamInfo(params[1]);
+										const auto [VY, VY_Type] = Default_ProgramInterface.GetParamInfo(params[2]);
+										if (Default_ProgramInterface.IsStringType(Name_Type) &&
+											Default_ProgramInterface.IsNumberType(VX_Type) &&
+											Default_ProgramInterface.IsNumberType(VY_Type))
+										{
+											return std::make_unique<command::Button>(
+												Name,
+												WorldVector{ ToDec<Dec>(VX.c_str(), nullptr), ToDec<Dec>(VY.c_str(), nullptr) },
+												L"",
+												WorldVector{ 0.0, 0.0 }
+											);
+										} else {
+											return std::make_unique<command::Button>(params);
+										}
+										break;
+									}
+									case 6:
+									{
+										const auto [Name, Name_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+										const auto [VX, VX_Type] = Default_ProgramInterface.GetParamInfo(params[1]);
+										const auto [VY, VY_Type] = Default_ProgramInterface.GetParamInfo(params[2]);
+										const auto [SX, SX_Type] = Default_ProgramInterface.GetParamInfo(params[3]);
+										const auto [SY, SY_Type] = Default_ProgramInterface.GetParamInfo(params[4]);
+										const auto [Img, Img_Type] = Default_ProgramInterface.GetParamInfo(params[5]);
+										if (Default_ProgramInterface.IsStringType(Name_Type) &&
+											Default_ProgramInterface.IsNumberType(VX_Type) &&
+											Default_ProgramInterface.IsNumberType(VY_Type) &&
+											Default_ProgramInterface.IsStringType(Img_Type) &&
+											Default_ProgramInterface.IsNumberType(SX_Type) &&
+											Default_ProgramInterface.IsNumberType(SY_Type))
+										{
+											return std::make_unique<command::Button>(
+												Name,
+												WorldVector{ ToDec<Dec>(VX.c_str(), nullptr), ToDec<Dec>(VY.c_str(), nullptr) },
+												Img,
+												WorldVector{ ToDec<Dec>(SX.c_str(), nullptr), ToDec<Dec>(SY.c_str(), nullptr) }
+											);
+										} else {
+											return std::make_unique<command::Button>(params);
+										}
+										break;
+									}
+								}
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+									case 1:
+									case 2:
+										return KeywordInfo::ParamResult::Lack;
+									case 3:
+										return KeywordInfo::ParamResult::Medium;
+									case 4:
+									case 5:
+										return KeywordInfo::ParamResult::Lack;
+									case 6:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"input"] =
+						words[L"入力"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+								.Result = [&]() noexcept -> CommandPtr {
+									return std::make_unique<command::Input>(params);
+								},
+								.checkParamState = [params]() -> KeywordInfo::ParamResult {
+									switch (params.size()) {
+										case 0:
+										case 1:
+										case 2:
+										case 3:
+											return KeywordInfo::ParamResult::Lack;
+										case 4:
+											return KeywordInfo::ParamResult::Maximum;
+										default:
+											return KeywordInfo::ParamResult::Excess;
+									}
+								},
+								.is_static = false,
+								.is_dynamic = true
+						};
+					};
+
+					words[L"teleport"] =
+						words[L"瞬間移動"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() noexcept -> CommandPtr {
+								const auto [Target, Target_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								const auto [X, X_Type] = Default_ProgramInterface.GetParamInfo(params[1]);
+								const auto [Y, Y_Type] = Default_ProgramInterface.GetParamInfo(params[2]);
+								if (Default_ProgramInterface.IsStringType(Target_Type) && Default_ProgramInterface.IsNumberType(X_Type) && Default_ProgramInterface.IsNumberType(Y_Type)) {
+									return std::make_unique<command::entity::Teleport>(
+										Target,
+										WorldVector{ ToDec<Dec>(X.c_str(), nullptr), ToDec<Dec>(Y.c_str(), nullptr)
+									});
+								} else {
+									return std::make_unique<command::entity::Teleport>(params);
+								}
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+									case 1:
+									case 2:
+										return KeywordInfo::ParamResult::Lack;
+									case 3:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"kill"] =
+						words[L"殺害"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() noexcept -> CommandPtr {
+								const auto [Var, Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								if (Default_ProgramInterface.IsStringType(Type))
+									return std::make_unique<command::entity::Kill>(Var);
+								else
+									return std::make_unique<command::entity::Kill>(params);
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+										return KeywordInfo::ParamResult::Lack;
+									case 1:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"makelayer"] =
+						words[L"レイヤー生成"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() noexcept -> CommandPtr {
+								const auto [Index, Index_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								const auto [Kind, Kind_Type] = Default_ProgramInterface.GetParamInfo(params[1]);
+								const auto [Name, Name_Type] = Default_ProgramInterface.GetParamInfo(params[2]);
+								if (Default_ProgramInterface.IsNumberType(Index_Type) &&
+									Default_ProgramInterface.IsStringType(Kind_Type) &&
+									Default_ProgramInterface.IsStringType(Name_Type))
+								{
+									auto i = ToInt<int>(Index.c_str(), nullptr);
+									return std::make_unique<command::layer::Make>(i, Kind, Name);
+								} else
+									return std::make_unique<command::layer::Make>(params);
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+									case 1:
+									case 2:
+										return KeywordInfo::ParamResult::Lack;
+									case 3:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"setbasis"] =
+						words[L"レイヤー基準"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() noexcept -> CommandPtr {
+								const auto [Entity_Name, Entity_Name_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								const auto [Layer_Name, Layer_Name_Type] = Default_ProgramInterface.GetParamInfo(params[1]);
+								if (Default_ProgramInterface.IsStringType(Entity_Name_Type) && Default_ProgramInterface.IsStringType(Layer_Name_Type))
+									return std::make_unique<command::layer::SetBasis>(Entity_Name, Layer_Name);
+								else
+									return std::make_unique<command::layer::SetBasis>(params);
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+									case 1:
+										return KeywordInfo::ParamResult::Lack;
+									case 2:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"selectlayer"] =
+						words[L"レイヤー選択"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() noexcept -> CommandPtr {
+								const auto [Name, Name_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								if (Default_ProgramInterface.IsStringType(Name_Type))
+									return std::make_unique<command::layer::Select>(Name);
+								else
+									return std::make_unique<command::layer::Select>(params);
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+										return KeywordInfo::ParamResult::Lack;
+									case 1:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"deletelayer"] =
+						words[L"レイヤー削除"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() noexcept -> CommandPtr {
+								const auto [Name, Name_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								if (Default_ProgramInterface.IsStringType(Name_Type))
+									return std::make_unique<command::layer::Delete>(Name);
+								else
+									return std::make_unique<command::layer::Delete>(params);
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+										return KeywordInfo::ParamResult::Lack;
+									case 1:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"showlayer"] =
+						words[L"レイヤー表示"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() noexcept -> CommandPtr {
+								const auto [Name, Name_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								return (Default_ProgramInterface.IsStringType(Name_Type) ?
+									std::make_unique<command::layer::Show>(Name) : std::make_unique<command::layer::Show>(params));
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+										return KeywordInfo::ParamResult::Lack;
+									case 1:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"hidelayer"] =
+						words[L"レイヤー非表示"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() noexcept -> CommandPtr {
+								const auto [Name, Name_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								return (Default_ProgramInterface.IsStringType(Name_Type) ?
+									std::make_unique<command::layer::Hide>(Name) : std::make_unique<command::layer::Hide>(params));
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+										return KeywordInfo::ParamResult::Lack;
+									case 1:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"bind"] =
+						words[L"キー"] = [this](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+						.Result = [&]() -> CommandPtr {
+							const auto [Base, Base_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+							const auto [Cmd, Cmd_Type] = Default_ProgramInterface.GetParamInfo(params[1]);
+							if (Default_ProgramInterface.IsStringType(Base_Type)) {
+								std::wstring sub_param = Cmd + L' ';
+								for (auto it = params.begin() + 2; it != params.end(); it++) {
+									auto [word, word_type] = Default_ProgramInterface.GetParamInfo(*it);
+									if (Default_ProgramInterface.IsStringType(word_type)) {
+										sub_param += L'\'' + word + L'\'' + std::wstring(L" ");
+									} else {
+										sub_param += word + std::wstring(L" ");
+									}
+								}
+								return std::make_unique<command::Bind>(Base, sub_param);
+							} else
+								return nullptr;
+						},
+						.checkParamState = [&]() -> KeywordInfo::ParamResult {
+							if (params.size() <= 1) {
+								return KeywordInfo::ParamResult::Lack;
+							}
+
+							const auto [Cmd, Cmd_Type] = Default_ProgramInterface.GetParamInfo(params[1]);
+							auto it = words.find(Cmd);
+							if (it == words.end())
+								return KeywordInfo::ParamResult::Lack;
+
+							std::vector<std::wstring> exparams{};
+							for (auto it = params.begin() + 2; it < params.end(); it++) {
+								exparams.push_back(*it);
+							}
+							return it->second(exparams).checkParamState();
+						},
+						.is_static = false,
+						.is_dynamic = true
+						};
+					};
+
+					words[L"alias"] =
+						words[L"別名"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() -> CommandPtr {
+								const auto [Base, Base_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								const auto [New_One, New_Type] = Default_ProgramInterface.GetParamInfo(params[1]);
+								if (Default_ProgramInterface.IsNoType(Base_Type) && Default_ProgramInterface.IsNoType(New_Type))
+									return std::make_unique<command::Alias>(Base, New_One);
+								else
+									return nullptr;
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+									case 1:
+										return KeywordInfo::ParamResult::Lack;
+									case 2:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = true,
+							.is_dynamic = false
+						};
+					};
+
+					// DLLアタッチ
+					words[L"attach"] =
+						words[L"接続"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() -> CommandPtr {
+								const auto [Var, Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								return (Default_ProgramInterface.IsStringType(Type) ?
+									std::make_unique<command::Attach>(Var) : nullptr);
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+										return KeywordInfo::ParamResult::Lack;
+									case 1:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = true,
+							.is_dynamic = false
+						};
+					};
+
+					// DLLデタッチ
+					words[L"detach"] =
+						words[L"切断"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() -> CommandPtr {
+								const auto [Var, Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								return (Default_ProgramInterface.IsStringType(Type) ?
+									std::make_unique<command::Detach>(Var) : nullptr);
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+										return KeywordInfo::ParamResult::Lack;
+									case 1:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = true,
+							.is_dynamic = false
+						};
+					};
+
+					// 外部イベントファイル読み込み
+					words[L"load"] =
+						words[L"読込"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() -> CommandPtr {
+								const auto [Path, Path_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								return (Default_ProgramInterface.IsStringType(Path_Type) ?
+									std::make_unique<command::Load>(Path) : std::make_unique<command::Load>(params));
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+										return KeywordInfo::ParamResult::Lack;
+									case 1:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					// 外部イベントファイル読み込み
+					words[L"import"] =
+						words[L"取込"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() -> CommandPtr {
+								const auto [Path, Path_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								return (Default_ProgramInterface.IsStringType(Path_Type) ?
+									std::make_unique<command::Import>(Path) : std::make_unique<command::Import>(params));
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+										return KeywordInfo::ParamResult::Lack;
+									case 1:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"call"] =
+						words[L"呼出"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() -> CommandPtr {
+								return std::make_unique<command::Call>(params);
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+										return KeywordInfo::ParamResult::Lack;
+									case 1:
+										return KeywordInfo::ParamResult::Medium;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"var"] =
+						words[L"変数"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() -> CommandPtr {
+								const auto [Var, Var_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								const auto [Value, Value_Type] = Default_ProgramInterface.GetParamInfo(params[1]);
+								if (Var_Type == L"")
+									return std::make_unique<command::Variable>(Var, Value);
+								else
+									return std::make_unique<command::Variable>(params);
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+									case 1:
+										return KeywordInfo::ParamResult::Lack;
+									case 2:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = true,
+							.is_dynamic = false
+						};
+					};
+
+					words[L"global"] =
+						words[L"大域"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() -> CommandPtr {
+								const auto [Var, Var_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								const auto [Value, Value_Type] = Default_ProgramInterface.GetParamInfo(params[1]);
+								if (Var_Type == L"")
+									return std::make_unique<command::Global>(Var, Value);
+								else
+									return std::make_unique<command::Global>(params);
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+									case 1:
+										return KeywordInfo::ParamResult::Lack;
+									case 2:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = true,
+							.is_dynamic = false
+						};
+					};
+
+					words[L"exist"] =
+						words[L"存在確認"] = [](const std::vector<std::wstring>& params)->KeywordInfo {
+						return {
+							.Result = [&]() -> CommandPtr {
+								return std::make_unique<command::Exist>(params);
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+									case 1:
+										return KeywordInfo::ParamResult::Lack;
+									case 2:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"filter"] =
+						words[L"フィルター"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() -> CommandPtr {
+								const auto [Layer_Name, Layer_Name_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								const auto [Filter_Name, Filter_Name_Type] = Default_ProgramInterface.GetParamInfo(params[1]);
+								const auto [Potency_Value, Potency_Value_Type] = Default_ProgramInterface.GetParamInfo(params[2]);
+								if (Default_ProgramInterface.IsStringType(Layer_Name_Type) &&
+									Default_ProgramInterface.IsStringType(Filter_Name_Type) &&
+									Default_ProgramInterface.IsNumberType(Potency_Value_Type))
+								{
+									const auto Potency = std::stoi(Potency_Value);
+									return std::make_unique<command::Filter>(Layer_Name, Filter_Name, Potency);
+								} else {
+									return std::make_unique<command::Filter>(params);
+								}
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+									case 1:
+									case 2:
+										return KeywordInfo::ParamResult::Lack;
+									case 3:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"case"] =
+						words[L"条件"] = [&](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() -> CommandPtr {
+								const auto [Var, Var_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								if (!Default_ProgramInterface.IsUndecidedType(Var_Type))
+									return std::make_unique<command::Case>(Var);
+								else
+									return std::make_unique<command::Case>(params);
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+										return KeywordInfo::ParamResult::Lack;
+									case 1:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"of"] =
+						words[L"分岐"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() -> CommandPtr {
+								if (params.size() == 1) {
+									const auto [Var, Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+									if (Default_ProgramInterface.IsNumberType(Type)) {
+										auto [iv, ip] = ToInt(Var.c_str());
+										auto [fv, fp] = ToDec<Dec>(Var.c_str());
+
+										if (wcslen(ip) <= 0)
+											return std::make_unique<command::Of>(L"==", iv);
+										else
+											return std::make_unique<command::Of>(L"==", fv);
+									} else if (Default_ProgramInterface.IsStringType(Type)) {
+										return std::make_unique<command::Of>(L"==", Var);
+									} else {
+										return std::make_unique<command::Of>(std::vector<std::wstring>{ L"==", params[0] });
+									}
+								} else {
+									auto [mode, mode_type] = Default_ProgramInterface.GetParamInfo(params[0]);
+									const auto [Var, Type] = Default_ProgramInterface.GetParamInfo(params[1]);
+
+									mode = mode.substr(mode.find(L'.') + 1);
+									if (Default_ProgramInterface.IsNumberType(Type)) {
+										auto [iv, ip] = ToInt(Var.c_str());
+										auto [fv, fp] = ToDec<Dec>(Var.c_str());
+										if (wcslen(ip) <= 0)
+											return std::make_unique<command::Of>(mode, iv);
+										else
+											return std::make_unique<command::Of>(mode, fv);
+									} else if (Default_ProgramInterface.IsStringType(Type)) {
+										return std::make_unique<command::Of>(mode, Var);
+									} else {
+										return std::make_unique<command::Of>(params);
+									}
+								}
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+										return KeywordInfo::ParamResult::Lack;
+									case 1:
+										return KeywordInfo::ParamResult::Medium;
+									case 2:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"__endof"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() -> CommandPtr { return std::make_unique<command::hidden::EndOf>(); },
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"endcase"] =
+						words[L"分岐終了"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() -> CommandPtr {
+								return std::make_unique<command::EndCase>();
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"__entity強制更新"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() -> CommandPtr {
+								return std::make_unique<command::hidden::UpdateEntity>();
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"assign"] = words[L"代入"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() -> CommandPtr {
+								return std::make_unique<command::math::Assign>(params);
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+									case 1:
+										return KeywordInfo::ParamResult::Lack;
+									case 2:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"sum"] = words[L"加算"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() -> CommandPtr {
+								return std::make_unique<command::math::Sum>(params);
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+									case 1:
+									case 2:
+										return KeywordInfo::ParamResult::Lack;
+									case 3:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"sub"] = words[L"減算"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() -> CommandPtr {
+								return std::make_unique<command::math::Sub>(params);
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+									case 1:
+									case 2:
+										return KeywordInfo::ParamResult::Lack;
+									case 3:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"mul"] = words[L"乗算"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() -> CommandPtr {
+								return std::make_unique<command::math::Mul>(params);
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+									case 1:
+									case 2:
+										return KeywordInfo::ParamResult::Lack;
+									case 3:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"div"] = words[L"徐算"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() -> CommandPtr {
+								return std::make_unique<command::math::Div>(params);
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+									case 1:
+									case 2:
+										return KeywordInfo::ParamResult::Lack;
+									case 3:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"mod"] = words[L"剰余"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() -> CommandPtr {
+								return std::make_unique<command::math::Mod>(params);
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+									case 1:
+									case 2:
+										return KeywordInfo::ParamResult::Lack;
+									case 3:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"or"] =
+						words[L"論理和"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() -> CommandPtr {
+								return std::make_unique<command::math::Or>(params);
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+									case 1:
+									case 2:
+										return KeywordInfo::ParamResult::Lack;
+									case 3:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"and"] =
+						words[L"論理積"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() -> CommandPtr {
+								return std::make_unique<command::math::And>(params);
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+									case 1:
+									case 2:
+										return KeywordInfo::ParamResult::Lack;
+									case 3:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"xor"] =
+						words[L"排他的論理和"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() -> CommandPtr {
+								return std::make_unique<command::math::Xor>(params);
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+									case 1:
+									case 2:
+										return KeywordInfo::ParamResult::Lack;
+									case 3:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"not"] =
+						words[L"論理否定"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() -> CommandPtr {
+								return std::make_unique<command::math::Not>(params);
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+									case 1:
+										return KeywordInfo::ParamResult::Lack;
+									case 2:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+				}
+
+				SemanticParser(std::list<Syntax> *syntax) noexcept : SemanticParser() {
+					for (auto it = syntax->begin(); it != syntax->end(); it++) {
+						if (std::find_if(visited.begin(), visited.end(), [it](Syntax* s) { return s->text == it->text && s->parent == it->parent; }) != visited.end()) {
+							continue;
+						}
+						auto route = &(*it);
+						while (route != nullptr) {
+							visited.push_back(route);
+							queue.push_back(route);
+							route = route->parent;
+						}
+
+						while (!queue.empty()) {
+							stack.push_front(queue.front()->text);
+							auto& op = stack.front();
+							if (op == L"[]") {
+								stack.pop_front();
+								event_name = stack.front();
+								stack.pop_front();
+							} else if (op == L"<>") {
+								stack.pop_front();
+								auto word = stack.front();
+								if (word == L"a") {
+									trigger_type = TriggerType::Auto;
+								} else if (word == L"t") {
+									trigger_type = TriggerType::Trigger;
+								} else if (word == L"n") {
+									trigger_type = TriggerType::None;
+								} else if (word == L"l") {
+									trigger_type = TriggerType::Load;
+								}
+								stack.pop_front();
+							} else if (op == L"()") {
+								stack.pop_front();
+								while (!stack.empty()) {
+									params.push_back(stack.front());
+									stack.pop_front();
+								}
+							} else if (op == L"{}") {
+								stack.pop_front();
+								std::wstring command_name{};
+								GenerateFunc generator_candidate{};
+								while (!stack.empty()) {
+									auto it = words.find(stack.front());
+									if (it != words.end()) {
+										command_name = stack.front();
+										generator_candidate = it->second;
+									} else {
+										command_parameters.push_back(stack.front());
+									}
+									stack.pop_front();
+								}
+
+								if (generator_candidate != nullptr) {
+									auto generator = generator_candidate(command_parameters);
+									switch (generator.checkParamState()) {
+										case KeywordInfo::ParamResult::Lack:
+											break;
+										case KeywordInfo::ParamResult::Medium:
+										case KeywordInfo::ParamResult::Maximum:
+											commands.push_front(CommandTree{
+												.command = generator.Result(),
+												.word = command_name,
+												.parent = parent
+											});
+											parent = &commands.front();
+											break;
+										case KeywordInfo::ParamResult::Excess:
+											break;
+									}
+								}
+								command_parameters.clear();
+							}
+							queue.pop_front();
+						}
+						stack.clear();
+
+						if (!event_name.empty()) {
+							parsing_events[event_name].trigger_type = trigger_type;
+							parsing_events[event_name].param_names = std::move(params);
+							for (int i = 0; i < 2; i++)
+								parsing_events[event_name].origin[i] = origin[i];
+
+							parsing_events[event_name].command_tree = std::move(commands);
+							trigger_type = TriggerType::Invalid;
+							commands.clear();
+							params.clear();
+							event_name.clear();
+							parent = nullptr;
+						}
+					}
+				}
+
+				auto& Result() {
+					return parsing_events;
 				}
 			};
 
@@ -3302,7 +4524,9 @@ namespace karapo::event {
 			Parser(const std::wstring& Sentence) noexcept : Parser() {
 				auto context = ParseBasic(Sentence);
 				bool aborted = false;
-
+				auto tree = std::move(SyntaxParser(&context).Result());
+				auto plain_events = std::move(SemanticParser(&tree).Result());
+#if 0
 				while (!context.empty() && !aborted) {
 					auto [name, trigger, min, max] = ParseInformation(&context);
 					Program::Instance().var_manager.Get<false>(L"__生成中イベント") = name;
@@ -3321,6 +4545,7 @@ namespace karapo::event {
 					error::UserErrorHandler::SendGlobalError(parser_abortion_error);
 					events.clear();
 				}
+#endif
 			}
 
 			[[nodiscard]] auto Result() noexcept {

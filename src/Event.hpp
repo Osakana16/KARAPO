@@ -22,6 +22,12 @@ namespace karapo::event {
 		Button					// 決定キー
 	};
 
+	struct CommandTree final {
+		std::unique_ptr<Command> command{};
+		std::wstring word{};	// コマンド名
+		CommandTree* parent{};
+	};
+
 	// イベント
 	struct Event {
 		using Commands = std::deque<CommandPtr>;
