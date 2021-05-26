@@ -2950,10 +2950,6 @@ namespace karapo::event {
 				bool aborted = false;
 				auto tree = std::move(SyntaxParser(&context).Result());
 				events = std::move(SemanticParser(&tree).Result());
-				// テスト用
-				for (auto& e : events) {
-					auto executer = Manager::CommandExecuter(&e.second.commands);
-				}
 			}
 
 			[[nodiscard]] auto Result() noexcept {
@@ -3164,19 +3160,14 @@ namespace karapo::event {
 	void Manager::Call(const std::wstring& EName) noexcept {
 		auto candidate = events.find(EName);
 		if (candidate != events.end()) {
-#if 0
 			auto event_name = std::any_cast<std::wstring>(Program::Instance().var_manager.Get<false>(variable::Executing_Event_Name));
-			CommandExecuter cmd_executer(std::move(candidate->second.commands));
-			Program::Instance().var_manager.Get<false>(variable::Executing_Event_Name) = (event_name += std::wstring(EName) + L"\n");
-			cmd_executer.Execute();
-
-			candidate->second.commands = std::move(cmd_executer.Result());
+			CommandExecuter cmd_executer(&candidate->second.commands);
 			if (candidate->second.trigger_type == TriggerType::Load)
 				candidate->second.trigger_type = TriggerType::None;
+	
+			Program::Instance().var_manager.Get<false>(variable::Executing_Event_Name) = (event_name += std::wstring(EName) + L"\n");
 			event_name.erase(event_name.find(EName + L"\n"));
-
 			Program::Instance().var_manager.Get<false>(variable::Executing_Event_Name) = event_name;
-#endif
 		} else {
 			error_handler.SendLocalError(call_error, L"イベント名: " + EName);
 			return;
