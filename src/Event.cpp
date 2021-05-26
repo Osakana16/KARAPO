@@ -7,7 +7,7 @@
 #include <queue>
 #include <chrono>
 #include <forward_list>
-
+ 
 #define DYNAMIC_COMMAND(NAME) class NAME : public DynamicCommand
 #define DYNAMIC_COMMAND_CONSTRUCTOR(NAME) NAME(const std::vector<std::wstring>& Param) : DynamicCommand(Param)
 
@@ -340,7 +340,7 @@ namespace karapo::event {
 						}
 					}
 				}
-				Program::Instance().event_manager.Evalute(mode, value);
+				Program::Instance().var_manager.Get<false>(L"of_state") = (int)Program::Instance().event_manager.Evalute(mode, value);
 				StandardCommand::Execute();
 			}
 		};
@@ -1397,51 +1397,69 @@ namespace karapo::event {
 
 	// イベントのコマンド実行クラス
 	class Manager::CommandExecuter final {
-		bool called_result = false;
-
-		Event::Commands commands;	// 実行中のコマンド
-		Event::Commands ended;		// 実行を終えたコマンド
-
-		// 一つのコマンドを実行する。
-		CommandPtr Execute(CommandPtr cmd) noexcept {
-			if (cmd == nullptr)
-				return nullptr;
-
-			if (!cmd->IsUnnecessary() && (cmd->IgnoreCondition() || Program::Instance().event_manager.CanOfExecute())) {
-				cmd->Execute();
-				return std::move(cmd);
-			} else {
-				cmd->Reset();
-				ended.push_back(std::move(cmd));
-				return nullptr;
-			}
-		}
 	public:
-		CommandExecuter(Event::Commands&& wantto_exec) noexcept {
-			commands = std::move(wantto_exec);
-		}
-
-		// コマンド全体を実行する。
-		void Execute() noexcept {
-			while (!commands.empty()) {
-				// 再実行コマンド
-				CommandPtr recycled = Execute(std::move(commands.front()));
-				if (recycled == nullptr)
-					commands.pop_front();
-				else {
-					// 再格納する。
-					commands.push_front(std::move(recycled));
+		CommandExecuter(std::list<CommandTree>* commands) {
+			// 適切な道の形成
+			{
+				auto it = commands->begin();
+				decltype(it) case_pos{}, endcase_pos{};
+				while (it != commands->end()) {
+					if (it->word == L"case") {
+						case_pos = it;
+					} else if (it->word == L"of") {
+						case_pos->parent = nullptr;
+						{
+							CommandTree *of_parent{};
+							auto parent = &(*it);
+							while (parent->parent != nullptr) {
+								if (parent->parent->word == L"of" && of_parent == nullptr) {
+									of_parent = parent;
+								} else if (parent->parent->word == L"endcase" && of_parent != nullptr) {
+									of_parent->parent = parent->parent;
+									break;
+								}
+								parent = parent->parent;
+							}
+						}
+						auto insert_to = std::next(case_pos, 1);
+						commands->insert(insert_to, std::move(*it));
+						it = commands->erase(it);
+					}
+					it++;
 				}
-				event::Manager::Instance().error_handler.ShowLocalError(4);
+				commands->size();
+			}
+			Program::Instance().var_manager.MakeNew(L"of_state") = 1;
+			// ここから、コマンド実行。
+			{
+				CommandTree *executing = &commands->front();
+				const CommandTree *goal = &commands->back();
+				while (executing != nullptr) {
+					executing->command->Execute();
+					
+					// 親が存在せず、自身がゴールでない場合:
+					// 自身がcaseコマンドなので、他のofコマンド候補を探す。
+					if (executing->parent == nullptr && executing != goal) {
+						auto command_iterator = std::find_if(commands->begin(), commands->end(), [executing](const CommandTree& tree) {
+							return executing->parent == tree.parent;
+						});
+
+						command_iterator++;
+						while (command_iterator != commands->end()) {
+							command_iterator->command->Execute();
+							auto can_execute = std::any_cast<int>(Program::Instance().var_manager.Get<false>(L"of_state"));
+							if (can_execute) {
+								// 実行可能なコマンドなので、ここからコマンド実行。
+								executing = command_iterator->parent;
+								break;
+							}
+							command_iterator++;
+						}
+					} else
+						executing = executing->parent;
+				}
 			}
 		}
-
-		[[nodiscard]] auto&& Result() noexcept {
-			called_result = true;
-			return std::move(ended);
-		}
-
-		~CommandExecuter() noexcept {}
 	};
 
 	// イベント生成クラス
@@ -4526,6 +4544,10 @@ namespace karapo::event {
 				bool aborted = false;
 				auto tree = std::move(SyntaxParser(&context).Result());
 				auto plain_events = std::move(SemanticParser(&tree).Result());
+				// テスト用
+				for (auto& e : plain_events) {
+					auto executer = Manager::CommandExecuter(&e.second.command_tree);
+				}
 #if 0
 				while (!context.empty() && !aborted) {
 					auto [name, trigger, min, max] = ParseInformation(&context);
@@ -4633,7 +4655,7 @@ namespace karapo::event {
 	}
 
 	// 条件式を評価する
-	void Manager::ConditionManager::Evalute(const std::wstring& Mode, const std::any& Right_Value) noexcept {
+	bool Manager::ConditionManager::Evalute(const std::wstring& Mode, const std::any& Right_Value) noexcept {
 		can_execute = true;
 		auto& target_type = target_value.type();
 		// 同じ型のみを比較する。
@@ -4680,6 +4702,7 @@ namespace karapo::event {
 				}
 			}
 		}
+		return can_execute;
 	}
 
 	void Manager::ConditionManager::FreeCase() {
@@ -4760,6 +4783,7 @@ namespace karapo::event {
 	void Manager::Call(const std::wstring& EName) noexcept {
 		auto candidate = events.find(EName);
 		if (candidate != events.end()) {
+#if 0
 			auto event_name = std::any_cast<std::wstring>(Program::Instance().var_manager.Get<false>(variable::Executing_Event_Name));
 			CommandExecuter cmd_executer(std::move(candidate->second.commands));
 			Program::Instance().var_manager.Get<false>(variable::Executing_Event_Name) = (event_name += std::wstring(EName) + L"\n");
@@ -4771,6 +4795,7 @@ namespace karapo::event {
 			event_name.erase(event_name.find(EName + L"\n"));
 
 			Program::Instance().var_manager.Get<false>(variable::Executing_Event_Name) = event_name;
+#endif
 		} else {
 			error_handler.SendLocalError(call_error, L"イベント名: " + EName);
 			return;
@@ -4782,8 +4807,11 @@ namespace karapo::event {
 		condition_current = condition_manager.end() - 1;
 	}
 
-	void Manager::Evalute(const std::wstring& Mode, const std::any& Right_Value) {
-		condition_current->Evalute(Mode, Right_Value);
+	bool Manager::Evalute(const std::wstring& Mode, const std::any& Right_Value) {
+		if (!condition_manager.empty() && condition_current != condition_manager.end())
+			return condition_current->Evalute(Mode, Right_Value);
+		else
+			return false;
 	}
 
 	void Manager::FreeCase() {

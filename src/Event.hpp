@@ -7,7 +7,7 @@ namespace karapo::event {
 	namespace innertype {
 		constexpr const wchar_t *const Number = L"number";			// 数値型(整数または浮動小数点数)
 		constexpr const wchar_t *const String = L"string";			// 文字列型(文字または文字列)
-		constexpr const wchar_t *const Undecided = L"undecided";	// 未決定型
+		constexpr const wchar_t *const Undecided = L"";	// 未決定型
 		constexpr const wchar_t *const None = L"";					// 型無し(変数や特定の記号)
 		constexpr const wchar_t *const Block = L"scope";			// スコープ型({ または })
 	}
@@ -41,8 +41,6 @@ namespace karapo::event {
 	// イベント管理クラス
 	// ワールド毎のイベント内容管理、文章解析、コマンド実行等を行う。
 	class Manager final : private Singleton {
-		class CommandExecuter;
-
 		// イベントを読み込む必要があるか否か。
 		std::wstring requesting_path{};
 	
@@ -54,7 +52,7 @@ namespace karapo::event {
 			ConditionManager(std::any& tv) { SetTarget(tv); }
 			void SetTarget(std::any& tv);
 			// 条件式を評価する
-			void Evalute(const std::wstring&, const std::any&) noexcept;
+			bool Evalute(const std::wstring&, const std::any&) noexcept;
 			void FreeCase(), FreeOf();
 			bool CanExecute() const noexcept { return can_execute; }
 		};
@@ -71,6 +69,7 @@ namespace karapo::event {
 		Manager();
 		~Manager() = default;
 	public:
+		class CommandExecuter;
 		// イベントを読み込み、新しく設定し直す。
 		void LoadEvent(const std::wstring Path) noexcept;
 		// イベントの遅延読み込み。
@@ -89,7 +88,7 @@ namespace karapo::event {
 		void MakeEmptyEvent(const std::wstring&);
 
 		void NewCaseTarget(std::any);
-		void Evalute(const std::wstring&, const std::any&);
+		bool Evalute(const std::wstring&, const std::any&);
 		void FreeCase(), FreeOf();
 		bool CanOfExecute() const noexcept;
 
