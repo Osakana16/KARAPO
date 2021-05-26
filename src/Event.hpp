@@ -30,7 +30,7 @@ namespace karapo::event {
 
 	// イベント
 	struct Event {
-		using Commands = std::deque<CommandPtr>;
+		using Commands = std::list<CommandTree>;
 		
 		Commands commands;						// コマンド
 		TriggerType trigger_type;				// イベント発生タイプ

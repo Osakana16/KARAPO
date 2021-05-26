@@ -1474,13 +1474,6 @@ namespace karapo::event {
 				Syntax* parent{};
 			};
 
-			struct ParsingEvent final {
-				std::list<CommandTree> command_tree;			// コマンド
-				TriggerType trigger_type;				// イベント発生タイプ
-				WorldVector origin[2];
-				std::vector<std::wstring> param_names{};		// 引数名
-			};
-
 			// 一文字ずつの解析器。
 			// 空白を基準とする単語単位の解析結果をcontextとして排出。
 			class LexicalParser final {
@@ -1714,7 +1707,7 @@ namespace karapo::event {
 				std::list<Syntax*> visited{}, queue{};
 				std::list<std::wstring> stack{};
 
-				std::unordered_map<std::wstring, ParsingEvent> parsing_events{};
+				std::unordered_map<std::wstring, Event> parsing_events{};
 
 				CommandTree* parent = nullptr;
 				WorldVector origin[2]{ { -1, -1 }, { -1, -1 } };
@@ -2909,7 +2902,7 @@ namespace karapo::event {
 							for (int i = 0; i < 2; i++)
 								parsing_events[event_name].origin[i] = origin[i];
 
-							parsing_events[event_name].command_tree = std::move(commands);
+							parsing_events[event_name].commands = std::move(commands);
 							trigger_type = TriggerType::Invalid;
 							commands.clear();
 							params.clear();
@@ -2956,10 +2949,10 @@ namespace karapo::event {
 				auto context = ParseBasic(Sentence);
 				bool aborted = false;
 				auto tree = std::move(SyntaxParser(&context).Result());
-				auto plain_events = std::move(SemanticParser(&tree).Result());
+				events = std::move(SemanticParser(&tree).Result());
 				// テスト用
-				for (auto& e : plain_events) {
-					auto executer = Manager::CommandExecuter(&e.second.command_tree);
+				for (auto& e : events) {
+					auto executer = Manager::CommandExecuter(&e.second.commands);
 				}
 			}
 
