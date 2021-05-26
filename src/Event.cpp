@@ -3213,6 +3213,11 @@ namespace karapo::event {
 		return (e != events.end() ? &e->second : nullptr);
 	}
 
+	void EventEditor::MakeNewEvent(const std::wstring& Event_Name) {
+		Program::Instance().event_manager.MakeEmptyEvent(Event_Name);
+		SetTarget(Event_Name);
+	}
+
 	bool EventEditor::IsEditing() const noexcept {
 		return (targeting != nullptr);
 	}
@@ -3221,28 +3226,21 @@ namespace karapo::event {
 		return (IsEditing() && Program::Instance().event_manager.GetEvent(Event_Name) == targeting);
 	}
 
-	void EventEditor::MakeNewEvent(const std::wstring& Event_Name) {
-		Program::Instance().event_manager.MakeEmptyEvent(Event_Name);
-		SetTarget(Event_Name);
-	}
-
 	void EventEditor::AddCommand(const std::wstring& Command_Sentence, const int Index) {
-#if 0
-		EventGenerator::Parser parser;
-		auto context = parser.ParseBasic(Command_Sentence);
-		auto commands = parser.ParseCommand(&context, nullptr);
+		auto commands = std::move(EventGenerator::Parser(
+			L"[ダミー]\n<n>\n()\n" + Command_Sentence
+		).Result().begin()->second.commands);
 
 		for (auto& cmd : commands) {
 			if (Index < 0 && !targeting->commands.empty())
-				targeting->commands.insert(targeting->commands.end() + Index + 1, std::move(cmd));
+				targeting->commands.insert(std::next(targeting->commands.end(), Index + 1), std::move(cmd));
 			else {
 				if (targeting->commands.empty())
 					targeting->commands.insert(targeting->commands.begin(), std::move(cmd));
 				else
-					targeting->commands.insert(targeting->commands.begin() + Index, std::move(cmd));
+					targeting->commands.insert(std::next(targeting->commands.begin(), Index), std::move(cmd));
 			}
 		}
-#endif
 	}
 
 	void EventEditor::SetTarget(const std::wstring& Event_Name) {
@@ -3255,16 +3253,11 @@ namespace karapo::event {
 	}
 
 	void EventEditor::ChangeTriggerType(const std::wstring& TSentence) {
-		if (TSentence == L"l")
-			targeting->trigger_type = TriggerType::Load;
-		else if (TSentence == L"n")
-			targeting->trigger_type = TriggerType::None;
-		else if (TSentence == L"b")
-			targeting->trigger_type = TriggerType::Button;
-		else if (TSentence == L"a")
-			targeting->trigger_type = TriggerType::Auto;
-		else if (TSentence == L"t")
-			targeting->trigger_type = TriggerType::Trigger;
+		targeting->trigger_type = EventGenerator::Parser(
+			std::wstring(L"[ダミー]\n") +
+			L'<' + TSentence + L'>' +
+			std::wstring(L"\n()\n{}")
+		).Result().begin()->second.trigger_type;
 	}
 
 	void command::Alias::Execute() {
