@@ -1695,6 +1695,7 @@ namespace karapo::event {
 						}
 						lexical_context->pop_front();
 					}
+					tree.pop_front();
 				}
 
 				auto& Result() noexcept {
