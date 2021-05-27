@@ -1422,7 +1422,7 @@ namespace karapo::event {
 					if (it->word == L"case") {
 						case_pos.push_front(it);
 						case_pos.front()->parent = nullptr;
-					} else if (it->word == L"of") {
+					} else if (it->word == L"of" || it->word == L"else") {
 						// 親の修正
 						{
 							// 多重分岐避け
@@ -1432,8 +1432,8 @@ namespace karapo::event {
 							while (parent->parent != nullptr) {
 								if (parent->parent->word == L"case") {
 									ignore_case.push_back(parent->parent);
-								} else if (parent->parent->word == L"of" && of_parent == nullptr && ignore_case.empty()) {
-									// 次のコマンドがofコマンド:
+								} else if ((parent->parent->word == L"of" || parent->parent->word == L"else") && of_parent == nullptr && ignore_case.empty()) {
+									// 次のコマンドがofコマンドまたはelseコマンド:
 									// 分岐終了なので変更対象に設定。
 									of_parent = parent;
 								} else if (parent->parent->word == L"endcase" && of_parent != nullptr) {
