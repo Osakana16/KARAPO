@@ -2889,6 +2889,10 @@ namespace karapo::event {
 				}
 
 				SemanticParser(std::list<Syntax> *syntax) noexcept : SemanticParser() {
+					// 左: 現在のcaseのイテレータ
+					// 右: elseが存在するか否か。
+					std::list<std::pair<decltype(commands)::iterator, bool>> case_stack{};
+
 					for (auto it = syntax->begin(); it != syntax->end(); it++) {
 						if (std::find(visited.begin(), visited.end(), &(*it)) != visited.end()) {
 							continue;
@@ -2983,6 +2987,25 @@ namespace karapo::event {
 											break;
 										case KeywordInfo::ParamResult::Medium:
 										case KeywordInfo::ParamResult::Maximum:
+											if (command_name == L"case") {
+												if (!case_stack.front().second) {
+													// elseが無い為、暗黙的に空のelseを挿入。
+													commands.push_front(CommandTree{
+														.command = words[L"else"]({}).Result(),
+														.word = L"else",
+														.parent = parent
+													});
+													parent = &commands.front();
+												}
+												case_stack.pop_front();
+											} else if (command_name == L"endcase") {
+												// else検査開始。
+												case_stack.push_front({ commands.begin(), false });
+											} else if (command_name == L"else") {
+												// elseが存在するのでtrue。
+												case_stack.front().second = true;
+											}
+
 											commands.push_front(CommandTree{
 												.command = generator.Result(),
 												.word = command_name,
@@ -3027,6 +3050,8 @@ namespace karapo::event {
 							parent = nullptr;
 						}
 					}
+
+
 				}
 
 				auto& Result() {
