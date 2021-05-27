@@ -1418,10 +1418,13 @@ namespace karapo::event {
 			{
 				auto it = commands->begin();
 				std::list<decltype(it)> case_pos{};
+				// 各caseに対して、ofコマンドを挿入しなおした回数を保存するリスト。
+				std::list<int> inserted_counts{};
 				while (it != commands->end()) {
 					if (it->word == L"case") {
 						case_pos.push_front(it);
 						case_pos.front()->parent = nullptr;
+						inserted_counts.push_front(0);
 					} else if (it->word == L"of" || it->word == L"else") {
 						// 親の修正
 						{
@@ -1448,12 +1451,14 @@ namespace karapo::event {
 								parent = parent->parent;
 							}
 						}
+						inserted_counts.front()++;
 						// ofコマンドの位置をcaseの直後に設定。
-						commands->insert(std::next(case_pos.front(), 1), std::move(*it));
+						commands->insert(std::next(case_pos.front(), inserted_counts.front()), std::move(*it));
 						it = commands->erase(it);
 						continue;
 					} else if (it->word == L"endcase") {
 						case_pos.pop_front();
+						inserted_counts.pop_front();
 					}
 					it++;
 				}
