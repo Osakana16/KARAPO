@@ -1402,28 +1402,43 @@ namespace karapo::event {
 			// 適切な道の形成
 			{
 				auto it = commands->begin();
-				decltype(it) case_pos{}, endcase_pos{};
+				std::list<decltype(it)> case_pos{};
 				while (it != commands->end()) {
 					if (it->word == L"case") {
-						case_pos = it;
+						case_pos.push_front(it);
+						case_pos.front()->parent = nullptr;
 					} else if (it->word == L"of") {
-						case_pos->parent = nullptr;
+						// 親の修正
 						{
+							// 多重分岐避け
+							std::list<CommandTree*> ignore_case{};
 							CommandTree *of_parent{};
 							auto parent = &(*it);
 							while (parent->parent != nullptr) {
-								if (parent->parent->word == L"of" && of_parent == nullptr) {
+								if (parent->parent->word == L"case") {
+									ignore_case.push_back(parent->parent);
+								} else if (parent->parent->word == L"of" && of_parent == nullptr && ignore_case.empty()) {
+									// 次のコマンドがofコマンド:
+									// 分岐終了なので変更対象に設定。
 									of_parent = parent;
 								} else if (parent->parent->word == L"endcase" && of_parent != nullptr) {
-									of_parent->parent = parent->parent;
-									break;
+									if (ignore_case.empty()) {
+										// 変更対象をendcaseコマンドに繋げる。
+										of_parent->parent = parent->parent;
+										break;
+									} else {
+										ignore_case.pop_back();
+									}
 								}
 								parent = parent->parent;
 							}
 						}
-						auto insert_to = std::next(case_pos, 1);
-						commands->insert(insert_to, std::move(*it));
+						// ofコマンドの位置をcaseの直後に設定。
+						commands->insert(std::next(case_pos.front(), 1), std::move(*it));
 						it = commands->erase(it);
+						continue;
+					} else if (it->word == L"endcase") {
+						case_pos.pop_front();
 					}
 					it++;
 				}
