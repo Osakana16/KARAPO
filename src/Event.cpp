@@ -2949,8 +2949,10 @@ namespace karapo::event {
 											break;
 									}
 								} else {
-									error_occurred = command_not_found_error;
-									event::Manager::Instance().error_handler.SendLocalError(error_occurred, L"コマンド名: " + command_name);
+									if (!command_name.empty()) {
+										error_occurred = command_not_found_error;
+										event::Manager::Instance().error_handler.SendLocalError(error_occurred, L"コマンド名: " + command_name);
+									}
 								}
 								command_parameters.clear();
 							}
