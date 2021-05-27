@@ -1456,7 +1456,7 @@ namespace karapo::event {
 					// 自身がcaseコマンドなので、他のofコマンド候補を探す。
 					if (executing->parent == nullptr && executing != goal) {
 						auto command_iterator = std::find_if(commands->begin(), commands->end(), [executing](const CommandTree& tree) {
-							return executing->parent == tree.parent;
+							return executing == &tree;
 						});
 
 						command_iterator++;
