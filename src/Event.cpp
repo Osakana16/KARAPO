@@ -345,6 +345,21 @@ namespace karapo::event {
 			}
 		};
 
+		// ğŒ®(‘S‚ÄŠY“–‚È‚µ‚Ìê‡)
+		DYNAMIC_COMMAND(Else final) {
+		public:
+			Else() noexcept {}
+
+			DYNAMIC_COMMAND_CONSTRUCTOR(Else) {}
+
+			~Else() noexcept final {}
+
+			void Execute() override {
+				Program::Instance().var_manager.Get<false>(L"of_state") = !std::any_cast<int>(Program::Instance().var_manager.Get<false>(L"of_state"));
+				StandardCommand::Execute();
+			}
+		};
+
 		// ğŒI—¹
 		DYNAMIC_COMMAND(EndCase final) {
 		public:
@@ -2568,6 +2583,25 @@ namespace karapo::event {
 									case 1:
 										return KeywordInfo::ParamResult::Medium;
 									case 2:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"else"] =
+						words[L"ˆÈŠO"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() -> CommandPtr {
+								return std::make_unique<command::Else>();
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
 										return KeywordInfo::ParamResult::Maximum;
 									default:
 										return KeywordInfo::ParamResult::Excess;
