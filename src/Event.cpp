@@ -355,7 +355,7 @@ namespace karapo::event {
 			~Else() noexcept final {}
 
 			void Execute() override {
-				Program::Instance().var_manager.Get<false>(L"of_state") = !std::any_cast<int>(Program::Instance().var_manager.Get<false>(L"of_state"));
+				Program::Instance().var_manager.Get<false>(L"of_state") = (int)!std::any_cast<int>(Program::Instance().var_manager.Get<false>(L"of_state"));
 				StandardCommand::Execute();
 			}
 		};
