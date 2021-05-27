@@ -2851,6 +2851,16 @@ namespace karapo::event {
 									trigger_type = TriggerType::Load;
 								}
 								stack.pop_front();
+
+								for (int i = 0; !stack.empty(); ) {
+									if (stack.front() == L"~")
+										i = 1;
+									else {
+										origin[(origin[0][1] > -1)][i] = ToDec<Dec>(stack.front().c_str(), nullptr);
+										i = 0;
+									}
+									stack.pop_front();
+								}
 							} else if (op == L"()") {
 								stack.pop_front();
 								while (!stack.empty()) {
