@@ -1717,8 +1717,27 @@ namespace karapo::event {
 				std::list<CommandTree> commands{};
 				std::vector<std::wstring> command_parameters{};
 				std::unordered_map<std::wstring, GenerateFunc> words{};
+
+				error::ErrorContent *error_occurred{};
+				inline static error::ErrorContent 
+					*empty_name_error{}, 
+					*invalid_trigger_type_warning{},
+					*command_not_found_error{},
+					*lack_of_parameters_error{},
+					*too_many_parameters_warning{};
 			public:
 				SemanticParser() noexcept {
+					if (empty_name_error == nullptr)
+						empty_name_error = error::UserErrorHandler::MakeError(event::Manager::Instance().error_class, L"イベント名を空にすることはできません。", MB_OK | MB_ICONERROR, 1);
+					if (invalid_trigger_type_warning == nullptr)
+						invalid_trigger_type_warning = error::UserErrorHandler::MakeError(event::Manager::Instance().error_class, L"不明なイベント発生タイプが指定されたため、発生無しを設定しました。", MB_OK | MB_ICONWARNING, 4);
+					if (command_not_found_error == nullptr)
+						command_not_found_error = error::UserErrorHandler::MakeError(event::Manager::Instance().error_class, L"指定されたコマンドが見つかりません。", MB_OK | MB_ICONERROR, 2);
+					if (lack_of_parameters_error == nullptr)
+						lack_of_parameters_error = error::UserErrorHandler::MakeError(event::Manager::Instance().error_class, L"コマンドの引数が足りない為、生成できません。", MB_OK | MB_ICONERROR, 2);
+					if (too_many_parameters_warning == nullptr)
+						too_many_parameters_warning = error::UserErrorHandler::MakeError(event::Manager::Instance().error_class, L"コマンドの引数が多すぎる為、余分なものは廃棄しました。", MB_OK | MB_ICONWARNING, 3);
+
 					words[L"text"] =
 						words[L"文章"] = [](const std::vector<std::wstring>& params) -> KeywordInfo
 					{
@@ -2831,13 +2850,30 @@ namespace karapo::event {
 							route = route->parent;
 						}
 
-						while (!queue.empty()) {
+						while (!queue.empty() && error_occurred == nullptr) {
 							stack.push_front(queue.front()->text);
 							auto& op = stack.front();
 							if (op == L"[]") {
 								stack.pop_front();
-								event_name = stack.front();
-								stack.pop_front();
+								switch (stack.size()) {
+									case 0:
+										error_occurred = empty_name_error;
+										event::Manager::Instance().error_handler.SendLocalError(error_occurred);
+										break;
+									case 1:
+										event_name = stack.front();
+										stack.pop_front();
+										break;
+									default:
+										std::wstring candidate_name{};
+										while (!stack.empty()) {
+											candidate_name += stack.front() + L' ';
+											stack.pop_front();
+										}
+										candidate_name.pop_back();
+										event_name = candidate_name;
+										break;
+								}
 							} else if (op == L"<>") {
 								stack.pop_front();
 								auto word = stack.front();
@@ -2849,6 +2885,9 @@ namespace karapo::event {
 									trigger_type = TriggerType::None;
 								} else if (word == L"l") {
 									trigger_type = TriggerType::Load;
+								} else {
+									trigger_type = TriggerType::None;
+									event::Manager::Instance().error_handler.SendLocalError(invalid_trigger_type_warning);
 								}
 								stack.pop_front();
 
@@ -2886,6 +2925,11 @@ namespace karapo::event {
 									auto generator = generator_candidate(command_parameters);
 									switch (generator.checkParamState()) {
 										case KeywordInfo::ParamResult::Lack:
+											error_occurred = lack_of_parameters_error;
+											event::Manager::Instance().error_handler.SendLocalError(
+												error_occurred,
+												(L"コマンド名: " + command_name).c_str()
+											);
 											break;
 										case KeywordInfo::ParamResult::Medium:
 										case KeywordInfo::ParamResult::Maximum:
@@ -2897,14 +2941,25 @@ namespace karapo::event {
 											parent = &commands.front();
 											break;
 										case KeywordInfo::ParamResult::Excess:
+											event::Manager::Instance().error_handler.SendLocalError(
+												too_many_parameters_warning,
+												(L"コマンド名: " + command_name).c_str()
+											);
 											break;
 									}
+								} else {
+									error_occurred = command_not_found_error;
+									event::Manager::Instance().error_handler.SendLocalError(error_occurred, L"コマンド名: " + command_name);
 								}
 								command_parameters.clear();
 							}
 							queue.pop_front();
 						}
 						stack.clear();
+
+						if (event::Manager::Instance().error_handler.ShowLocalError(4)) {
+							break;
+						}
 
 						if (!event_name.empty()) {
 							parsing_events[event_name].trigger_type = trigger_type;
