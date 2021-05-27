@@ -1481,12 +1481,14 @@ namespace karapo::event {
 
 						command_iterator++;
 						while (command_iterator != commands->end()) {
-							command_iterator->command->Execute();
-							auto can_execute = std::any_cast<int>(Program::Instance().var_manager.Get<false>(L"of_state"));
-							if (can_execute) {
-								// 実行可能なコマンドなので、ここからコマンド実行。
-								executing = command_iterator->parent;
-								break;
+							if (command_iterator->word == L"of" || command_iterator->word == L"else") {
+								command_iterator->command->Execute();
+								auto can_execute = std::any_cast<int>(Program::Instance().var_manager.Get<false>(L"of_state"));
+								if (can_execute) {
+									// 実行可能なコマンドなので、ここからコマンド実行。
+									executing = command_iterator->parent;
+									break;
+								}
 							}
 							command_iterator++;
 						}
