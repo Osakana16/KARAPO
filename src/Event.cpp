@@ -2856,7 +2856,7 @@ namespace karapo::event {
 
 				SemanticParser(std::list<Syntax> *syntax) noexcept : SemanticParser() {
 					for (auto it = syntax->begin(); it != syntax->end(); it++) {
-						if (std::find_if(visited.begin(), visited.end(), [it](Syntax* s) { return s->text == it->text && s->parent == it->parent; }) != visited.end()) {
+						if (std::find(visited.begin(), visited.end(), &(*it)) != visited.end()) {
 							continue;
 						}
 						auto route = &(*it);
