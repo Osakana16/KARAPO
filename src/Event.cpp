@@ -1378,22 +1378,6 @@ namespace karapo::event {
 		}
 
 		namespace hidden {
-			class EndOf final : public StandardCommand {
-				bool executed = false;
-			public:
-				EndOf() noexcept {}
-				~EndOf() noexcept final {}
-
-				void Execute() final {
-					Program::Instance().event_manager.FreeOf();
-					StandardCommand::Execute();
-				}
-
-				bool IgnoreCondition() const noexcept final {
-					return true;
-				}
-			};
-
 			// Entity‚ªŠÖ‚í‚é‘S‚Ä‚ÌManager‚ðXV
 			class UpdateEntity final : public StandardCommand {
 			public:
@@ -2553,22 +2537,6 @@ namespace karapo::event {
 							.Result = [&]() -> CommandPtr {
 								return std::make_unique<command::Else>();
 							},
-							.checkParamState = [params]() -> KeywordInfo::ParamResult {
-								switch (params.size()) {
-									case 0:
-										return KeywordInfo::ParamResult::Maximum;
-									default:
-										return KeywordInfo::ParamResult::Excess;
-								}
-							},
-							.is_static = false,
-							.is_dynamic = true
-						};
-					};
-
-					words[L"__endof"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
-						return {
-							.Result = [&]() -> CommandPtr { return std::make_unique<command::hidden::EndOf>(); },
 							.checkParamState = [params]() -> KeywordInfo::ParamResult {
 								switch (params.size()) {
 									case 0:
