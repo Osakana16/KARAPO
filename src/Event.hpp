@@ -53,7 +53,7 @@ namespace karapo::event {
 			void SetTarget(std::any& tv);
 			// ğŒ®‚ğ•]‰¿‚·‚é
 			bool Evalute(const std::wstring&, const std::any&) noexcept;
-			void FreeCase(), FreeOf();
+			void FreeCase();
 			bool CanExecute() const noexcept { return can_execute; }
 		};
 		
@@ -89,7 +89,7 @@ namespace karapo::event {
 
 		void NewCaseTarget(std::any);
 		bool Evalute(const std::wstring&, const std::any&);
-		void FreeCase(), FreeOf();
+		void FreeCase();
 		bool CanOfExecute() const noexcept;
 
 		static Manager& Instance() noexcept {

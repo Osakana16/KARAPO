@@ -3212,11 +3212,6 @@ namespace karapo::event {
 
 	void Manager::ConditionManager::FreeCase() {
 		target_value.reset();
-		FreeOf();
-	}
-
-	void Manager::ConditionManager::FreeOf() {
-		can_execute = true;
 	}
 
 	Manager::Manager() {
@@ -3319,10 +3314,6 @@ namespace karapo::event {
 		condition_manager.pop_back();
 		if (!condition_manager.empty())
 			condition_current = condition_manager.end() - 1;
-	}
-
-	void Manager::FreeOf() {
-		condition_current->FreeOf();
 	}
 
 	bool Manager::CanOfExecute() const noexcept {
