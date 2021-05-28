@@ -1414,56 +1414,6 @@ namespace karapo::event {
 	class Manager::CommandExecuter final {
 	public:
 		CommandExecuter(std::list<CommandTree>* commands) {
-			// 適切な道の形成
-			{
-				auto it = commands->begin();
-				std::list<decltype(it)> case_pos{};
-				// 各caseに対して、ofコマンドを挿入しなおした回数を保存するリスト。
-				std::list<int> inserted_counts{};
-				while (it != commands->end()) {
-					if (it->word == L"case") {
-						case_pos.push_front(it);
-						case_pos.front()->parent = nullptr;
-						inserted_counts.push_front(0);
-					} else if (it->word == L"of" || it->word == L"else") {
-						// 親の修正
-						{
-							// 多重分岐避け
-							std::list<CommandTree*> ignore_case{};
-							CommandTree *of_parent{};
-							auto parent = &(*it);
-							while (parent->parent != nullptr) {
-								if (parent->parent->word == L"case") {
-									ignore_case.push_back(parent->parent);
-								} else if ((parent->parent->word == L"of" || parent->parent->word == L"else") && of_parent == nullptr && ignore_case.empty()) {
-									// 次のコマンドがofコマンドまたはelseコマンド:
-									// 分岐終了なので変更対象に設定。
-									of_parent = parent;
-								} else if (parent->parent->word == L"endcase" && of_parent != nullptr) {
-									if (ignore_case.empty()) {
-										// 変更対象をendcaseコマンドに繋げる。
-										of_parent->parent = parent->parent;
-										break;
-									} else {
-										ignore_case.pop_back();
-									}
-								}
-								parent = parent->parent;
-							}
-						}
-						inserted_counts.front()++;
-						// ofコマンドの位置をcaseの直後に設定。
-						commands->insert(std::next(case_pos.front(), inserted_counts.front()), std::move(*it));
-						it = commands->erase(it);
-						continue;
-					} else if (it->word == L"endcase") {
-						case_pos.pop_front();
-						inserted_counts.pop_front();
-					}
-					it++;
-				}
-				commands->size();
-			}
 			Program::Instance().var_manager.MakeNew(L"of_state") = 1;
 			// ここから、コマンド実行。
 			{
@@ -3066,7 +3016,68 @@ namespace karapo::event {
 				}
 			};
 
-		
+			// 最適化機構
+			class Optimizer final {
+			public:
+				Optimizer() = default;
+
+				// 出来る限りの最適化。
+				Optimizer(std::list<CommandTree> *commands) noexcept {
+					// 適切な道の形成
+					SortOfElse(commands);
+				}
+
+				// of/elseコマンドをstd::list内のcaseの直後に並べ直す。
+				void SortOfElse(std::list<CommandTree> *commands) noexcept {
+					auto it = commands->begin();
+					std::list<decltype(it)> case_pos{};
+					// 各caseに対して、ofコマンドを挿入しなおした回数を保存するリスト。
+					std::list<int> inserted_counts{};
+					while (it != commands->end()) {
+						if (it->word == L"case") {
+							case_pos.push_front(it);
+							case_pos.front()->parent = nullptr;
+							inserted_counts.push_front(0);
+						} else if (it->word == L"of" || it->word == L"else") {
+							// 親の修正
+							{
+								// 多重分岐避け
+								std::list<CommandTree*> ignore_case{};
+								CommandTree *of_parent{};
+								auto parent = &(*it);
+								while (parent->parent != nullptr) {
+									if (parent->parent->word == L"case") {
+										ignore_case.push_back(parent->parent);
+									} else if ((parent->parent->word == L"of" || parent->parent->word == L"else") && of_parent == nullptr && ignore_case.empty()) {
+										// 次のコマンドがofコマンドまたはelseコマンド:
+										// 分岐終了なので変更対象に設定。
+										of_parent = parent;
+									} else if (parent->parent->word == L"endcase" && of_parent != nullptr) {
+										if (ignore_case.empty()) {
+											// 変更対象をendcaseコマンドに繋げる。
+											of_parent->parent = parent->parent;
+											break;
+										} else {
+											ignore_case.pop_back();
+										}
+									}
+									parent = parent->parent;
+								}
+							}
+							inserted_counts.front()++;
+							// ofコマンドの位置をcaseの直後に設定。
+							commands->insert(std::next(case_pos.front(), inserted_counts.front()), std::move(*it));
+							it = commands->erase(it);
+							continue;
+						} else if (it->word == L"endcase") {
+							case_pos.pop_front();
+							inserted_counts.pop_front();
+						}
+						it++;
+					}
+				}
+			};
+
 			std::unordered_map<std::wstring, Event> events;
 			std::wstring ename;
 
@@ -3099,6 +3110,9 @@ namespace karapo::event {
 				bool aborted = false;
 				auto tree = std::move(SyntaxParser(&context).Result());
 				events = std::move(SemanticParser(&tree).Result());
+				for (auto& e : events) {
+					Optimizer(&e.second.commands);
+				}
 			}
 
 			[[nodiscard]] auto Result() noexcept {
