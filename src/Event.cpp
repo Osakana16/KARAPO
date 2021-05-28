@@ -1477,68 +1477,56 @@ namespace karapo::event {
 						// 読み込もうとした単語が、文字列として書かれているかを判定する為の変数
 						// 値がtrueの間、解析器はスペースを区切り文字として認識しなくなる。
 						bool is_string = false;
-						bool need_skip = false;
 						auto text = std::wstring(L"");
 
 						for (auto c : Sentence) {
 							if (!is_string) {
-								if (auto it = context.cend(); context.size() >= 2 && *(--it) == L"/" && *(--it) == L"/") {
-									for (int i = 0; i < 2; i++)
-										context.pop_back();
-									need_skip = true;
+								
+
+								// スペース判定
+								if (IsSpace(c) || c == L'\0' || c == L'\n') {
+									// 貯めこんだ文字を単語として格納
+									if (!text.empty()) {
+										PushWord(&context, &text);
+									}
+
+									if (c == L'\n' && context.back() != L"\n") {
+										text = L'\n';
+										PushWord(&context, &text);
+									}
+									continue;
+								} else if (c == L'\r') {
+									// 復帰コードは無視。
+									continue;
 								}
 
-								if (!need_skip) {
-									// スペース判定
-									if (IsSpace(c) || c == L'\0' || c == L'\n') {
+								// 演算子判定
+								switch (c) {
+									case L'\'':
+										is_string = true;
+										break;
+									case L'/':
+									case L'~':
+									case L']':
+									case L'[':
+									case L'>':
+									case L'<':
+									case L'(':
+									case L')':
+									case L',':
+									case L'{':
+									case L'}':
+									{
 										// 貯めこんだ文字を単語として格納
 										if (!text.empty()) {
 											PushWord(&context, &text);
 										}
-
-										if (c == L'\n' && context.back() != L"\n") {
-											text = L'\n';
-											PushWord(&context, &text);
-										}
-										continue;
-									} else if (c == L'\r') {
-										// 復帰コードは無視。
+										// 記号を代入
+										text = c;
+										PushWord(&context, &text);
 										continue;
 									}
-
-									// 演算子判定
-									switch (c) {
-										case L'\'':
-											is_string = true;
-											break;
-										case '/':
-										case L'~':
-										case L']':
-										case L'[':
-										case L'>':
-										case L'<':
-										case L'(':
-										case L')':
-										case L',':
-										case L'{':
-										case L'}':
-										{
-											// 貯めこんだ文字を単語として格納
-											if (!text.empty()) {
-												PushWord(&context, &text);
-											}
-											// 記号を代入
-											text = c;
-											PushWord(&context, &text);
-											continue;
-										}
-										break;
-									}
-								} else {
-									if (c == L'\n') {
-										need_skip = false;
-									}
-									continue;
+									break;
 								}
 							} else {
 								// 演算子判定
@@ -1557,13 +1545,13 @@ namespace karapo::event {
 
 					{
 						// 文字の結合部
-						// >、=、<をそれぞれ結合する。
+						// >、=、<、/をそれぞれ結合する。
 
 						std::wstring tmp{};
 						Context::iterator it = context.begin();
 						while (it != context.end()) {
 							it = std::find_if(it, context.end(), [](std::wstring text) {
-								return text == L"<" || text == L"=" || text == L">" || text == L"\n";
+								return text == L"<" || text == L"=" || text == L">" || text == L"/" || text == L"\n";
 							});
 
 							if (it != context.end()) {
@@ -1574,7 +1562,7 @@ namespace karapo::event {
 								}
 								tmp += *it;
 								if (tmp.size() == 2) {
-									if (tmp == L"<=" || tmp == L"==" || tmp == L">=") {
+									if (tmp == L"<=" || tmp == L"==" || tmp == L">=" || tmp == L"//") {
 										// 結合
 										context.erase(it--);
 										context.insert(it, tmp);
@@ -1656,18 +1644,20 @@ namespace karapo::event {
 							}
 							case L'\n':
 							{
-								if (operator_iterator->text != L"{") {
-									operator_iterator = tree.end();
-									tree_iterator->parent = nullptr;
-									tree.push_front(Syntax{ .parent = &(*tree_iterator) });
-								} else {
-									// コマンド文は複数行の文で構成される。
-									// ({}を親とする構文木が複数存在する。)
-									// 
-									// その為、常に{}を親として設定。
-									tree_iterator->parent = &(*operator_iterator);
+								if (operator_iterator != tree.end()) {
+									if (operator_iterator->text != L"{") {
+										operator_iterator = tree.end();
+										tree_iterator->parent = nullptr;
+										tree.push_front(Syntax{ .parent = &(*tree_iterator) });
+									} else {
+										// コマンド文は複数行の文で構成される。
+										// ({}を親とする構文木が複数存在する。)
+										// 
+										// その為、常に{}を親として設定。
+										tree_iterator->parent = &(*operator_iterator);
+									}
+									tree_iterator = tree.begin();
 								}
-								tree_iterator = tree.begin();
 								break;
 							}
 							case L',':
@@ -1675,10 +1665,17 @@ namespace karapo::event {
 								break;
 							default:
 							not_operator:
-								tree_iterator->text = str;
-								tree.push_front(Syntax{ .parent = &(*tree_iterator) });
-								tree_iterator = tree.begin();
-								break;
+								if (str != L"//") {
+									tree_iterator->text = str;
+									tree.push_front(Syntax{ .parent = &(*tree_iterator) });
+									tree_iterator = tree.begin();
+									break;
+								} else {
+									while (lexical_context->front() != L"\n") {
+										lexical_context->pop_front();
+									}
+									continue;
+								}
 						}
 						lexical_context->pop_front();
 					}
