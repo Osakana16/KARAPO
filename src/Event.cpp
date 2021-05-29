@@ -1594,14 +1594,20 @@ namespace karapo::event {
 			// \•¶–Ø‰ğÍ
 			class SyntaxParser final {
 				std::list<Syntax> tree{};
+				inline static error::ErrorContent *invalid_operator_error{};
 			public:
 				SyntaxParser(Context* lexical_context) noexcept {
+					if (invalid_operator_error == nullptr)
+						invalid_operator_error = error::UserErrorHandler::MakeError(event::Manager::Instance().error_class, L"\•¶‚ÉŒë‚è‚ª‚ ‚è‚Ü‚·B", MB_OK | MB_ICONERROR, 1);
+					
+					error::ErrorContent *error_occurred{};
+
 					tree.push_front({});
 					tree.push_front(Syntax{ .parent = &tree.front() });
 					auto operator_iterator = tree.end();
 					auto tree_iterator = tree.begin();
 
-					while (!lexical_context->empty()) {
+					while (!lexical_context->empty() && error_occurred == nullptr) {
 						auto str = lexical_context->front();
 						switch (str[0]) {
 							case L'{':
@@ -1621,8 +1627,13 @@ namespace karapo::event {
 									operator_iterator = tree_iterator;
 								} else
 									tree_iterator = operator_iterator;
-
+								
 								tree_iterator->text += str[0];
+								// 
+								if (tree_iterator->text.size() == 2 && tree_iterator->text != L"()" && tree_iterator->text != L"<>" && tree_iterator->text != L"[]" && tree_iterator->text != L"{}") {
+									error_occurred = invalid_operator_error;
+									event::Manager::Instance().error_handler.SendLocalError(error_occurred, L"•¶: " + tree_iterator->text);
+								}
 								tree_iterator = old;
 								break;
 							}
