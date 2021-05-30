@@ -1723,7 +1723,7 @@ namespace karapo::event {
 						already_new_event_name_defined_error = error::UserErrorHandler::MakeError(event::Manager::Instance().error_class, L"既にイベント名が設定されています。", MB_OK | MB_ICONERROR, 1);
 					if (already_new_trigger_type_defined_error == nullptr)
 						already_new_trigger_type_defined_error = error::UserErrorHandler::MakeError(event::Manager::Instance().error_class, L"既に発生タイプが指定されています。", MB_OK | MB_ICONERROR, 1);
-
+			
 					words[L"text"] =
 						words[L"文章"] = [](const std::vector<std::wstring>& params) -> KeywordInfo
 					{
@@ -2831,6 +2831,8 @@ namespace karapo::event {
 					// 左: 現在のcaseのイテレータ
 					// 右: elseが存在するか否か。
 					std::list<std::pair<decltype(commands)::iterator, bool>> case_stack{};
+					// コマンド文を発見したか否か。
+					bool found_command_sentence = false;
 
 					for (auto it = syntax->begin(); it != syntax->end(); it++) {
 						if (std::find(visited.begin(), visited.end(), &(*it)) != visited.end()) {
@@ -2910,6 +2912,7 @@ namespace karapo::event {
 									stack.pop_front();
 								}
 							} else if (op == L"{}") {
+								found_command_sentence = true;
 								stack.pop_front();
 								std::wstring command_name{};
 								GenerateFunc generator_candidate{};
@@ -2985,7 +2988,7 @@ namespace karapo::event {
 							break;
 						}
 
-						if (!event_name.empty()) {
+						if (!event_name.empty() && found_command_sentence) {
 							parsing_events[event_name].trigger_type = trigger_type;
 							parsing_events[event_name].param_names = std::move(params);
 							for (int i = 0; i < 2; i++)
@@ -2997,6 +3000,7 @@ namespace karapo::event {
 							params.clear();
 							event_name.clear();
 							parent = nullptr;
+							found_command_sentence = false;
 						}
 					}
 
