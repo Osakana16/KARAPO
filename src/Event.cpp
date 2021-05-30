@@ -1691,7 +1691,7 @@ namespace karapo::event {
 
 				CommandTree* parent = nullptr;
 				WorldVector origin[2]{ { -1, -1 }, { -1, -1 } };
-				TriggerType trigger_type;
+				TriggerType trigger_type = TriggerType::Invalid;
 				std::wstring event_name;
 				std::vector<std::wstring> params{};
 				std::list<CommandTree> commands{};
@@ -1704,7 +1704,9 @@ namespace karapo::event {
 					*invalid_trigger_type_warning{},
 					*command_not_found_error{},
 					*lack_of_parameters_error{},
-					*too_many_parameters_warning{};
+					*too_many_parameters_warning{},
+					*already_new_event_name_defined_error{},
+					*already_new_trigger_type_defined_error{};
 			public:
 				SemanticParser() noexcept {
 					if (empty_name_error == nullptr)
@@ -1717,6 +1719,10 @@ namespace karapo::event {
 						lack_of_parameters_error = error::UserErrorHandler::MakeError(event::Manager::Instance().error_class, L"コマンドの引数が足りない為、生成できません。", MB_OK | MB_ICONERROR, 2);
 					if (too_many_parameters_warning == nullptr)
 						too_many_parameters_warning = error::UserErrorHandler::MakeError(event::Manager::Instance().error_class, L"コマンドの引数が多すぎる為、余分なものは廃棄しました。", MB_OK | MB_ICONWARNING, 3);
+					if (already_new_event_name_defined_error == nullptr)
+						already_new_event_name_defined_error = error::UserErrorHandler::MakeError(event::Manager::Instance().error_class, L"既にイベント名が設定されています。", MB_OK | MB_ICONERROR, 1);
+					if (already_new_trigger_type_defined_error == nullptr)
+						already_new_trigger_type_defined_error = error::UserErrorHandler::MakeError(event::Manager::Instance().error_class, L"既に発生タイプが指定されています。", MB_OK | MB_ICONERROR, 1);
 
 					words[L"text"] =
 						words[L"文章"] = [](const std::vector<std::wstring>& params) -> KeywordInfo
@@ -2842,50 +2848,60 @@ namespace karapo::event {
 							auto& op = stack.front();
 							if (op == L"[]") {
 								stack.pop_front();
-								switch (stack.size()) {
-									case 0:
-										error_occurred = empty_name_error;
-										event::Manager::Instance().error_handler.SendLocalError(error_occurred);
-										break;
-									case 1:
-										event_name = stack.front();
-										stack.pop_front();
-										break;
-									default:
-										std::wstring candidate_name{};
-										while (!stack.empty()) {
-											candidate_name += stack.front() + L' ';
+								if (event_name.empty()) {
+									switch (stack.size()) {
+										case 0:
+											error_occurred = empty_name_error;
+											event::Manager::Instance().error_handler.SendLocalError(error_occurred);
+											break;
+										case 1:
+											event_name = stack.front();
 											stack.pop_front();
-										}
-										candidate_name.pop_back();
-										event_name = candidate_name;
-										break;
+											break;
+										default:
+											std::wstring candidate_name{};
+											while (!stack.empty()) {
+												candidate_name += stack.front() + L' ';
+												stack.pop_front();
+											}
+											candidate_name.pop_back();
+											event_name = candidate_name;
+											break;
+									}
+								} else {
+									error_occurred = already_new_event_name_defined_error;
+									event::Manager::Instance().error_handler.SendLocalError(error_occurred, (L"多重定義として判定されたイベント名: " + stack.front()));
 								}
 							} else if (op == L"<>") {
 								stack.pop_front();
-								auto word = stack.front();
-								if (word == L"a") {
-									trigger_type = TriggerType::Auto;
-								} else if (word == L"t") {
-									trigger_type = TriggerType::Trigger;
-								} else if (word == L"n") {
-									trigger_type = TriggerType::None;
-								} else if (word == L"l") {
-									trigger_type = TriggerType::Load;
-								} else {
-									trigger_type = TriggerType::None;
-									event::Manager::Instance().error_handler.SendLocalError(invalid_trigger_type_warning);
-								}
-								stack.pop_front();
-
-								for (int i = 0; !stack.empty(); ) {
-									if (stack.front() == L"~")
-										i = 1;
-									else {
-										origin[(origin[0][1] > -1)][i] = ToDec<Dec>(stack.front().c_str(), nullptr);
-										i = 0;
+								if (trigger_type == TriggerType::Invalid) {
+									auto word = stack.front();
+									if (word == L"a") {
+										trigger_type = TriggerType::Auto;
+									} else if (word == L"t") {
+										trigger_type = TriggerType::Trigger;
+									} else if (word == L"n") {
+										trigger_type = TriggerType::None;
+									} else if (word == L"l") {
+										trigger_type = TriggerType::Load;
+									} else {
+										trigger_type = TriggerType::None;
+										event::Manager::Instance().error_handler.SendLocalError(invalid_trigger_type_warning);
 									}
 									stack.pop_front();
+
+									for (int i = 0; !stack.empty(); ) {
+										if (stack.front() == L"~")
+											i = 1;
+										else {
+											origin[(origin[0][1] > -1)][i] = ToDec<Dec>(stack.front().c_str(), nullptr);
+											i = 0;
+										}
+										stack.pop_front();
+									}
+								} else {
+									error_occurred = already_new_trigger_type_defined_error;
+									event::Manager::Instance().error_handler.SendLocalError(error_occurred, (L"多重定義として判定された発生タイプ名: " + stack.front()));
 								}
 							} else if (op == L"()") {
 								stack.pop_front();
