@@ -408,6 +408,38 @@ namespace karapo::event {
 			}
 		};
 
+		// âÊëúÇì«Ç›çûÇ›ÅAï\é¶Ç≥ÇπÇÈÅB
+		DYNAMIC_COMMAND(Capture) {
+			std::wstring variable_name{}, path{};
+			ScreenVector position{}, length{};
+		public:
+			Capture(const std::wstring &V, const std::wstring &P, const ScreenVector Pos, const ScreenVector Len) {
+				variable_name = V;
+				path = P;
+				position = Pos;
+				length = Len;
+			}
+
+			DYNAMIC_COMMAND_CONSTRUCTOR(Capture) {}
+
+			~Capture() override {}
+
+			void Execute() override {
+				int x{}, y{}, w{}, h{};
+				if (MustSearch()) {
+					variable_name = GetParam<std::wstring>(0);
+					path = GetParam<std::wstring>(1);
+					position[0] = GetParam<int>(2);
+					position[1] = GetParam<int>(3);
+					length[0] = GetParam<int>(4);
+					length[1] = GetParam<int>(5);
+				}
+				Program::Instance().engine.CopyImage(&path, position, length);
+				Program::Instance().var_manager.Get<false>(variable_name) = path;
+				StandardCommand::Execute();
+			}
+		};
+
 		// BGM
 		DYNAMIC_COMMAND(Music) {
 			std::shared_ptr<karapo::entity::Sound> music;
@@ -1850,6 +1882,53 @@ namespace karapo::event {
 									case 4:
 										return KeywordInfo::ParamResult::Lack;
 									case 5:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"capture"] =
+						words[L"âÊëúêÿéÊ"] = [](const std::vector<std::wstring>& params) -> KeywordInfo
+					{
+						return {
+							.Result = [&]() noexcept -> CommandPtr {
+								const auto [Var_Name, Var_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								const auto [File_Path, Path_Type] = Default_ProgramInterface.GetParamInfo(params[1]);
+								const auto [Vec_X, VX_Type] = Default_ProgramInterface.GetParamInfo(params[2]);
+								const auto [Vec_Y, VY_Type] = Default_ProgramInterface.GetParamInfo(params[3]);
+								const auto [Len_X, LX_Type] = Default_ProgramInterface.GetParamInfo(params[4]);
+								const auto [Len_Y, LY_Type] = Default_ProgramInterface.GetParamInfo(params[5]);
+
+								if (Default_ProgramInterface.IsNoType(Var_Type) &&
+									Default_ProgramInterface.IsStringType(Path_Type) &&
+									Default_ProgramInterface.IsNumberType(VX_Type) &&
+									Default_ProgramInterface.IsNumberType(VY_Type) &&
+									Default_ProgramInterface.IsNumberType(LX_Type) &&
+									Default_ProgramInterface.IsNumberType(LY_Type))
+								{
+									return std::make_unique<command::Capture>(Var_Name,
+										File_Path,
+										ScreenVector{ ToInt(Vec_X.c_str(), nullptr), ToInt(Vec_Y.c_str(), nullptr) },
+										ScreenVector{ ToInt(Len_X.c_str(), nullptr), ToInt(Len_Y.c_str(), nullptr) });
+								} else {
+									return std::make_unique<command::Capture>(params);
+								}
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+									case 1:
+									case 2:
+									case 3:
+									case 4:
+									case 5:
+										return KeywordInfo::ParamResult::Lack;
+									case 6:
 										return KeywordInfo::ParamResult::Maximum;
 									default:
 										return KeywordInfo::ParamResult::Excess;
