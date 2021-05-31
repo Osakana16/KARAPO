@@ -122,7 +122,11 @@ namespace karapo::entity {
 	class Manager final : private Singleton {
 		std::vector<Chunk> chunks;
 
-		Manager() = default;
+		error::UserErrorHandler error_handler{};
+		error::ErrorClass *entity_error_class{};
+		error::ErrorContent *entity_already_registered_warning{};
+
+		Manager();
 		~Manager() = default;
 	public:
 		// Entity‚ğXV‚·‚éB

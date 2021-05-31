@@ -9,6 +9,11 @@
 #include <forward_list>
 
 namespace karapo::entity {
+	Manager::Manager() {
+		entity_error_class = error::UserErrorHandler::MakeErrorClass(L"entityエラー");
+		entity_already_registered_warning = error::UserErrorHandler::MakeError(entity_error_class, L"既に同じ名前のEntityが存在する為、新しく登録できません。", MB_OK | MB_ICONWARNING, 1);
+	}
+
 	void Manager::Update() noexcept {
 		for (auto& group : chunks) {
 			std::thread th(&Chunk::Update, &group);
@@ -48,19 +53,24 @@ namespace karapo::entity {
 	}
 
 	void Manager::Register(std::shared_ptr<Entity> entity, const std::wstring& Layer_Name) noexcept {
-		decltype(chunks)::iterator candidate;
 		if (chunks.empty()) {
 			chunks.push_back(Chunk());
 		}
-		candidate = chunks.begin();
-		candidate->Register(entity);
-		auto var = std::any_cast<std::wstring>(Program::Instance().var_manager.Get<false>(variable::Managing_Entity_Name));
-		var += std::wstring(entity->Name()) + L"=" + std::wstring(entity->KindName()) + L"\n";
-		Program::Instance().var_manager.Get<false>(variable::Managing_Entity_Name) = var;
-		if (!Layer_Name.empty())
-			Program::Instance().canvas.Register(entity, Layer_Name);
-		else
-			Program::Instance().canvas.Register(entity);
+
+		if (GetEntity(entity->Name()) == nullptr) {
+			auto candidate = chunks.begin();
+			candidate->Register(entity);
+			auto var = std::any_cast<std::wstring>(Program::Instance().var_manager.Get<false>(variable::Managing_Entity_Name));
+			var += std::wstring(entity->Name()) + L"=" + std::wstring(entity->KindName()) + L"\n";
+			Program::Instance().var_manager.Get<false>(variable::Managing_Entity_Name) = var;
+			if (!Layer_Name.empty())
+				Program::Instance().canvas.Register(entity, Layer_Name);
+			else
+				Program::Instance().canvas.Register(entity);
+		} else {
+			error_handler.SendLocalError(entity_already_registered_warning, std::wstring(L"登録しようとしたEntity名: ") + entity->Name());
+			error_handler.ShowLocalError(4);
+		}
 	}
 
 	size_t Manager::Amount() const noexcept {
