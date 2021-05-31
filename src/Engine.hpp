@@ -104,6 +104,9 @@ namespace karapo {
 			bool Failed() const noexcept;
 
 			resource::Resource LoadImage(const std::wstring&) noexcept, LoadSound(const std::wstring&) noexcept;
+			// 指定領域を元の画像からコピーする。
+			// コピー後、コピー元を示すpathをコピー先の名前に書き換える。
+			resource::Resource CopyImage(std::wstring* path, const ScreenVector Position, const ScreenVector Length) noexcept;
 
 			void SetBlend(const BlendMode, const int);
 			void DrawLine(int, int, int, int, Color);

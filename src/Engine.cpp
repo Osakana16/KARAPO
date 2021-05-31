@@ -108,6 +108,27 @@ namespace karapo {
 		}
 	}
 
+	resource::Resource Program::Engine::CopyImage(std::wstring* path, const ScreenVector Position, const ScreenVector Length) noexcept {
+		auto r = resources.find(*path);
+		if (r == resources.end()) {
+			LoadImage(*path);
+			r = resources.find(*path);
+		}
+		auto copied = static_cast<resource::Resource>(
+			DxLib::DerivationGraph(Position[0], Position[1], Length[0], Length[1], static_cast<int>(r->second))
+			);
+
+		size_t count{};
+		for (;; count++) {
+			auto result = resources.count(*path + L'.' + std::to_wstring(count));
+			if (result == 0)
+				break;
+		}
+		*path = *path + L'.' + std::to_wstring(count);
+		resources[*path] = copied;
+		return copied;
+	}
+
 	resource::Resource Program::Engine::LoadSound(const std::wstring& Path) noexcept {
 		if (auto r = resources.find(Path); r != resources.end()) {
 			return r->second;
