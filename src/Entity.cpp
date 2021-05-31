@@ -210,7 +210,6 @@ namespace karapo::entity {
 
 	int Sound::Main() {
 		Play(PlayType::Normal);
-		Delete();
 		return 0;
 	}
 
