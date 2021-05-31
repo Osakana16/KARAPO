@@ -92,7 +92,8 @@ namespace karapo::event {
 		protected:
 			inline static error::ErrorClass *command_error_class{};
 			inline static error::ErrorContent *incorrect_type_error{},
-				*lack_of_parameters_error{};
+				*lack_of_parameters_error{},
+				*empty_name_error{};
 			DynamicCommand() noexcept {
 				if (command_error_class == nullptr)
 					command_error_class = error::UserErrorHandler::MakeErrorClass(L"コマンドエラー");
@@ -100,6 +101,8 @@ namespace karapo::event {
 					incorrect_type_error = error::UserErrorHandler::MakeError(command_error_class, L"引数の型が不適切です。", MB_OK | MB_ICONERROR, 1);
 				if (lack_of_parameters_error == nullptr)
 					lack_of_parameters_error = error::UserErrorHandler::MakeError(command_error_class, L"引数が足りない為、コマンドを実行できません。", MB_OK | MB_ICONERROR, 1);
+				if (empty_name_error == nullptr)
+					empty_name_error = error::UserErrorHandler::MakeError(command_error_class, L"名前を空にすることはできません。", MB_OK | MB_ICONERROR, 2);
 			}
 
 			DynamicCommand(const decltype(param_names)& Param) noexcept : DynamicCommand() {
@@ -161,7 +164,7 @@ namespace karapo::event {
 			std::wstring varname;
 			std::any value;
 		public:
-			Variable(const std::wstring& VName, const std::wstring& Any_Value) noexcept {
+			Variable(const std::wstring& VName, const std::wstring& Any_Value) noexcept : Variable(std::vector<std::wstring>{}) {
 				varname = VName;
 				auto [iv, ir] = ToInt<int>(Any_Value.c_str());
 				auto [fv, fr] = ToDec<Dec>(Any_Value.c_str());
@@ -185,12 +188,19 @@ namespace karapo::event {
 
 			~Variable() noexcept {}
 
-			void CheckParams() noexcept {
+			bool CheckParams() noexcept {
 				if (MustSearch()) {
-					varname = std::any_cast<std::wstring>(GetParam<true>(0));
+					auto name = GetParam<true>(0);
+					auto any_value = GetParam<true>(1);
+					if (name.type() == typeid(std::nullptr_t))
+						goto noname_error;
+					else if (any_value.type() == typeid(std::nullptr_t))
+						goto novalue_error;
+
+					varname = std::any_cast<std::wstring>(name);
 					value = GetParam(1);
 					if (value.type() == typeid(std::nullptr_t)) {
-						auto value_name = std::any_cast<std::wstring>(GetParam<true>(1));
+						auto value_name = std::any_cast<std::wstring>(any_value);
 						auto [fv, fp] = ToDec<Dec>(value_name.c_str());
 						auto [iv, ip] = ToInt(value_name.c_str());
 						if (wcslen(ip) <= 0)
@@ -203,6 +213,16 @@ namespace karapo::event {
 						}
 					}
 				}
+				return true;
+
+			// 変数名が書かれていない場合のエラー(=引数が0個)。
+			noname_error:
+			// 初期値が指定されていない場合のエラー(=引数が1個)。 
+			novalue_error:
+				event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error, L"コマンド名: var/変数");
+				goto return_failed;
+			return_failed:
+				return false;
 			}
 
 			void Execute(const std::wstring& Var_Name) noexcept {
@@ -211,9 +231,10 @@ namespace karapo::event {
 			}
 
 			void Execute() override {
-				CheckParams();
-				Program::Instance().var_manager.MakeNew(varname) = value;
-				StandardCommand::Execute();
+				if (CheckParams()) {
+					Program::Instance().var_manager.MakeNew(varname) = value;
+					StandardCommand::Execute();
+				}
 			}
 		};
 
@@ -223,9 +244,10 @@ namespace karapo::event {
 			using Variable::Variable;
 
 			void Execute() override {
-				CheckParams();
-				varname = varname.substr(varname.find(L'.') + 1);
-				Variable::Execute(varname);
+				if (CheckParams()) {
+					varname = varname.substr(varname.find(L'.') + 1);
+					Variable::Execute(varname);
+				}
 			}
 		};
 		
@@ -288,7 +310,7 @@ namespace karapo::event {
 		DYNAMIC_COMMAND(Case final) {
 			std::any value;
 		public:
-			Case(const std::wstring& Param) noexcept {
+			Case(const std::wstring& Param) noexcept : Case(std::vector<std::wstring>{}) {
 				const auto [Value, Type] = Default_ProgramInterface.GetParamInfo(Param);
 				if (Default_ProgramInterface.IsStringType(Type)) {
 					value = Value;
@@ -315,7 +337,7 @@ namespace karapo::event {
 			std::wstring mode;
 			std::any value;
 		public:
-			Of(const std::wstring& Condition_Sentence, const std::any& V) noexcept {
+			Of(const std::wstring& Condition_Sentence, const std::any& V) noexcept : Of(std::vector<std::wstring>{}) {
 				mode = Condition_Sentence;
 				value = V;
 			}
@@ -350,7 +372,7 @@ namespace karapo::event {
 		// 条件式(全て該当なしの場合)
 		DYNAMIC_COMMAND(Else final) {
 		public:
-			Else() noexcept {}
+			Else() noexcept : Else(std::vector<std::wstring>{}) {}
 
 			DYNAMIC_COMMAND_CONSTRUCTOR(Else) {}
 
@@ -365,7 +387,7 @@ namespace karapo::event {
 		// 条件終了
 		DYNAMIC_COMMAND(EndCase final) {
 		public:
-			EndCase() noexcept {}
+			EndCase() noexcept : EndCase(std::vector<std::wstring>{}) {}
 			~EndCase() final {}
 
 			DYNAMIC_COMMAND_CONSTRUCTOR(EndCase) {}
@@ -387,7 +409,8 @@ namespace karapo::event {
 		public:
 			Image(const std::wstring& P, const WorldVector WV) : Image(P, WV, WorldVector{ 0, 0 }) {}
 
-			Image(const std::wstring& P, const WorldVector WV, const WorldVector Len) : path(P) {
+			Image(const std::wstring& P, const WorldVector WV, const WorldVector Len) : Image(std::vector<std::wstring>{}) {
+				path = P;
 				image = std::make_shared<karapo::entity::Image>(WV, Len);
 			}
 
@@ -397,16 +420,50 @@ namespace karapo::event {
 
 			void Execute() override {
 				if (MustSearch()) {
-					path = std::any_cast<std::wstring>(GetParam(0));
-					Dec x = (GetParam(1).type() == typeid(Dec) ? std::any_cast<Dec>(GetParam(1)) : std::any_cast<int>(GetParam(1))),
-						y = (GetParam(2).type() == typeid(Dec) ? std::any_cast<Dec>(GetParam(2)) : std::any_cast<int>(GetParam(2))),
-						w = (GetParam(1).type() == typeid(Dec) ? std::any_cast<Dec>(GetParam(3)) : std::any_cast<int>(GetParam(3))),
-						h = (GetParam(2).type() == typeid(Dec) ? std::any_cast<Dec>(GetParam(4)) : std::any_cast<int>(GetParam(4)));
+					auto path_param = GetParam(0),
+						x_param = GetParam(1),
+						y_param = GetParam(2),
+						w_param = GetParam(3),
+						h_param = GetParam(4);
+
+					if (path_param.type() == typeid(std::nullptr_t) ||
+						x_param.type() == typeid(std::nullptr_t) ||
+						y_param.type() == typeid(std::nullptr_t) ||
+						w_param.type() == typeid(std::nullptr_t) ||
+						h_param.type() == typeid(std::nullptr_t))
+					{
+						goto lack_error;
+					} 
+					else if (path_param.type() != typeid(std::wstring) ||
+						(x_param.type() != typeid(int) && x_param.type() != typeid(Dec)) ||
+						(y_param.type() != typeid(int) && y_param.type() != typeid(Dec)) ||
+						(w_param.type() != typeid(int) && w_param.type() != typeid(Dec)) ||
+						(h_param.type() != typeid(int) && h_param.type() != typeid(Dec)))
+					{
+						goto type_error;
+					}
+
+
+					path = std::any_cast<std::wstring>(path_param);
+					Dec x = (x_param.type() == typeid(Dec) ? std::any_cast<Dec>(x_param) : std::any_cast<int>(x_param)),
+						y = (y_param.type() == typeid(Dec) ? std::any_cast<Dec>(y_param) : std::any_cast<int>(y_param)),
+						w = (w_param.type() == typeid(Dec) ? std::any_cast<Dec>(w_param) : std::any_cast<int>(w_param)),
+						h = (h_param.type() == typeid(Dec) ? std::any_cast<Dec>(h_param) : std::any_cast<int>(h_param));
 					image = std::make_shared<karapo::entity::Image>(WorldVector{ x, y }, WorldVector{ w, h });
 				}
 				image->Load(path.c_str());
 				Program::Instance().entity_manager.Register(image);
 				StandardCommand::Execute();
+				return;
+
+			lack_error:
+				event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error, L"コマンド名: image/画像");
+				goto end_of_function;
+			type_error:
+				event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error, L"コマンド名: image/画像");
+				goto end_of_function;
+			end_of_function:
+				return;
 			}
 		};
 
@@ -415,7 +472,7 @@ namespace karapo::event {
 			std::wstring variable_name{}, path{};
 			ScreenVector position{}, length{};
 		public:
-			Capture(const std::wstring &V, const std::wstring &P, const ScreenVector Pos, const ScreenVector Len) {
+			Capture(const std::wstring & V, const std::wstring & P, const ScreenVector Pos, const ScreenVector Len) : Capture(std::vector<std::wstring>{}) {
 				variable_name = V;
 				path = P;
 				position = Pos;
@@ -429,16 +486,53 @@ namespace karapo::event {
 			void Execute() override {
 				int x{}, y{}, w{}, h{};
 				if (MustSearch()) {
-					variable_name = std::any_cast<std::wstring>(GetParam(0));
-					path = std::any_cast<std::wstring>(GetParam(1));
-					position[0] = std::any_cast<int>(GetParam(2));
-					position[1] = std::any_cast<int>(GetParam(3));
-					length[0] = std::any_cast<int>(GetParam(4));
-					length[1] = std::any_cast<int>(GetParam(5));
+					auto var_name = GetParam<true>(0),
+						path_param = GetParam(1),
+						x_param = GetParam(2),
+						y_param = GetParam(3),
+						w_param = GetParam(4),
+						h_param = GetParam(5);
+
+					path_param.has_value();
+					if (var_name.type() == typeid(std::nullptr_t) ||
+						path_param.type() == typeid(std::nullptr_t) ||
+						x_param.type() == typeid(std::nullptr_t) ||
+						y_param.type() == typeid(std::nullptr_t) ||
+						w_param.type() == typeid(std::nullptr_t) ||
+						h_param.type() == typeid(std::nullptr_t))
+					{
+						goto lack_error;
+					}
+					else if (var_name.type() != typeid(std::wstring) ||
+						path_param.type() != typeid(std::wstring) ||
+						x_param.type() != typeid(int) ||
+						y_param.type() != typeid(int) ||
+						w_param.type() != typeid(int) ||
+						h_param.type() != typeid(int))
+					{
+						goto type_error;
+					}
+
+					variable_name = std::any_cast<std::wstring>(var_name);
+					path = std::any_cast<std::wstring>(path_param);
+					position[0] = std::any_cast<int>(x_param);
+					position[1] = std::any_cast<int>(y_param);
+					length[0] = std::any_cast<int>(w_param);
+					length[1] = std::any_cast<int>(h_param);
 				}
 				Program::Instance().engine.CopyImage(&path, position, length);
 				Program::Instance().var_manager.Get<false>(variable_name) = path;
 				StandardCommand::Execute();
+				return;
+
+			lack_error:
+				event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error, L"コマンド名: capture/画像切取");
+				goto end_of_function;
+			type_error:
+				event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error, L"コマンド名: capture/画像切取");
+				goto end_of_function;
+			end_of_function:
+				return;
 			}
 		};
 
@@ -459,12 +553,28 @@ namespace karapo::event {
 
 			void Execute() override {
 				if (MustSearch()) {
-					path = std::any_cast<int>(GetParam(0));
+					auto path_param = GetParam(0);
+					if (path_param.type() == typeid(std::nullptr_t))
+						goto lack_error;
+					else if (path_param.type() != typeid(std::wstring))
+						goto type_error;
+					
+					path = std::any_cast<std::wstring>(GetParam(0));
 				}
 				ReplaceFormat(&path);
 				music->Load(path);
 				Program::Instance().entity_manager.Register(music);
 				StandardCommand::Execute();
+				return;
+
+			lack_error:
+				event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error, L"コマンド名: music/BGM/音楽");
+				goto end_of_function;
+			type_error:
+				event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error, L"コマンド名: music/BGM/音楽");
+				goto end_of_function;
+			end_of_function:
+				return;
 			}
 		};
 
@@ -473,7 +583,8 @@ namespace karapo::event {
 			std::shared_ptr<karapo::entity::Sound> sound;
 			std::wstring path;
 		public:
-			Sound(const std::wstring& P, const WorldVector& WV) : path(P) {
+			Sound(const std::wstring& P, const WorldVector& WV) : Sound(std::vector<std::wstring>{}) {
+				path = P;
 				sound = std::make_shared<karapo::entity::Sound>(WV);
 			}
 
@@ -483,6 +594,22 @@ namespace karapo::event {
 
 			void Execute() override {
 				if (MustSearch()) {
+					auto path_param = GetParam(0),
+						x_param = GetParam(1),
+						y_param = GetParam(2);
+					if (path_param.type() == typeid(std::nullptr_t) ||
+						x_param.type() == typeid(std::nullptr_t) ||
+						y_param.type() == typeid(std::nullptr_t))
+					{
+						goto lack_error;
+					}
+					else if (path_param.type() != typeid(std::wstring) ||
+						(x_param.type() != typeid(int) && x_param.type() != typeid(Dec)) ||
+						(y_param.type() != typeid(int) && y_param.type() != typeid(Dec)))
+					{
+						goto type_error;
+					}
+
 					path = std::any_cast<std::wstring>(GetParam(0));
 					Dec x = (GetParam(1).type() == typeid(Dec) ? std::any_cast<Dec>(GetParam(1)) : std::any_cast<int>(GetParam(1))),
 						y = (GetParam(2).type() == typeid(Dec) ? std::any_cast<Dec>(GetParam(2)) : std::any_cast<int>(GetParam(2)));
@@ -492,6 +619,15 @@ namespace karapo::event {
 				sound->Load(path);
 				Program::Instance().entity_manager.Register(sound);
 				StandardCommand::Execute();
+				return;
+			lack_error:
+				event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error, L"コマンド名: Sound/効果音");
+				goto end_of_function;
+			type_error:
+				event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error, L"コマンド名: Sound/効果音");
+				goto end_of_function;
+			end_of_function:
+				return;
 			}
 		};
 
@@ -503,7 +639,7 @@ namespace karapo::event {
 			Button(const std::wstring& Name,
 				const WorldVector& WV,
 				const std::wstring& Image_Path,
-				const WorldVector& Size) noexcept
+				const WorldVector& Size) noexcept : Button(std::vector<std::wstring>{})
 			{
 				auto name = Name;
 				ReplaceFormat(&name);
@@ -517,15 +653,34 @@ namespace karapo::event {
 
 			void Execute() final {
 				if (MustSearch()) {
-					auto name = std::any_cast<std::wstring>(GetParam(0));
-					Dec x = (GetParam(1).type() == typeid(Dec) ? std::any_cast<Dec>(GetParam(1)) : std::any_cast<int>(GetParam(1))),
-						y = (GetParam(2).type() == typeid(Dec) ? std::any_cast<Dec>(GetParam(2)) : std::any_cast<int>(GetParam(2)));
+					auto name_param = GetParam(0),
+						x_param = GetParam(1),
+						y_param = GetParam(2);
+					if (name_param.type() == typeid(std::nullptr_t) ||
+						x_param.type() == typeid(std::nullptr_t) ||
+						y_param.type() == typeid(std::nullptr_t))
+					{
+						goto lack_error;
+					} 
+					else if (name_param.type() != typeid(std::wstring) ||
+						(x_param.type() != typeid(Dec) && x_param.type() != typeid(int)) ||
+						(y_param.type() != typeid(Dec) && y_param.type() != typeid(int)))
+					{
+						goto type_error;
+					}
 
+					auto name = std::any_cast<std::wstring>(name_param);
+					Dec x = (GetParam(1).type() == typeid(Dec) ? std::any_cast<Dec>(x_param) : std::any_cast<int>(x_param)),
+						y = (GetParam(2).type() == typeid(Dec) ? std::any_cast<Dec>(y_param) : std::any_cast<int>(y_param));
+
+					auto w_param = GetParam(3),
+						h_param = GetParam(4),
+						path_param = GetParam(5);
 					Dec w{}, h{};
-					if (GetParam(3).type() != typeid(std::nullptr_t)) {
-						w = (GetParam(3).type() == typeid(Dec) ? std::any_cast<Dec>(GetParam(3)) : std::any_cast<int>(GetParam(3)));
-						h = (GetParam(4).type() == typeid(Dec) ? std::any_cast<Dec>(GetParam(4)) : std::any_cast<int>(GetParam(4)));
-						path = std::any_cast<std::wstring>(GetParam(5));
+					if (w_param.type() != typeid(std::nullptr_t) && h_param.type() != typeid(std::nullptr_t) && path_param.type() != typeid(std::nullptr_t)) {
+						w = (GetParam(3).type() == typeid(Dec) ? std::any_cast<Dec>(w_param) : std::any_cast<int>(w_param));
+						h = (GetParam(4).type() == typeid(Dec) ? std::any_cast<Dec>(h_param) : std::any_cast<int>(h_param));
+						path = std::any_cast<std::wstring>(path_param);
 					}
 					ReplaceFormat(&name);
 					button = std::make_shared<karapo::entity::Button>(name, WorldVector{ x, y }, WorldVector{ w, h });
@@ -534,6 +689,15 @@ namespace karapo::event {
 				button->Load(path);
 				Program::Instance().entity_manager.Register(button);
 				StandardCommand::Execute();
+				return;
+			lack_error:
+				event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error, L"コマンド名: Button/ボタン");
+				goto end_of_function;
+			type_error:
+				event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error, L"コマンド名: Button/ボタン");
+				goto end_of_function;
+			end_of_function:
+				return;
 			}
 		};
 
@@ -541,7 +705,7 @@ namespace karapo::event {
 		DYNAMIC_COMMAND(Print final) {
 			std::shared_ptr<karapo::entity::Text> text;
 		public:
-			Print(const std::wstring& Name, const WorldVector& Pos) noexcept {
+			Print(const std::wstring& Name, const WorldVector& Pos) noexcept : Print(std::vector<std::wstring>{}) {
 				auto name = Name;
 				auto pos = Pos;
 				ReplaceFormat(&name);
@@ -555,9 +719,23 @@ namespace karapo::event {
 
 			void Execute() final {
 				if (MustSearch()) {
-					auto name = std::any_cast<std::wstring>(GetParam(0));
-					Dec x = (GetParam(1).type() == typeid(Dec) ? std::any_cast<Dec>(GetParam(1)) : std::any_cast<int>(GetParam(1))),
-						y = (GetParam(2).type() == typeid(Dec) ? std::any_cast<Dec>(GetParam(2)) : std::any_cast<int>(GetParam(2)));
+					auto name_param = GetParam(0),
+						x_param = GetParam(1),
+						y_param = GetParam(2);
+					if (name_param.type() == typeid(std::nullptr_t) ||
+						x_param.type() == typeid(std::nullptr_t) ||
+						y_param.type() == typeid(std::nullptr_t))
+					{
+						goto lack_error;
+					} 				else if (name_param.type() != typeid(std::wstring) ||
+						(x_param.type() != typeid(Dec) && x_param.type() != typeid(int)) ||
+						(y_param.type() != typeid(Dec) && y_param.type() != typeid(int)))
+					{
+						goto type_error;
+					}
+					auto name = std::any_cast<std::wstring>(name_param);
+					Dec x = (x_param.type() == typeid(Dec) ? std::any_cast<Dec>(x_param) : std::any_cast<int>(x_param)),
+						y = (y_param.type() == typeid(Dec) ? std::any_cast<Dec>(y_param) : std::any_cast<int>(y_param));
 					ReplaceFormat(&name);
 
 					Program::Instance().var_manager.MakeNew(name + L".text") = std::wstring(L"");
@@ -565,6 +743,15 @@ namespace karapo::event {
 				}
 				Program::Instance().entity_manager.Register(text);
 				StandardCommand::Execute();
+				return;
+			lack_error:
+				event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error, L"コマンド名: text/文章");
+				goto end_of_function;
+			type_error:
+				event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error, L"コマンド名: text/文章");
+				goto end_of_function;
+			end_of_function:
+				return;
 			}
 		};
 
@@ -580,15 +767,41 @@ namespace karapo::event {
 
 			void Execute()final {
 				if (MustSearch()) {
-					var = &Program::Instance().var_manager.Get<false>(std::any_cast<std::wstring>(GetParam<true>(0)));
-					pos[0] = std::any_cast<int>(GetParam(1));
-					pos[1] = std::any_cast<int>(GetParam(2));
-					length = std::any_cast<int>(GetParam(3));
+					auto name_param = GetParam<true>(0),
+						x_param = GetParam(1),
+						y_param = GetParam(2),
+						len_param = GetParam(3);
+					if (name_param.type() == typeid(std::nullptr_t) ||
+						x_param.type() == typeid(std::nullptr_t) ||
+						y_param.type() == typeid(std::nullptr_t) ||
+						len_param.type() == typeid(std::nullptr_t))
+					{
+						goto lack_error;
+					} else if (name_param.type() != typeid(std::wstring) ||
+						x_param.type() != typeid(int) ||
+						y_param.type() != typeid(int) ||
+						len_param.type() != typeid(int))
+					{
+						goto type_error;
+					}
+					var = &Program::Instance().var_manager.Get<false>(std::any_cast<std::wstring>(name_param));
+					pos[0] = std::any_cast<int>(x_param);
+					pos[1] = std::any_cast<int>(y_param);
+					length = std::any_cast<int>(len_param);
 				}
 				wchar_t str[10000];
 				Program::Instance().engine.GetString(pos, str, length);
 				*var = std::wstring(str);
 				StandardCommand::Execute();
+				return;
+			lack_error:
+				event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error, L"コマンド名: input/入力");
+				goto end_of_function;
+			type_error:
+				event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error, L"コマンド名: input/入力");
+				goto end_of_function;
+			end_of_function:
+				return;
 			}
 		};
 
@@ -598,7 +811,7 @@ namespace karapo::event {
 				std::wstring entity_name;
 				WorldVector move;
 			public:
-				Teleport(const std::wstring& ename, const WorldVector& MV) noexcept {
+				Teleport(const std::wstring& ename, const WorldVector& MV) noexcept : Teleport(std::vector<std::wstring>{}) {
 					entity_name = ename;
 					move = MV;
 				}
@@ -609,23 +822,49 @@ namespace karapo::event {
 
 				void Execute() override {
 					if (MustSearch()) {
-						entity_name = std::any_cast<std::wstring>(GetParam(0));
-						auto x = std::any_cast<Dec>(GetParam(1));
-						auto y = std::any_cast<Dec>(GetParam(2));
+						auto name_param = GetParam(0),
+							x_param = GetParam(1),
+							y_param = GetParam(2);
+						if (name_param.type() == typeid(std::nullptr_t) ||
+							x_param.type() == typeid(std::nullptr_t) ||
+							y_param.type() == typeid(std::nullptr_t))
+						{
+							goto lack_error;
+						} else if (name_param.type() != typeid(std::wstring) ||
+							x_param.type() != typeid(Dec) ||
+							y_param.type() != typeid(Dec))
+						{
+							goto type_error;
+						}
+						entity_name = std::any_cast<std::wstring>(name_param);
+						auto x = std::any_cast<Dec>(x_param);
+						auto y = std::any_cast<Dec>(y_param);
 						move = { x, y };
 					}
-					ReplaceFormat(&entity_name);
-					auto ent = Program::Instance().entity_manager.GetEntity(entity_name);
-					ent->Teleport(move);
-					StandardCommand::Execute();
+
+					{
+						ReplaceFormat(&entity_name);
+						auto ent = Program::Instance().entity_manager.GetEntity(entity_name);
+						ent->Teleport(move);
+						StandardCommand::Execute();
+						return; 
+					}
+				lack_error:
+					event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error, L"コマンド名: teleport/瞬間移動");
+					goto end_of_function;
+				type_error:
+					event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error, L"コマンド名: teleport/瞬間移動");
+					goto end_of_function;
+				end_of_function:
+					return;
 				}
 			};
 
 			// Entityの削除。
 			DYNAMIC_COMMAND(Kill final) {
-				std::wstring entity_name;
+				std::wstring entity_name{};
 			public:
-				Kill(const std::wstring& ename) noexcept {
+				Kill(const std::wstring & ename) noexcept : Kill(std::vector<std::wstring>{}) {
 					entity_name = ename;
 				}
 
@@ -635,8 +874,16 @@ namespace karapo::event {
 
 				void Execute() override {
 					if (MustSearch()) {
-						entity_name = std::any_cast<std::wstring>(GetParam(0));
+						auto name_param = GetParam(0);
+						if (name_param.type() == typeid(std::nullptr_t))
+							goto lack_error;
+						else if (name_param.type() != typeid(std::wstring))
+							goto type_error;
+
+						entity_name = std::any_cast<std::wstring>(name_param);
 					}
+					if (entity_name.empty())
+						goto name_error;
 
 					ReplaceFormat(&entity_name);
 					if (entity_name == L"__all" || entity_name == L"__全員") {
@@ -662,6 +909,18 @@ namespace karapo::event {
 						Program::Instance().entity_manager.Kill(entity_name);
 					}
 					StandardCommand::Execute();
+					return;
+				name_error:
+					event::Manager::Instance().error_handler.SendLocalError(empty_name_error, L"コマンド名: kill/殺害");
+					goto end_of_function;
+				lack_error:
+					event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error, L"コマンド名: kill/殺害");
+					goto end_of_function;
+				type_error:
+					event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error, L"コマンド名: kill/殺害");
+					goto end_of_function;
+				end_of_function:
+					return;
 				}
 			};
 		}
@@ -696,7 +955,7 @@ namespace karapo::event {
 			int potency{};
 			std::wstring layer_name{}, kind_name{};
 		public:
-			Filter(const std::wstring& N, const std::wstring& KN, const int P) noexcept {
+			Filter(const std::wstring& N, const std::wstring& KN, const int P) noexcept : Filter(std::vector<std::wstring>{}) {
 				layer_name = N;
 				kind_name = KN;
 				potency = P % 256;
@@ -708,14 +967,45 @@ namespace karapo::event {
 
 			void Execute() final {
 				if (MustSearch()) {
-					layer_name = std::any_cast<std::wstring>(GetParam(0));
-					kind_name = std::any_cast<std::wstring>(GetParam(1));
-					potency = std::any_cast<int>(GetParam(2));
+					auto layer_name_param = GetParam(0),
+						kind_name_param = GetParam(1),
+						potecy_param = GetParam(2);
+					if (layer_name_param.type() == typeid(std::nullptr_t) ||
+						kind_name_param.type() == typeid(std::nullptr_t) ||
+						potecy_param.type() == typeid(std::nullptr_t))
+					{
+						goto lack_error;
+					} 
+					else if (layer_name_param.type() != typeid(std::wstring) ||
+						kind_name_param.type() != typeid(std::wstring) ||
+						potecy_param.type() != typeid(int))
+					{
+						goto type_error;
+					}
+					layer_name = std::any_cast<std::wstring>(layer_name_param);
+					kind_name = std::any_cast<std::wstring>(kind_name_param);
+					potency = std::any_cast<int>(potecy_param);
+				}
+
+				if (layer_name.empty() || kind_name.empty()) {
+					goto name_error;
 				}
 				ReplaceFormat(&layer_name);
 				ReplaceFormat(&kind_name);
 				Program::Instance().canvas.ApplyFilter(layer_name, kind_name, potency);
 				StandardCommand::Execute();
+				return;
+			name_error:
+				event::Manager::Instance().error_handler.SendLocalError(empty_name_error, L"コマンド名: filter/フィルター");
+				goto end_of_function;
+			lack_error:
+				event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error, L"コマンド名: filter/フィルター");
+				goto end_of_function;
+			type_error:
+				event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error, L"コマンド名: filter/フィルター");
+				goto end_of_function;
+			end_of_function:
+				return;
 			}
 		};
 
@@ -763,24 +1053,46 @@ namespace karapo::event {
 				std::vector<std::any> params{};
 				SetAllParams(&params);
 				if (MustSearch()) {
+					if (params[0].type() == typeid(std::nullptr_t))
+						goto lack_error;
+					else if (params[0].type() != typeid(std::wstring))
+						goto type_error;
+
 					event_name = std::any_cast<std::wstring>(params[0]);
 				}
-				ReplaceFormat(&event_name);
-				Event* e = Program::Instance().event_manager.GetEvent(event_name);
-				if (!params.empty()) {
-					for (int i = 0; i < e->param_names.size(); i++) {
-						auto value = params[i + 1];
-						auto& newvar = Program::Instance().var_manager.MakeNew(event_name + std::wstring(L".") + e->param_names[i]);
-						if (value.type() == typeid(int))
-							newvar = std::any_cast<int>(value);
-						else if (value.type() == typeid(Dec))
-							newvar = std::any_cast<Dec>(value);
-						else if (value.type() == typeid(std::wstring))
-							newvar = std::any_cast<std::wstring>(value);
+				if (event_name.empty())
+					goto name_error;
+
+				{
+					ReplaceFormat(&event_name);
+					Event* e = Program::Instance().event_manager.GetEvent(event_name);
+					if (!params.empty()) {
+						for (int i = 0; i < e->param_names.size(); i++) {
+							auto value = params[i + 1];
+							auto& newvar = Program::Instance().var_manager.MakeNew(event_name + std::wstring(L".") + e->param_names[i]);
+							if (value.type() == typeid(int))
+								newvar = std::any_cast<int>(value);
+							else if (value.type() == typeid(Dec))
+								newvar = std::any_cast<Dec>(value);
+							else if (value.type() == typeid(std::wstring))
+								newvar = std::any_cast<std::wstring>(value);
+						}
 					}
+					Program::Instance().event_manager.Call(event_name);
+					StandardCommand::Execute();
+					return;
 				}
-				Program::Instance().event_manager.Call(event_name);
-				StandardCommand::Execute();
+			name_error:
+				event::Manager::Instance().error_handler.SendLocalError(empty_name_error, L"コマンド名: call/呼出");
+				goto end_of_function;
+			lack_error:
+				event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error, L"コマンド名: call/呼出");
+				goto end_of_function;
+			type_error:
+				event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error, L"コマンド名: call/呼出");
+				goto end_of_function;
+			end_of_function:
+				return;
 			}
 		};
 
@@ -788,7 +1100,7 @@ namespace karapo::event {
 		DYNAMIC_COMMAND(Import final) {
 			std::wstring file_name;
 		public:
-			Import(const std::wstring& File_Name) noexcept {
+			Import(const std::wstring& File_Name) noexcept : Import(std::vector<std::wstring>{}) {
 				file_name = File_Name;
 			}
 
@@ -798,11 +1110,31 @@ namespace karapo::event {
 
 			void Execute() override {
 				if (MustSearch()) {
-					file_name = std::any_cast<std::wstring>(GetParam(0));
+					auto name_param = GetParam(0);
+					if (name_param.type() == typeid(std::nullptr_t))
+						goto lack_error;
+					else if (name_param.type() != typeid(std::wstring))
+						goto type_error;
+					file_name = std::any_cast<std::wstring>(name_param);
 				}
+				if (file_name.empty())
+					goto name_error;
+
 				ReplaceFormat(&file_name);
 				Program::Instance().event_manager.ImportEvent(file_name);
 				StandardCommand::Execute();
+				return;
+			name_error:
+				event::Manager::Instance().error_handler.SendLocalError(empty_name_error, L"コマンド名: import/取込");
+				goto end_of_function;
+			lack_error:
+				event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error, L"コマンド名: import/取込");
+				goto end_of_function;
+			type_error:
+				event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error, L"コマンド名: import/取込");
+				goto end_of_function;
+			end_of_function:
+				return;
 			}
 		};
 
@@ -810,7 +1142,7 @@ namespace karapo::event {
 		DYNAMIC_COMMAND(Load final) {
 			std::wstring file_name;
 		public:
-			Load(const std::wstring & File_Name) noexcept {
+			Load(const std::wstring & File_Name) noexcept : Load(std::vector<std::wstring>{}) {
 				file_name = File_Name;
 			}
 
@@ -820,11 +1152,31 @@ namespace karapo::event {
 
 			void Execute() override {
 				if (MustSearch()) {
-					file_name = std::any_cast<std::wstring>(GetParam(0));
+					auto name_param = GetParam(0);
+					if (name_param.type() == typeid(std::nullptr_t))
+						goto lack_error;
+					else if (name_param.type() != typeid(std::wstring))
+						goto type_error;
+					file_name = std::any_cast<std::wstring>(name_param);
 				}
+				if (file_name.empty())
+					goto name_error;
+
 				ReplaceFormat(&file_name);
 				Program::Instance().event_manager.RequestEvent(file_name);
 				StandardCommand::Execute();
+				return;
+			name_error:
+				event::Manager::Instance().error_handler.SendLocalError(empty_name_error, L"コマンド名: load/読込");
+				goto end_of_function;
+			lack_error:
+				event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error, L"コマンド名: load/読込");
+				goto end_of_function;
+			type_error:
+				event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error, L"コマンド名: load/読込");
+				goto end_of_function;
+			end_of_function:
+				return;
 			}
 		};
 
@@ -858,17 +1210,48 @@ namespace karapo::event {
 
 				void Execute() final {
 					if (MustSearch()) {
-						index = std::any_cast<int>(GetParam(0));
-						kind_name = std::any_cast<std::wstring>(GetParam(1));
-						layer_name = std::any_cast<std::wstring>(GetParam(2));
+						auto index_param = GetParam(0),
+							kind_param = GetParam(1),
+							layer_param = GetParam(2);
+						if (index_param.type() == typeid(std::nullptr_t) ||
+							kind_param.type() == typeid(std::nullptr_t) ||
+							layer_param.type() == typeid(std::nullptr_t))
+						{
+							goto lack_error;
+						}
+						else if (index_param.type() != typeid(int) ||
+							kind_param.type() != typeid(std::wstring) ||
+							layer_param.type() != typeid(std::wstring))
+						{
+							goto type_error;
+						}
+						index = std::any_cast<int>(index_param);
+						kind_name = std::any_cast<std::wstring>(kind_param);
+						layer_name = std::any_cast<std::wstring>(layer_param);
 					}
-					ReplaceFormat(&kind_name);
-					ReplaceFormat(&layer_name);
-					auto it = Create.find(kind_name);
-					if (it != Create.end()) {
-						(Program::Instance().canvas.*it->second)(layer_name, index);
+					if (kind_name.empty() || layer_name.empty())
+						goto name_error;
+					{
+						ReplaceFormat(&kind_name);
+						ReplaceFormat(&layer_name);
+						auto it = Create.find(kind_name);
+						if (it != Create.end()) {
+							(Program::Instance().canvas.*it->second)(layer_name, index);
+						}
+						StandardCommand::Execute();
+						return;
 					}
-					StandardCommand::Execute();
+				name_error:
+					event::Manager::Instance().error_handler.SendLocalError(empty_name_error, L"コマンド名: makelayer/レイヤー生成");
+					goto end_of_function;
+				lack_error:
+					event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error, L"コマンド名: makelayer/レイヤー生成");
+					goto end_of_function;
+				type_error:
+					event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error, L"コマンド名: makelayer/レイヤー生成");
+					goto end_of_function;
+				end_of_function:
+					return;
 				}
 			};
 
@@ -876,7 +1259,7 @@ namespace karapo::event {
 			DYNAMIC_COMMAND(Select final) {
 				std::wstring layer_name{};
 			public:
-				Select(const std::wstring& LN) noexcept {
+				Select(const std::wstring & LN) noexcept : Select(std::vector<std::wstring>{}) {
 					layer_name = LN;
 				}
 
@@ -886,11 +1269,33 @@ namespace karapo::event {
 
 				void Execute() final {
 					if (MustSearch()) {
-						layer_name = std::any_cast<std::wstring>(GetParam(0));
+						auto layer_name_param = GetParam(0);
+						if (layer_name_param.type() == typeid(std::nullptr_t))
+							goto lack_error;
+						else if (layer_name_param.type() != typeid(std::wstring))
+							goto type_error;
+
+						layer_name = std::any_cast<std::wstring>(layer_name_param);
 					}
+
+					if (layer_name.empty())
+						goto name_error;
+
 					ReplaceFormat(&layer_name);
 					Program::Instance().canvas.SelectLayer(layer_name);
 					StandardCommand::Execute();
+					return;
+				name_error:
+					event::Manager::Instance().error_handler.SendLocalError(empty_name_error, L"コマンド名: selectlayer/レイヤー選択");
+					goto end_of_function;
+				lack_error:
+					event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error, L"コマンド名: selectlayer/レイヤー選択");
+					goto end_of_function;
+				type_error:
+					event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error, L"コマンド名: selectlayer/レイヤー選択");
+					goto end_of_function;
+				end_of_function:
+					return;
 				}
 			};
 
@@ -898,7 +1303,7 @@ namespace karapo::event {
 			DYNAMIC_COMMAND(SetBasis final) {
 				std::wstring entity_name{}, layer_name{};
 			public:
-				SetBasis(const std::wstring& EN, const std::wstring& LN) noexcept {
+				SetBasis(const std::wstring & EN, const std::wstring & LN) noexcept : SetBasis(std::vector<std::wstring>{}) {
 					entity_name = EN;
 					layer_name = LN;
 				}
@@ -909,14 +1314,40 @@ namespace karapo::event {
 
 				void Execute() final {
 					if (MustSearch()) {
+						auto entity_name_param = GetParam(0),
+							layer_name_param = GetParam(1);
+
+						if (entity_name_param.type() == typeid(std::nullptr_t) || layer_name_param.type() == typeid(std::nullptr_t))
+							goto lack_error;
+						else if (entity_name_param.type() != typeid(std::wstring) || layer_name_param.type() != typeid(std::wstring))
+							goto type_error;
+
 						entity_name = std::any_cast<std::wstring>(GetParam(0));
 						layer_name = std::any_cast<std::wstring>(GetParam(1));
 					}
-					ReplaceFormat(&entity_name);
-					ReplaceFormat(&layer_name);
-					auto ent = Program::Instance().entity_manager.GetEntity(entity_name);
-					Program::Instance().canvas.SetBasis(ent, layer_name);
-					StandardCommand::Execute();
+
+					if (entity_name.empty() || layer_name.empty())
+						goto name_error;
+
+					{
+						ReplaceFormat(&entity_name);
+						ReplaceFormat(&layer_name);
+						auto ent = Program::Instance().entity_manager.GetEntity(entity_name);
+						Program::Instance().canvas.SetBasis(ent, layer_name);
+						StandardCommand::Execute();
+						return;
+					}
+				name_error:
+					event::Manager::Instance().error_handler.SendLocalError(empty_name_error, L"コマンド名: setbasis/レイヤー基準");
+					goto end_of_function;
+				lack_error:
+					event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error, L"コマンド名: setbasis/レイヤー基準");
+					goto end_of_function;
+				type_error:
+					event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error, L"コマンド名: setbasis/レイヤー基準");
+					goto end_of_function;
+				end_of_function:
+					return;
 				}
 			};
 
@@ -924,7 +1355,7 @@ namespace karapo::event {
 			DYNAMIC_COMMAND(Delete final) {
 				std::wstring name{};
 			public:
-				Delete(const std::wstring& N) noexcept {
+				Delete(const std::wstring& N) noexcept : Delete(std::vector<std::wstring>{}) {
 					name = N;
 				}
 
@@ -934,8 +1365,17 @@ namespace karapo::event {
 
 				void Execute() final {
 					if (MustSearch()) {
-						name = std::any_cast<std::wstring>(GetParam(0));
+						auto name_param = GetParam(0);
+						if (name_param.type() == typeid(std::nullptr_t))
+							goto lack_error;
+						else if (name_param.type() != typeid(std::wstring))
+							goto type_error;
+
+						name = std::any_cast<std::wstring>(name_param);
 					}
+					if (name.empty())
+						goto name_error;
+
 					ReplaceFormat(&name);
 					if (name == L"__all" || name == L"__全部") {
 						for (int i = 0; Program::Instance().canvas.DeleteLayer(i););
@@ -945,13 +1385,25 @@ namespace karapo::event {
 						Program::Instance().canvas.DeleteLayer(name);
 					}
 					StandardCommand::Execute();
+					return;
+				name_error:
+					event::Manager::Instance().error_handler.SendLocalError(empty_name_error, L"コマンド名: deletelayer/レイヤー削除");
+					goto end_of_function;
+				lack_error:
+					event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error, L"コマンド名: deletelayer/レイヤー削除");
+					goto end_of_function;
+				type_error:
+					event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error, L"コマンド名: deletelayer/レイヤー削除");
+					goto end_of_function;
+				end_of_function:
+					return;
 				}
 			};
 
 			DYNAMIC_COMMAND(Show final) {
 				std::wstring name{};
 			public:
-				Show(const std::wstring &N) noexcept {
+				Show(const std::wstring &N) noexcept : Show(std::vector<std::wstring>{}) {
 					name = N;
 				}
 
@@ -961,18 +1413,38 @@ namespace karapo::event {
 
 				void Execute() final {
 					if (MustSearch()) {
-						name = std::any_cast<std::wstring>(GetParam(0));
+						auto name_param = GetParam(0);
+						if (name_param.type() == typeid(std::nullptr_t))
+							goto lack_error;
+						else if (name_param.type() != typeid(std::wstring))
+							goto type_error;
+
+						name = std::any_cast<std::wstring>(name_param);
 					}
+					if (name.empty())
+						goto name_error;
 					ReplaceFormat(&name);
 					Program::Instance().canvas.Show(name);
 					StandardCommand::Execute();
+					return;
+				name_error:
+					event::Manager::Instance().error_handler.SendLocalError(empty_name_error, L"コマンド名: showlayer/レイヤー表示");
+					goto end_of_function;
+				lack_error:
+					event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error, L"コマンド名: showlayer/レイヤー表示");
+					goto end_of_function;
+				type_error:
+					event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error, L"コマンド名: showlayer/レイヤー表示");
+					goto end_of_function;
+				end_of_function:
+					return;
 				}
 			};
 
 			DYNAMIC_COMMAND(Hide final) {
 				std::wstring name{};
 			public:
-				Hide(const std::wstring &N) noexcept {
+				Hide(const std::wstring &N) noexcept : Hide(std::vector<std::wstring>{}) {
 					name = N;
 				}
 
@@ -982,11 +1454,31 @@ namespace karapo::event {
 
 				void Execute() final {
 					if (MustSearch()) {
-						name = std::any_cast<std::wstring>(GetParam(0));
+						auto name_param = GetParam(0);
+						if (name_param.type() == typeid(std::nullptr_t))
+							goto lack_error;
+						else if (name_param.type() != typeid(std::wstring))
+							goto type_error;
+
+						name = std::any_cast<std::wstring>(name_param);
 					}
+					if (name.empty())
+						goto name_error;
 					ReplaceFormat(&name);
 					Program::Instance().canvas.Hide(name);
 					StandardCommand::Execute();
+					return;
+				name_error:
+					event::Manager::Instance().error_handler.SendLocalError(empty_name_error, L"コマンド名: hidelayer/レイヤー非表示");
+					goto end_of_function;
+				lack_error:
+					event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error, L"コマンド名: hidelayer/レイヤー非表示");
+					goto end_of_function;
+				type_error:
+					event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error, L"コマンド名: hidelayer/レイヤー非表示");
+					goto end_of_function;
+				end_of_function:
+					return;
 				}
 			};
 		}
@@ -1071,11 +1563,19 @@ namespace karapo::event {
 
 				std::wstring var_name{};
 				std::any value[2]{};
-				void Extract(const int Length) {
+
+				// 計算に必要な値を展開する。
+				// 成功ならtrue、失敗ならfalseを返す。
+				[[nodiscard]] bool Extract(const int Length) noexcept {
 					if (MustSearch()) {
 						var_name = std::any_cast<std::wstring>(GetParam<true>(0));
 						for (int i = 0; i < Length; i++) {
 							value[i] = GetParam(i + 1);
+							if (value[i].type() == typeid(std::nullptr_t))
+								goto lack_error;
+							else if (value[i].type() != typeid(int) || value[i].type() != typeid(Dec)|| value[i].type() != typeid(std::wstring))
+								goto type_error;
+
 							if (value[i].type() == typeid(int))
 								value[i] = std::any_cast<int>(value[i]);
 							else if (value[i].type() == typeid(Dec))
@@ -1094,6 +1594,15 @@ namespace karapo::event {
 							}
 						}
 					}
+					return true;
+				lack_error:
+					event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error);
+					goto failed_exit;
+				type_error:
+					event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error);
+					goto failed_exit;
+				failed_exit:
+					return false;
 				}
 			};
 
@@ -1103,21 +1612,22 @@ namespace karapo::event {
 				~Assign() final {}
 
 				void Execute() final {
-					Extract(1);
-					auto var_name = std::any_cast<std::wstring>(GetParam<true>(0));
-					auto* v = &Program::Instance().var_manager.Get<false>(var_name);
-					if (v->type() != typeid(std::nullptr_t)) {
-						if (value[0].type() == typeid(int))
-							*v = std::any_cast<int>(value[0]);
-						else if (value[0].type() == typeid(Dec))
-							*v = std::any_cast<Dec>(value[0]);
-						else if (value[0].type() == typeid(std::wstring)) {
-							auto txt = std::any_cast<std::wstring>(value[0]);
-							ReplaceFormat(&txt);
-							*v = txt;
+					if (Extract(1)) {
+						auto var_name = std::any_cast<std::wstring>(GetParam<true>(0));
+						auto* v = &Program::Instance().var_manager.Get<false>(var_name);
+						if (v->type() != typeid(std::nullptr_t)) {
+							if (value[0].type() == typeid(int))
+								*v = std::any_cast<int>(value[0]);
+							else if (value[0].type() == typeid(Dec))
+								*v = std::any_cast<Dec>(value[0]);
+							else if (value[0].type() == typeid(std::wstring)) {
+								auto txt = std::any_cast<std::wstring>(value[0]);
+								ReplaceFormat(&txt);
+								*v = txt;
+							}
+						} else {
+							SendAssignError(value[0]);
 						}
-					} else {
-						SendAssignError(value[0]);
 					}
 					StandardCommand::Execute();
 				}
@@ -1131,20 +1641,21 @@ namespace karapo::event {
 				~Sum() final {}
 
 				void Execute() final {
-					Extract(2);
-					const bool Is_Only_Int = (value[0].type() == typeid(int) && value[1].type() == typeid(int));
-					
-					CalculateValue cal;
-					MATH_COMMAND_CALCULATE(+);
+					if (Extract(2)) {
+						const bool Is_Only_Int = (value[0].type() == typeid(int) && value[1].type() == typeid(int));
 
-					auto* v = &Program::Instance().var_manager.Get<false>(var_name);
-					if (v->type() != typeid(std::nullptr_t)) {
-						if (Is_Only_Int)
-							*v = cal.i;
-						else
-							*v = cal.d;
-					} else {
-						SendAssignError(Is_Only_Int, cal);
+						CalculateValue cal;
+						MATH_COMMAND_CALCULATE(+);
+
+						auto* v = &Program::Instance().var_manager.Get<false>(var_name);
+						if (v->type() != typeid(std::nullptr_t)) {
+							if (Is_Only_Int)
+								*v = cal.i;
+							else
+								*v = cal.d;
+						} else {
+							SendAssignError(Is_Only_Int, cal);
+						}
 					}
 					StandardCommand::Execute();
 				}
@@ -1157,20 +1668,21 @@ namespace karapo::event {
 				~Sub() final {}
 
 				void Execute() final {
-					Extract(2);
-					const bool Is_Only_Int = (value[0].type() == typeid(int) && value[1].type() == typeid(int));
+					if (Extract(2)) {
+						const bool Is_Only_Int = (value[0].type() == typeid(int) && value[1].type() == typeid(int));
 
-					CalculateValue cal;
-					MATH_COMMAND_CALCULATE(-);
+						CalculateValue cal;
+						MATH_COMMAND_CALCULATE(-);
 
-					auto* v = &Program::Instance().var_manager.Get<false>(var_name);
-					if (v->type() != typeid(std::nullptr_t)) {
-						if (Is_Only_Int)
-							*v = cal.i;
-						else
-							*v = cal.d;
-					} else {
-						SendAssignError(Is_Only_Int, cal);
+						auto* v = &Program::Instance().var_manager.Get<false>(var_name);
+						if (v->type() != typeid(std::nullptr_t)) {
+							if (Is_Only_Int)
+								*v = cal.i;
+							else
+								*v = cal.d;
+						} else {
+							SendAssignError(Is_Only_Int, cal);
+						}
 					}
 					StandardCommand::Execute();
 				}
@@ -1183,20 +1695,21 @@ namespace karapo::event {
 				~Mul() final {}
 
 				void Execute() final {
-					Extract(2);
-					const bool Is_Only_Int = (value[0].type() == typeid(int) && value[1].type() == typeid(int));
+					if (Extract(2)) {
+						const bool Is_Only_Int = (value[0].type() == typeid(int) && value[1].type() == typeid(int));
 
-					CalculateValue cal;
-					MATH_COMMAND_CALCULATE(*);
+						CalculateValue cal;
+						MATH_COMMAND_CALCULATE(*);
 
-					auto *v = &Program::Instance().var_manager.Get<false>(var_name);
-					if (v->type() != typeid(std::nullptr_t)) {
-						if (Is_Only_Int)
-							*v = cal.i;
-						else
-							*v = cal.d;
-					} else {
-						SendAssignError(Is_Only_Int, cal);
+						auto *v = &Program::Instance().var_manager.Get<false>(var_name);
+						if (v->type() != typeid(std::nullptr_t)) {
+							if (Is_Only_Int)
+								*v = cal.i;
+							else
+								*v = cal.d;
+						} else {
+							SendAssignError(Is_Only_Int, cal);
+						}
 					}
 					StandardCommand::Execute();
 				}
@@ -1209,20 +1722,21 @@ namespace karapo::event {
 				~Div() final {}
 
 				void Execute() final {
-					Extract(2);
-					const bool Is_Only_Int = (value[0].type() == typeid(int) && value[1].type() == typeid(int));
+					if (Extract(2)) {
+						const bool Is_Only_Int = (value[0].type() == typeid(int) && value[1].type() == typeid(int));
 
-					CalculateValue cal;
-					MATH_COMMAND_CALCULATE(/);
+						CalculateValue cal;
+						MATH_COMMAND_CALCULATE(/ );
 
-					auto* v = &Program::Instance().var_manager.Get<false>(var_name);
-					if (v->type() != typeid(std::nullptr_t)) {
-						if (Is_Only_Int)
-							*v = cal.i;
-						else
-							*v = cal.d;
-					} else {
-						SendAssignError(Is_Only_Int, cal);
+						auto* v = &Program::Instance().var_manager.Get<false>(var_name);
+						if (v->type() != typeid(std::nullptr_t)) {
+							if (Is_Only_Int)
+								*v = cal.i;
+							else
+								*v = cal.d;
+						} else {
+							SendAssignError(Is_Only_Int, cal);
+						}
 					}
 					StandardCommand::Execute();
 				}
@@ -1234,35 +1748,36 @@ namespace karapo::event {
 				~Mod() final {}
 
 				void Execute() final {
-					Extract(2);
-					const bool Is_Only_Int = (value[0].type() == typeid(int) && value[1].type() == typeid(int));
+					if (Extract(2)) {
+						const bool Is_Only_Int = (value[0].type() == typeid(int) && value[1].type() == typeid(int));
 
-					CalculateValue cal;
-					if (Is_Only_Int) {
-						cal.i = std::any_cast<int>(value[0]) % std::any_cast<int>(value[1]);
-					} else {
-						cal.d = 0.0;
-						if (value[0].type() == typeid(int)) {
-							cal.d = std::any_cast<int>(value[0]);
+						CalculateValue cal;
+						if (Is_Only_Int) {
+							cal.i = std::any_cast<int>(value[0]) % std::any_cast<int>(value[1]);
 						} else {
-							cal.d = std::any_cast<Dec>(value[0]);
+							cal.d = 0.0;
+							if (value[0].type() == typeid(int)) {
+								cal.d = std::any_cast<int>(value[0]);
+							} else {
+								cal.d = std::any_cast<Dec>(value[0]);
+							}
+
+							if (value[1].type() == typeid(int)) {
+								cal.d = fmod(cal.d, std::any_cast<int>(value[1]));
+							} else {
+								cal.d = fmod(cal.d, std::any_cast<int>(value[1]));
+							}
 						}
 
-						if (value[1].type() == typeid(int)) {
-							cal.d = fmod(cal.d, std::any_cast<int>(value[1]));
+						auto* v = &Program::Instance().var_manager.Get<false>(var_name);
+						if (v->type() != typeid(std::nullptr_t)) {
+							if (Is_Only_Int)
+								*v = cal.i;
+							else
+								*v = cal.d;
 						} else {
-							cal.d = fmod(cal.d, std::any_cast<int>(value[1]));
+							SendAssignError(Is_Only_Int, cal);
 						}
-					}
-
-					auto* v = &Program::Instance().var_manager.Get<false>(var_name);
-					if (v->type() != typeid(std::nullptr_t)) {
-						if (Is_Only_Int)
-							*v = cal.i;
-						else
-							*v = cal.d;
-					} else {
-						SendAssignError(Is_Only_Int, cal);
 					}
 					StandardCommand::Execute();
 				}
@@ -1314,20 +1829,21 @@ namespace karapo::event {
 				~Or() final {}
 
 				void Execute() final {
-					Extract(2);
-					const auto Is_Int = CheckValueType();
+					if (Extract(2)) {
+						const auto Is_Int = CheckValueType();
 
-					if (Is_Int.first && Is_Int.second) {
-						CalculateValue cal;
-						cal.i = std::any_cast<int>(value[0]) | std::any_cast<int>(value[1]);
-						auto* v = &Program::Instance().var_manager.Get<false>(var_name);
-						if (v->type() != typeid(std::nullptr_t)) {
-							*v = cal.i;
+						if (Is_Int.first && Is_Int.second) {
+							CalculateValue cal;
+							cal.i = std::any_cast<int>(value[0]) | std::any_cast<int>(value[1]);
+							auto* v = &Program::Instance().var_manager.Get<false>(var_name);
+							if (v->type() != typeid(std::nullptr_t)) {
+								*v = cal.i;
+							} else {
+								SendAssignError(true, cal);
+							}
 						} else {
-							SendAssignError(true, cal);
+							SendBitLogicError(L"演算: ビット論理和\n", Is_Int);
 						}
-					} else {
-						SendBitLogicError(L"演算: ビット論理和\n", Is_Int);
 					}
 					StandardCommand::Execute();
 				}
@@ -1340,19 +1856,20 @@ namespace karapo::event {
 				~And() final {}
 
 				void Execute() final {
-					Extract(2);
-					const auto Is_Int = CheckValueType();
-					if (Is_Int.first && Is_Int.second) {
-						CalculateValue cal;
-						cal.i = std::any_cast<int>(value[0]) & std::any_cast<int>(value[1]);
-						auto* v = &Program::Instance().var_manager.Get<false>(var_name);
-						if (v->type() != typeid(std::nullptr_t)) {
-							*v = cal.i;
+					if (Extract(2)) {
+						const auto Is_Int = CheckValueType();
+						if (Is_Int.first && Is_Int.second) {
+							CalculateValue cal;
+							cal.i = std::any_cast<int>(value[0]) & std::any_cast<int>(value[1]);
+							auto* v = &Program::Instance().var_manager.Get<false>(var_name);
+							if (v->type() != typeid(std::nullptr_t)) {
+								*v = cal.i;
+							} else {
+								SendAssignError(true, cal);
+							}
 						} else {
-							SendAssignError(true, cal);
+							SendBitLogicError(L"演算: ビット論理積\n", Is_Int);
 						}
-					} else {
-						SendBitLogicError(L"演算: ビット論理積\n", Is_Int);
 					}
 					StandardCommand::Execute();
 				}
@@ -1365,20 +1882,21 @@ namespace karapo::event {
 				~Xor() final {}
 
 				void Execute() final {
-					Extract(2);
-					const auto Is_Int = CheckValueType();
+					if (Extract(2)) {
+						const auto Is_Int = CheckValueType();
 
-					if (Is_Int.first && Is_Int.second) {
-						CalculateValue cal;
-						cal.i = std::any_cast<int>(value[0]) ^ std::any_cast<int>(value[1]);
-						auto* v = &Program::Instance().var_manager.Get<false>(var_name);
-						if (v->type() != typeid(std::nullptr_t)) {
-							*v = cal.i;
+						if (Is_Int.first && Is_Int.second) {
+							CalculateValue cal;
+							cal.i = std::any_cast<int>(value[0]) ^ std::any_cast<int>(value[1]);
+							auto* v = &Program::Instance().var_manager.Get<false>(var_name);
+							if (v->type() != typeid(std::nullptr_t)) {
+								*v = cal.i;
+							} else {
+								SendAssignError(true, cal);
+							}
 						} else {
-							SendAssignError(true, cal);
+							SendBitLogicError(L"演算: ビット排他的論理和\n", Is_Int);
 						}
-					} else {
-						SendBitLogicError(L"演算: ビット排他的論理和\n", Is_Int);
 					}
 					StandardCommand::Execute();
 				}
@@ -1391,21 +1909,22 @@ namespace karapo::event {
 				~Not() final {}
 
 				void Execute() final {
-					Extract(1);
-					std::wstring var_name{};
-					var_name = std::any_cast<std::wstring>(GetParam<true>(0));
-				
-					if (value[0].type() == typeid(int)) {
-						auto* v = &Program::Instance().var_manager.Get<false>(var_name);
-						CalculateValue cal;
-						cal.i = ~std::any_cast<int>(value[0]);
-						if (v->type() != typeid(std::nullptr_t)) {
-							*v = cal.i;
+					if (Extract(1)) {
+						std::wstring var_name{};
+						var_name = std::any_cast<std::wstring>(GetParam<true>(0));
+
+						if (value[0].type() == typeid(int)) {
+							auto* v = &Program::Instance().var_manager.Get<false>(var_name);
+							CalculateValue cal;
+							cal.i = ~std::any_cast<int>(value[0]);
+							if (v->type() != typeid(std::nullptr_t)) {
+								*v = cal.i;
+							} else {
+								SendAssignError(true, cal);
+							}
 						} else {
-							SendAssignError(true, cal);
+							SendBitLogicError(L"演算: ビット論理否定\n", { false, true });
 						}
-					} else {
-						SendBitLogicError(L"演算: ビット論理否定\n", { false, true });
 					}
 					StandardCommand::Execute();
 				}
