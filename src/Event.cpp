@@ -90,9 +90,19 @@ namespace karapo::event {
 			// 読み込む予定の引数名。
 			std::vector<std::wstring> param_names{};
 		protected:
-			DynamicCommand() = default;
+			inline static error::ErrorClass *command_error_class{};
+			inline static error::ErrorContent *incorrect_type_error{},
+				*lack_of_parameters_error{};
+			DynamicCommand() noexcept {
+				if (command_error_class == nullptr)
+					command_error_class = error::UserErrorHandler::MakeErrorClass(L"コマンドエラー");
+				if (incorrect_type_error == nullptr)
+					incorrect_type_error = error::UserErrorHandler::MakeError(command_error_class, L"引数の型が不適切です。", MB_OK | MB_ICONERROR, 1);
+				if (lack_of_parameters_error == nullptr)
+					lack_of_parameters_error = error::UserErrorHandler::MakeError(command_error_class, L"引数が足りない為、コマンドを実行できません。", MB_OK | MB_ICONERROR, 1);
+			}
 
-			DynamicCommand(const decltype(param_names)& Param) noexcept {
+			DynamicCommand(const decltype(param_names)& Param) noexcept : DynamicCommand() {
 				param_names = Param;
 			}
 
