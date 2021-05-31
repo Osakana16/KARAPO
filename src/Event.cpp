@@ -101,43 +101,35 @@ namespace karapo::event {
 				return !param_names.empty();
 			}
 
-			// 指定した番号から引数名を読み込む。
-			template<typename T, const bool Get_Param_Name = false>
-			T GetParam(const int Index) const {
+			template<const bool Get_Param_Name = false>
+			std::any GetParam(const int Index) const noexcept {
+				if (Index < 0 || Index >= param_names.size())
+					return nullptr;
+
+				auto [var, type] = Default_ProgramInterface.GetParamInfo(param_names[Index]);
 				if constexpr (!Get_Param_Name) {
-					auto [vname, vtype] = Default_ProgramInterface.GetParamInfo(param_names[Index]);
-					if constexpr (!std::is_same_v<T, std::any>) {
-						// 型が判明する場合、定数なのでその値を取得。
-						if (Default_ProgramInterface.IsStringType(vtype))
-							return std::any_cast<T>(vname);
-						else if (Default_ProgramInterface.IsNumberType(vtype)) {
-							if constexpr (std::is_same_v<T, Dec>) {
-								auto [fv, fp] = ToDec<Dec>(vname.c_str());
-								return fv;
-							} else if constexpr (std::is_same_v<T, int>) {
-								auto [iv, ip] = ToInt(vname.c_str());
-								return iv;
-							}
-						}
-						else {
-							// 型がない場合は変数管理オブジェクトから取得。
-							return std::any_cast<T>(Program::Instance().var_manager.Get<false>(vname));
-						}
+					if (Default_ProgramInterface.IsNumberType(type)) {
+						auto [iv, ip] = ToInt(var.c_str());
+						auto [fv, fp] = ToDec<Dec>(var.c_str());
+						if (wcslen(ip) <= 0)
+							return iv;
+						else
+							return fv;
+					} else if (Default_ProgramInterface.IsStringType(type)) {
+						return var;
 					} else {
-						// std::anyが指定された場合、変数から直接取得。
-						return Program::Instance().var_manager.Get<false>(vname);
+						return Program::Instance().var_manager.Get<false>(var);
 					}
 				} else {
-					// 引数名を返す。
-					return Default_ProgramInterface.GetParamInfo(param_names[Index]).first;
+					return var;
 				}
 			}
 
 			void SetAllParams(std::vector<std::any>* to) {
 				for (int i = 0; i < param_names.size(); i++) {
-					auto value = GetParam<std::any>(i);
+					auto value = GetParam(i);
 					if (value.type() == typeid(std::nullptr_t)) {
-						auto value_name = GetParam<std::wstring, true>(i);
+						auto value_name = std::any_cast<std::wstring>(GetParam<true>(i));
 						auto [fv, fp] = ToDec<Dec>(value_name.c_str());
 						auto [iv, ip] = ToInt(value_name.c_str());
 
@@ -185,10 +177,10 @@ namespace karapo::event {
 
 			void CheckParams() noexcept {
 				if (MustSearch()) {
-					varname = GetParam<std::wstring, true>(0);
-					value = GetParam<std::any>(1);
+					varname = std::any_cast<std::wstring>(GetParam<true>(0));
+					value = GetParam(1);
 					if (value.type() == typeid(std::nullptr_t)) {
-						auto value_name = GetParam<std::wstring, true>(1);
+						auto value_name = std::any_cast<std::wstring>(GetParam<true>(1));
 						auto [fv, fp] = ToDec<Dec>(value_name.c_str());
 						auto [iv, ip] = ToInt(value_name.c_str());
 						if (wcslen(ip) <= 0)
@@ -241,7 +233,7 @@ namespace karapo::event {
 			void Execute() final {
 				std::wstring name[2]{ {}, {} };
 				for (int i = 0; i < 2; i++)
-					name[i] = GetParam<std::wstring, true>(i);
+					name[i] = std::any_cast<std::wstring>(GetParam<true>(i));
 
 				int result = 0;
 				if (Program::Instance().var_manager.Get<false>(name[0]).type() != typeid(std::nullptr_t)) {
@@ -301,7 +293,7 @@ namespace karapo::event {
 
 			void Execute() override {
 				if (MustSearch()) {
-					value = GetParam<std::any>(0);
+					value = GetParam(0);
 				}
 				Program::Instance().event_manager.NewCaseTarget(value);
 				StandardCommand::Execute();
@@ -324,8 +316,8 @@ namespace karapo::event {
 
 			void Execute() override {
 				if (MustSearch()) {
-					mode = GetParam<std::wstring, true>(0);
-					auto vname = GetParam<std::wstring, true>(1);
+					mode = std::any_cast<std::wstring>(GetParam<true>(0));
+					auto vname = std::any_cast<std::wstring>(GetParam<true>(1));
 					value = Program::Instance().var_manager.Get<false>(vname);
 					if (value.type() == typeid(std::nullptr_t)) {
 						auto [iv, ip] = ToInt(vname.c_str());
@@ -395,11 +387,11 @@ namespace karapo::event {
 
 			void Execute() override {
 				if (MustSearch()) {
-					path = GetParam<std::wstring>(0);
-					auto x = GetParam<Dec>(1);
-					auto y = GetParam<Dec>(2);
-					auto w = GetParam<Dec>(3);
-					auto h = GetParam<Dec>(4);
+					path = std::any_cast<std::wstring>(GetParam(0));
+					Dec x = (GetParam(1).type() == typeid(Dec) ? std::any_cast<Dec>(GetParam(1)) : std::any_cast<int>(GetParam(1))),
+						y = (GetParam(2).type() == typeid(Dec) ? std::any_cast<Dec>(GetParam(2)) : std::any_cast<int>(GetParam(2))),
+						w = (GetParam(1).type() == typeid(Dec) ? std::any_cast<Dec>(GetParam(3)) : std::any_cast<int>(GetParam(3))),
+						h = (GetParam(2).type() == typeid(Dec) ? std::any_cast<Dec>(GetParam(4)) : std::any_cast<int>(GetParam(4)));
 					image = std::make_shared<karapo::entity::Image>(WorldVector{ x, y }, WorldVector{ w, h });
 				}
 				image->Load(path.c_str());
@@ -427,12 +419,12 @@ namespace karapo::event {
 			void Execute() override {
 				int x{}, y{}, w{}, h{};
 				if (MustSearch()) {
-					variable_name = GetParam<std::wstring>(0);
-					path = GetParam<std::wstring>(1);
-					position[0] = GetParam<int>(2);
-					position[1] = GetParam<int>(3);
-					length[0] = GetParam<int>(4);
-					length[1] = GetParam<int>(5);
+					variable_name = std::any_cast<std::wstring>(GetParam(0));
+					path = std::any_cast<std::wstring>(GetParam(1));
+					position[0] = std::any_cast<int>(GetParam(2));
+					position[1] = std::any_cast<int>(GetParam(3));
+					length[0] = std::any_cast<int>(GetParam(4));
+					length[1] = std::any_cast<int>(GetParam(5));
 				}
 				Program::Instance().engine.CopyImage(&path, position, length);
 				Program::Instance().var_manager.Get<false>(variable_name) = path;
@@ -457,7 +449,7 @@ namespace karapo::event {
 
 			void Execute() override {
 				if (MustSearch()) {
-					path = GetParam<std::wstring>(0);
+					path = std::any_cast<int>(GetParam(0));
 				}
 				ReplaceFormat(&path);
 				music->Load(path);
@@ -481,9 +473,9 @@ namespace karapo::event {
 
 			void Execute() override {
 				if (MustSearch()) {
-					path = GetParam<std::wstring>(0);
-					auto x = GetParam<Dec>(1);
-					auto y = GetParam<Dec>(2);
+					path = std::any_cast<std::wstring>(GetParam(0));
+					Dec x = (GetParam(1).type() == typeid(Dec) ? std::any_cast<Dec>(GetParam(1)) : std::any_cast<int>(GetParam(1))),
+						y = (GetParam(2).type() == typeid(Dec) ? std::any_cast<Dec>(GetParam(2)) : std::any_cast<int>(GetParam(2)));
 					sound = std::make_shared<karapo::entity::Sound>(WorldVector{ x, y });
 				}
 				ReplaceFormat(&path);
@@ -515,14 +507,15 @@ namespace karapo::event {
 
 			void Execute() final {
 				if (MustSearch()) {
-					auto name = GetParam<std::wstring>(0);
-					auto x = GetParam<Dec>(1);
-					auto y = GetParam<Dec>(2);
+					auto name = std::any_cast<std::wstring>(GetParam(0));
+					Dec x = (GetParam(1).type() == typeid(Dec) ? std::any_cast<Dec>(GetParam(1)) : std::any_cast<int>(GetParam(1))),
+						y = (GetParam(2).type() == typeid(Dec) ? std::any_cast<Dec>(GetParam(2)) : std::any_cast<int>(GetParam(2)));
+
 					Dec w{}, h{};
-					if (GetParam<std::any>(3).type() != typeid(std::nullptr_t)) {
-						w = GetParam<Dec>(3);
-						h = GetParam<Dec>(4);
-						path = GetParam<std::wstring>(5);
+					if (GetParam(3).type() != typeid(std::nullptr_t)) {
+						w = (GetParam(3).type() == typeid(Dec) ? std::any_cast<Dec>(GetParam(3)) : std::any_cast<int>(GetParam(3)));
+						h = (GetParam(4).type() == typeid(Dec) ? std::any_cast<Dec>(GetParam(4)) : std::any_cast<int>(GetParam(4)));
+						path = std::any_cast<std::wstring>(GetParam(5));
 					}
 					ReplaceFormat(&name);
 					button = std::make_shared<karapo::entity::Button>(name, WorldVector{ x, y }, WorldVector{ w, h });
@@ -552,9 +545,9 @@ namespace karapo::event {
 
 			void Execute() final {
 				if (MustSearch()) {
-					auto name = GetParam<std::wstring>(0);
-					auto x = GetParam<Dec>(1);
-					auto y = GetParam<Dec>(2);
+					auto name = std::any_cast<std::wstring>(GetParam(0));
+					Dec x = (GetParam(1).type() == typeid(Dec) ? std::any_cast<Dec>(GetParam(1)) : std::any_cast<int>(GetParam(1))),
+						y = (GetParam(2).type() == typeid(Dec) ? std::any_cast<Dec>(GetParam(2)) : std::any_cast<int>(GetParam(2)));
 					ReplaceFormat(&name);
 
 					Program::Instance().var_manager.MakeNew(name + L".text") = std::wstring(L"");
@@ -577,10 +570,10 @@ namespace karapo::event {
 
 			void Execute()final {
 				if (MustSearch()) {
-					var = &Program::Instance().var_manager.Get<false>(GetParam<std::wstring, true>(0));
-					pos[0] = GetParam<int>(1);
-					pos[1] = GetParam<int>(2);
-					length = GetParam<int>(3);
+					var = &Program::Instance().var_manager.Get<false>(std::any_cast<std::wstring>(GetParam<true>(0)));
+					pos[0] = std::any_cast<int>(GetParam(1));
+					pos[1] = std::any_cast<int>(GetParam(2));
+					length = std::any_cast<int>(GetParam(3));
 				}
 				wchar_t str[10000];
 				Program::Instance().engine.GetString(pos, str, length);
@@ -606,9 +599,9 @@ namespace karapo::event {
 
 				void Execute() override {
 					if (MustSearch()) {
-						entity_name = GetParam<std::wstring>(0);
-						auto x = GetParam<Dec>(1);
-						auto y = GetParam<Dec>(2);
+						entity_name = std::any_cast<std::wstring>(GetParam(0));
+						auto x = std::any_cast<Dec>(GetParam(1));
+						auto y = std::any_cast<Dec>(GetParam(2));
 						move = { x, y };
 					}
 					ReplaceFormat(&entity_name);
@@ -632,7 +625,7 @@ namespace karapo::event {
 
 				void Execute() override {
 					if (MustSearch()) {
-						entity_name = GetParam<std::wstring>(0);
+						entity_name = std::any_cast<std::wstring>(GetParam(0));
 					}
 
 					ReplaceFormat(&entity_name);
@@ -705,9 +698,9 @@ namespace karapo::event {
 
 			void Execute() final {
 				if (MustSearch()) {
-					layer_name = GetParam<std::wstring>(0);
-					kind_name = GetParam<std::wstring>(1);
-					potency = GetParam<int>(2);
+					layer_name = std::any_cast<std::wstring>(GetParam(0));
+					kind_name = std::any_cast<std::wstring>(GetParam(1));
+					potency = std::any_cast<int>(GetParam(2));
 				}
 				ReplaceFormat(&layer_name);
 				ReplaceFormat(&kind_name);
@@ -795,7 +788,7 @@ namespace karapo::event {
 
 			void Execute() override {
 				if (MustSearch()) {
-					file_name = GetParam<std::wstring>(0);
+					file_name = std::any_cast<std::wstring>(GetParam(0));
 				}
 				ReplaceFormat(&file_name);
 				Program::Instance().event_manager.ImportEvent(file_name);
@@ -817,7 +810,7 @@ namespace karapo::event {
 
 			void Execute() override {
 				if (MustSearch()) {
-					file_name = GetParam<std::wstring>(0);
+					file_name = std::any_cast<std::wstring>(GetParam(0));
 				}
 				ReplaceFormat(&file_name);
 				Program::Instance().event_manager.RequestEvent(file_name);
@@ -855,9 +848,9 @@ namespace karapo::event {
 
 				void Execute() final {
 					if (MustSearch()) {
-						index = GetParam<int>(0);
-						kind_name = GetParam<std::wstring>(1);
-						layer_name = GetParam<std::wstring>(2);
+						index = std::any_cast<int>(GetParam(0));
+						kind_name = std::any_cast<std::wstring>(GetParam(1));
+						layer_name = std::any_cast<std::wstring>(GetParam(2));
 					}
 					ReplaceFormat(&kind_name);
 					ReplaceFormat(&layer_name);
@@ -883,7 +876,7 @@ namespace karapo::event {
 
 				void Execute() final {
 					if (MustSearch()) {
-						layer_name = GetParam<std::wstring>(0);
+						layer_name = std::any_cast<std::wstring>(GetParam(0));
 					}
 					ReplaceFormat(&layer_name);
 					Program::Instance().canvas.SelectLayer(layer_name);
@@ -906,8 +899,8 @@ namespace karapo::event {
 
 				void Execute() final {
 					if (MustSearch()) {
-						entity_name = GetParam<std::wstring>(0);
-						layer_name = GetParam<std::wstring>(1);
+						entity_name = std::any_cast<std::wstring>(GetParam(0));
+						layer_name = std::any_cast<std::wstring>(GetParam(1));
 					}
 					ReplaceFormat(&entity_name);
 					ReplaceFormat(&layer_name);
@@ -931,7 +924,7 @@ namespace karapo::event {
 
 				void Execute() final {
 					if (MustSearch()) {
-						name = GetParam<std::wstring>(0);
+						name = std::any_cast<std::wstring>(GetParam(0));
 					}
 					ReplaceFormat(&name);
 					if (name == L"__all" || name == L"__全部") {
@@ -958,7 +951,7 @@ namespace karapo::event {
 
 				void Execute() final {
 					if (MustSearch()) {
-						name = GetParam<std::wstring>(0);
+						name = std::any_cast<std::wstring>(GetParam(0));
 					}
 					ReplaceFormat(&name);
 					Program::Instance().canvas.Show(name);
@@ -979,7 +972,7 @@ namespace karapo::event {
 
 				void Execute() final {
 					if (MustSearch()) {
-						name = GetParam<std::wstring>(0);
+						name = std::any_cast<std::wstring>(GetParam(0));
 					}
 					ReplaceFormat(&name);
 					Program::Instance().canvas.Hide(name);
@@ -1070,15 +1063,15 @@ namespace karapo::event {
 				std::any value[2]{};
 				void Extract(const int Length) {
 					if (MustSearch()) {
-						var_name = GetParam<std::wstring, true>(0);
+						var_name = std::any_cast<std::wstring>(GetParam<true>(0));
 						for (int i = 0; i < Length; i++) {
-							value[i] = GetParam<std::any>(i + 1);
+							value[i] = GetParam(i + 1);
 							if (value[i].type() == typeid(int))
 								value[i] = std::any_cast<int>(value[i]);
 							else if (value[i].type() == typeid(Dec))
 								value[i] = std::any_cast<Dec>(value[i]);
 							else {
-								value[i] = GetParam<std::wstring, true>(i + 1);
+								value[i] = std::any_cast<std::wstring>(GetParam<true>(i + 1));
 								auto tmp = std::any_cast<std::wstring>(value[i]);
 								auto [iv, ip] = ToInt(tmp.c_str());
 								auto [fv, fp] = ToDec<Dec>(tmp.c_str());
@@ -1101,7 +1094,7 @@ namespace karapo::event {
 
 				void Execute() final {
 					Extract(1);
-					auto var_name = GetParam<std::wstring, true>(0);
+					auto var_name = std::any_cast<std::wstring>(GetParam<true>(0));
 					auto* v = &Program::Instance().var_manager.Get<false>(var_name);
 					if (v->type() != typeid(std::nullptr_t)) {
 						if (value[0].type() == typeid(int))
@@ -1275,7 +1268,7 @@ namespace karapo::event {
 					auto converted_name = new(std::nothrow) wchar_t[strlen(source_name) + 1]{};
 					if (converted_name != nullptr) {
 						mbstowcs(converted_name, source_name, strlen(source_name) + 1);
-						*extra_message += GetParam<std::wstring, true>(Index) + std::wstring(L": ") + converted_name + L'\n';
+						*extra_message += std::any_cast<std::wstring>(GetParam<true>(Index)) + std::wstring(L": ") + converted_name + L'\n';
 						delete[] converted_name;
 					}
 				}
@@ -1390,7 +1383,7 @@ namespace karapo::event {
 				void Execute() final {
 					Extract(1);
 					std::wstring var_name{};
-					var_name = GetParam<std::wstring, true>(0);
+					var_name = std::any_cast<std::wstring>(GetParam<true>(0));
 				
 					if (value[0].type() == typeid(int)) {
 						auto* v = &Program::Instance().var_manager.Get<false>(var_name);
