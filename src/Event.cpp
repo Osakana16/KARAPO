@@ -1197,6 +1197,8 @@ namespace karapo::event {
 					{ L"absolute",  &Canvas::CreateAbsoluteLayer },
 					{ L"絶対位置",  &Canvas::CreateAbsoluteLayer }
 				};
+
+				inline static error::ErrorContent *layer_kind_not_found_error{};
 			public:
 				Make(const int Index, const std::wstring & KN, const std::wstring & LN) noexcept : Make(std::vector<std::wstring>{}) {
 					index = Index;
@@ -1204,7 +1206,10 @@ namespace karapo::event {
 					layer_name = LN;
 				}
 
-				DYNAMIC_COMMAND_CONSTRUCTOR(Make) {}
+				DYNAMIC_COMMAND_CONSTRUCTOR(Make) {
+					if (layer_kind_not_found_error == nullptr)
+						layer_kind_not_found_error = error::UserErrorHandler::MakeError(command_error_class, L"レイヤーの種類が見つかりません。", MB_OK | MB_ICONERROR, 2);
+				}
 
 				~Make() final {}
 
@@ -1237,10 +1242,15 @@ namespace karapo::event {
 						auto it = Create.find(kind_name);
 						if (it != Create.end()) {
 							(Program::Instance().canvas.*it->second)(layer_name, index);
-						}
+						} else
+							goto kind_not_found_error;
+
 						StandardCommand::Execute();
-						return;
 					}
+					return;
+				kind_not_found_error:
+					event::Manager::Instance().error_handler.SendLocalError(layer_kind_not_found_error, L"コマンド名: makelayer/レイヤー生成");
+					goto end_of_function;
 				name_error:
 					event::Manager::Instance().error_handler.SendLocalError(empty_name_error, L"コマンド名: makelayer/レイヤー生成");
 					goto end_of_function;
