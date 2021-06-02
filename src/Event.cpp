@@ -97,15 +97,15 @@ namespace karapo::event {
 				*entity_not_found_error{};
 
 			DynamicCommand() noexcept {
-				if (command_error_class == nullptr)
+				if (command_error_class == nullptr) [[unlikely]]
 					command_error_class = error::UserErrorHandler::MakeErrorClass(L"コマンドエラー");
-				if (incorrect_type_error == nullptr)
+				if (incorrect_type_error == nullptr) [[unlikely]]
 					incorrect_type_error = error::UserErrorHandler::MakeError(command_error_class, L"引数の型が不適切です。", MB_OK | MB_ICONERROR, 1);
-				if (lack_of_parameters_error == nullptr)
+				if (lack_of_parameters_error == nullptr) [[unlikely]]
 					lack_of_parameters_error = error::UserErrorHandler::MakeError(command_error_class, L"引数が足りない為、コマンドを実行できません。", MB_OK | MB_ICONERROR, 1);
-				if (empty_name_error == nullptr)
+				if (empty_name_error == nullptr) [[unlikely]]
 					empty_name_error = error::UserErrorHandler::MakeError(command_error_class, L"名前を空にすることはできません。", MB_OK | MB_ICONERROR, 2);
-				if (entity_not_found_error == nullptr)
+				if (entity_not_found_error == nullptr) [[unlikely]]
 					entity_not_found_error = error::UserErrorHandler::MakeError(command_error_class, L"Entityが見つかりません。", MB_OK | MB_ICONERROR, 2);
 			}
 
@@ -260,7 +260,7 @@ namespace karapo::event {
 			inline static error::ErrorContent *assign_error{};
 		public:
 			DYNAMIC_COMMAND_CONSTRUCTOR(Exist) {
-				if (assign_error == nullptr)
+				if (assign_error == nullptr) [[unlikely]]
 					assign_error = error::UserErrorHandler::MakeError(event::Manager::Instance().error_class, L"代入先の変数が存在しません。\n新しくこの変数を作成しますか?", MB_YESNO | MB_ICONERROR, 2);
 			}
 
@@ -434,7 +434,7 @@ namespace karapo::event {
 						x_param.type() == typeid(std::nullptr_t) ||
 						y_param.type() == typeid(std::nullptr_t) ||
 						w_param.type() == typeid(std::nullptr_t) ||
-						h_param.type() == typeid(std::nullptr_t))
+						h_param.type() == typeid(std::nullptr_t)) [[unlikely]]
 					{
 						goto lack_error;
 					} 
@@ -442,7 +442,7 @@ namespace karapo::event {
 						(x_param.type() != typeid(int) && x_param.type() != typeid(Dec)) ||
 						(y_param.type() != typeid(int) && y_param.type() != typeid(Dec)) ||
 						(w_param.type() != typeid(int) && w_param.type() != typeid(Dec)) ||
-						(h_param.type() != typeid(int) && h_param.type() != typeid(Dec)))
+						(h_param.type() != typeid(int) && h_param.type() != typeid(Dec))) [[unlikely]]
 					{
 						goto type_error;
 					}
@@ -503,7 +503,7 @@ namespace karapo::event {
 						x_param.type() == typeid(std::nullptr_t) ||
 						y_param.type() == typeid(std::nullptr_t) ||
 						w_param.type() == typeid(std::nullptr_t) ||
-						h_param.type() == typeid(std::nullptr_t))
+						h_param.type() == typeid(std::nullptr_t)) [[unlikely]]
 					{
 						goto lack_error;
 					}
@@ -512,7 +512,7 @@ namespace karapo::event {
 						x_param.type() != typeid(int) ||
 						y_param.type() != typeid(int) ||
 						w_param.type() != typeid(int) ||
-						h_param.type() != typeid(int))
+						h_param.type() != typeid(int)) [[unlikely]]
 					{
 						goto type_error;
 					}
@@ -558,9 +558,9 @@ namespace karapo::event {
 			void Execute() override {
 				if (MustSearch()) {
 					auto path_param = GetParam(0);
-					if (path_param.type() == typeid(std::nullptr_t))
+					if (path_param.type() == typeid(std::nullptr_t)) [[unlikely]]
 						goto lack_error;
-					else if (path_param.type() != typeid(std::wstring))
+					else if (path_param.type() != typeid(std::wstring)) [[unlikely]]
 						goto type_error;
 					
 					path = std::any_cast<std::wstring>(GetParam(0));
@@ -603,13 +603,13 @@ namespace karapo::event {
 						y_param = GetParam(2);
 					if (path_param.type() == typeid(std::nullptr_t) ||
 						x_param.type() == typeid(std::nullptr_t) ||
-						y_param.type() == typeid(std::nullptr_t))
+						y_param.type() == typeid(std::nullptr_t)) [[unlikely]]
 					{
 						goto lack_error;
 					}
 					else if (path_param.type() != typeid(std::wstring) ||
 						(x_param.type() != typeid(int) && x_param.type() != typeid(Dec)) ||
-						(y_param.type() != typeid(int) && y_param.type() != typeid(Dec)))
+						(y_param.type() != typeid(int) && y_param.type() != typeid(Dec))) [[unlikely]]
 					{
 						goto type_error;
 					}
@@ -662,13 +662,13 @@ namespace karapo::event {
 						y_param = GetParam(2);
 					if (name_param.type() == typeid(std::nullptr_t) ||
 						x_param.type() == typeid(std::nullptr_t) ||
-						y_param.type() == typeid(std::nullptr_t))
+						y_param.type() == typeid(std::nullptr_t)) [[unlikely]]
 					{
 						goto lack_error;
 					} 
 					else if (name_param.type() != typeid(std::wstring) ||
 						(x_param.type() != typeid(Dec) && x_param.type() != typeid(int)) ||
-						(y_param.type() != typeid(Dec) && y_param.type() != typeid(int)))
+						(y_param.type() != typeid(Dec) && y_param.type() != typeid(int))) [[unlikely]]
 					{
 						goto type_error;
 					}
@@ -728,12 +728,13 @@ namespace karapo::event {
 						y_param = GetParam(2);
 					if (name_param.type() == typeid(std::nullptr_t) ||
 						x_param.type() == typeid(std::nullptr_t) ||
-						y_param.type() == typeid(std::nullptr_t))
+						y_param.type() == typeid(std::nullptr_t)) [[unlikely]]
 					{
 						goto lack_error;
-					} 				else if (name_param.type() != typeid(std::wstring) ||
+					}
+					else if (name_param.type() != typeid(std::wstring) ||
 						(x_param.type() != typeid(Dec) && x_param.type() != typeid(int)) ||
-						(y_param.type() != typeid(Dec) && y_param.type() != typeid(int)))
+						(y_param.type() != typeid(Dec) && y_param.type() != typeid(int))) [[unlikely]]
 					{
 						goto type_error;
 					}
@@ -778,13 +779,14 @@ namespace karapo::event {
 					if (name_param.type() == typeid(std::nullptr_t) ||
 						x_param.type() == typeid(std::nullptr_t) ||
 						y_param.type() == typeid(std::nullptr_t) ||
-						len_param.type() == typeid(std::nullptr_t))
+						len_param.type() == typeid(std::nullptr_t)) [[unlikely]]
 					{
 						goto lack_error;
-					} else if (name_param.type() != typeid(std::wstring) ||
+					} 
+					else if (name_param.type() != typeid(std::wstring) ||
 						x_param.type() != typeid(int) ||
 						y_param.type() != typeid(int) ||
-						len_param.type() != typeid(int))
+						len_param.type() != typeid(int)) [[unlikely]]
 					{
 						goto type_error;
 					}
@@ -831,12 +833,13 @@ namespace karapo::event {
 							y_param = GetParam(2);
 						if (name_param.type() == typeid(std::nullptr_t) ||
 							x_param.type() == typeid(std::nullptr_t) ||
-							y_param.type() == typeid(std::nullptr_t))
+							y_param.type() == typeid(std::nullptr_t)) [[unlikely]]
 						{
 							goto lack_error;
-						} else if (name_param.type() != typeid(std::wstring) ||
+						} 
+						else if (name_param.type() != typeid(std::wstring) ||
 							x_param.type() != typeid(Dec) ||
-							y_param.type() != typeid(Dec))
+							y_param.type() != typeid(Dec)) [[unlikely]]
 						{
 							goto type_error;
 						}
@@ -885,9 +888,9 @@ namespace karapo::event {
 				void Execute() override {
 					if (MustSearch()) {
 						auto name_param = GetParam(0);
-						if (name_param.type() == typeid(std::nullptr_t))
+						if (name_param.type() == typeid(std::nullptr_t)) [[unlikely]]
 							goto lack_error;
-						else if (name_param.type() != typeid(std::wstring))
+						else if (name_param.type() != typeid(std::wstring)) [[unlikely]]
 							goto type_error;
 
 						entity_name = std::any_cast<std::wstring>(name_param);
@@ -982,13 +985,13 @@ namespace karapo::event {
 						potecy_param = GetParam(2);
 					if (layer_name_param.type() == typeid(std::nullptr_t) ||
 						kind_name_param.type() == typeid(std::nullptr_t) ||
-						potecy_param.type() == typeid(std::nullptr_t))
+						potecy_param.type() == typeid(std::nullptr_t)) [[unlikely]]
 					{
 						goto lack_error;
 					} 
 					else if (layer_name_param.type() != typeid(std::wstring) ||
 						kind_name_param.type() != typeid(std::wstring) ||
-						potecy_param.type() != typeid(int))
+						potecy_param.type() != typeid(int)) [[unlikely]]
 					{
 						goto type_error;
 					}
@@ -997,7 +1000,7 @@ namespace karapo::event {
 					potency = std::any_cast<int>(potecy_param);
 				}
 
-				if (layer_name.empty() || kind_name.empty()) {
+				if (layer_name.empty() || kind_name.empty()) [[unlikely]] {
 					goto name_error;
 				}
 				ReplaceFormat(&layer_name);
@@ -1063,14 +1066,14 @@ namespace karapo::event {
 				std::vector<std::any> params{};
 				SetAllParams(&params);
 				if (MustSearch()) {
-					if (params[0].type() == typeid(std::nullptr_t))
+					if (params[0].type() == typeid(std::nullptr_t)) [[unlikely]]
 						goto lack_error;
-					else if (params[0].type() != typeid(std::wstring))
+					else if (params[0].type() != typeid(std::wstring)) [[unlikely]]
 						goto type_error;
 
 					event_name = std::any_cast<std::wstring>(params[0]);
 				}
-				if (event_name.empty())
+				if (event_name.empty()) [[unlikely]]
 					goto name_error;
 
 				{
@@ -1121,13 +1124,13 @@ namespace karapo::event {
 			void Execute() override {
 				if (MustSearch()) {
 					auto name_param = GetParam(0);
-					if (name_param.type() == typeid(std::nullptr_t))
+					if (name_param.type() == typeid(std::nullptr_t)) [[unlikely]]
 						goto lack_error;
-					else if (name_param.type() != typeid(std::wstring))
+					else if (name_param.type() != typeid(std::wstring)) [[unlikely]]
 						goto type_error;
 					file_name = std::any_cast<std::wstring>(name_param);
 				}
-				if (file_name.empty())
+				if (file_name.empty()) [[unlikely]]
 					goto name_error;
 
 				ReplaceFormat(&file_name);
@@ -1163,13 +1166,13 @@ namespace karapo::event {
 			void Execute() override {
 				if (MustSearch()) {
 					auto name_param = GetParam(0);
-					if (name_param.type() == typeid(std::nullptr_t))
+					if (name_param.type() == typeid(std::nullptr_t)) [[unlikely]]
 						goto lack_error;
-					else if (name_param.type() != typeid(std::wstring))
+					else if (name_param.type() != typeid(std::wstring)) [[unlikely]]
 						goto type_error;
 					file_name = std::any_cast<std::wstring>(name_param);
 				}
-				if (file_name.empty())
+				if (file_name.empty()) [[unlikely]]
 					goto name_error;
 
 				ReplaceFormat(&file_name);
@@ -1217,7 +1220,7 @@ namespace karapo::event {
 				}
 
 				DYNAMIC_COMMAND_CONSTRUCTOR(Make) {
-					if (layer_kind_not_found_error == nullptr)
+					if (layer_kind_not_found_error == nullptr) [[unlikely]]
 						layer_kind_not_found_error = error::UserErrorHandler::MakeError(command_error_class, L"レイヤーの種類が見つかりません。", MB_OK | MB_ICONERROR, 2);
 				}
 
@@ -1230,13 +1233,13 @@ namespace karapo::event {
 							layer_param = GetParam(2);
 						if (index_param.type() == typeid(std::nullptr_t) ||
 							kind_param.type() == typeid(std::nullptr_t) ||
-							layer_param.type() == typeid(std::nullptr_t))
+							layer_param.type() == typeid(std::nullptr_t)) [[unlikely]]
 						{
 							goto lack_error;
 						}
 						else if (index_param.type() != typeid(int) ||
 							kind_param.type() != typeid(std::wstring) ||
-							layer_param.type() != typeid(std::wstring))
+							layer_param.type() != typeid(std::wstring)) [[unlikely]]
 						{
 							goto type_error;
 						}
@@ -1244,13 +1247,13 @@ namespace karapo::event {
 						kind_name = std::any_cast<std::wstring>(kind_param);
 						layer_name = std::any_cast<std::wstring>(layer_param);
 					}
-					if (kind_name.empty() || layer_name.empty())
+					if (kind_name.empty() || layer_name.empty()) [[unlikely]]
 						goto name_error;
 					{
 						ReplaceFormat(&kind_name);
 						ReplaceFormat(&layer_name);
 						auto it = Create.find(kind_name);
-						if (it != Create.end()) {
+						if (it != Create.end()) [[likely]] {
 							(Program::Instance().canvas.*it->second)(layer_name, index);
 						} else
 							goto kind_not_found_error;
@@ -1290,15 +1293,15 @@ namespace karapo::event {
 				void Execute() final {
 					if (MustSearch()) {
 						auto layer_name_param = GetParam(0);
-						if (layer_name_param.type() == typeid(std::nullptr_t))
+						if (layer_name_param.type() == typeid(std::nullptr_t)) [[unlikely]]
 							goto lack_error;
-						else if (layer_name_param.type() != typeid(std::wstring))
+						else if (layer_name_param.type() != typeid(std::wstring)) [[unlikely]]
 							goto type_error;
 
 						layer_name = std::any_cast<std::wstring>(layer_name_param);
 					}
 
-					if (layer_name.empty())
+					if (layer_name.empty()) [[unlikely]]
 						goto name_error;
 
 					ReplaceFormat(&layer_name);
@@ -1337,9 +1340,9 @@ namespace karapo::event {
 						auto entity_name_param = GetParam(0),
 							layer_name_param = GetParam(1);
 
-						if (entity_name_param.type() == typeid(std::nullptr_t) || layer_name_param.type() == typeid(std::nullptr_t))
+						if (entity_name_param.type() == typeid(std::nullptr_t) || layer_name_param.type() == typeid(std::nullptr_t)) [[unlikely]]
 							goto lack_error;
-						else if (entity_name_param.type() != typeid(std::wstring) || layer_name_param.type() != typeid(std::wstring))
+						else if (entity_name_param.type() != typeid(std::wstring) || layer_name_param.type() != typeid(std::wstring)) [[unlikely]]
 							goto type_error;
 
 						entity_name = std::any_cast<std::wstring>(GetParam(0));
@@ -1353,7 +1356,7 @@ namespace karapo::event {
 						ReplaceFormat(&entity_name);
 						ReplaceFormat(&layer_name);
 						auto ent = Program::Instance().entity_manager.GetEntity(entity_name);
-						if (ent == nullptr)
+						if (ent == nullptr) [[unlikely]]
 							goto entity_error;
 
 						Program::Instance().canvas.SetBasis(ent, layer_name);
@@ -1392,14 +1395,14 @@ namespace karapo::event {
 				void Execute() final {
 					if (MustSearch()) {
 						auto name_param = GetParam(0);
-						if (name_param.type() == typeid(std::nullptr_t))
+						if (name_param.type() == typeid(std::nullptr_t)) [[unlikely]]
 							goto lack_error;
-						else if (name_param.type() != typeid(std::wstring))
+						else if (name_param.type() != typeid(std::wstring)) [[unlikely]]
 							goto type_error;
 
 						name = std::any_cast<std::wstring>(name_param);
 					}
-					if (name.empty())
+					if (name.empty()) [[unlikely]]
 						goto name_error;
 
 					ReplaceFormat(&name);
@@ -1440,14 +1443,14 @@ namespace karapo::event {
 				void Execute() final {
 					if (MustSearch()) {
 						auto name_param = GetParam(0);
-						if (name_param.type() == typeid(std::nullptr_t))
+						if (name_param.type() == typeid(std::nullptr_t)) [[unlikely]]
 							goto lack_error;
-						else if (name_param.type() != typeid(std::wstring))
+						else if (name_param.type() != typeid(std::wstring)) [[unlikely]]
 							goto type_error;
 
 						name = std::any_cast<std::wstring>(name_param);
 					}
-					if (name.empty())
+					if (name.empty()) [[unlikely]]
 						goto name_error;
 					ReplaceFormat(&name);
 					Program::Instance().canvas.Show(name);
@@ -1481,14 +1484,14 @@ namespace karapo::event {
 				void Execute() final {
 					if (MustSearch()) {
 						auto name_param = GetParam(0);
-						if (name_param.type() == typeid(std::nullptr_t))
+						if (name_param.type() == typeid(std::nullptr_t)) [[unlikely]]
 							goto lack_error;
-						else if (name_param.type() != typeid(std::wstring))
+						else if (name_param.type() != typeid(std::wstring)) [[unlikely]]
 							goto type_error;
 
 						name = std::any_cast<std::wstring>(name_param);
 					}
-					if (name.empty())
+					if (name.empty()) [[unlikely]]
 						goto name_error;
 					ReplaceFormat(&name);
 					Program::Instance().canvas.Hide(name);
@@ -1571,7 +1574,6 @@ namespace karapo::event {
 						Program::Instance().var_manager.MakeNew(L"__calculated") = std::any_cast<Dec>(Value);
 					else if (Value.type() == typeid(std::wstring))
 						Program::Instance().var_manager.MakeNew(L"__calculated") = std::any_cast<std::wstring>(Value);
-
 				}
 
 				void SendAssignError(const bool Is_Only_Int, const CalculateValue Cal_Value) {
@@ -1581,9 +1583,9 @@ namespace karapo::event {
 				}
 			public:
 				MathCommand(const std::vector<std::wstring>& Params) : DynamicCommand(Params) {
-					if (operation_error_class == nullptr)
+					if (operation_error_class == nullptr) [[unlikely]]
 						operation_error_class = error::UserErrorHandler::MakeErrorClass(L"演算エラー");
-					if (assign_error == nullptr)
+					if (assign_error == nullptr) [[unlikely]]
 						assign_error = error::UserErrorHandler::MakeError(operation_error_class, L"代入先の変数が存在しません。\n新しくこの変数を作成しますか?", MB_YESNO | MB_ICONERROR, 2);
 				}
 
@@ -1597,9 +1599,9 @@ namespace karapo::event {
 						var_name = std::any_cast<std::wstring>(GetParam<true>(0));
 						for (int i = 0; i < Length; i++) {
 							value[i] = GetParam(i + 1);
-							if (value[i].type() == typeid(std::nullptr_t))
+							if (value[i].type() == typeid(std::nullptr_t)) [[unlikely]]
 								goto lack_error;
-							else if (value[i].type() != typeid(int) || value[i].type() != typeid(Dec)|| value[i].type() != typeid(std::wstring))
+							else if (value[i].type() != typeid(int) || value[i].type() != typeid(Dec)|| value[i].type() != typeid(std::wstring)) [[unlikely]]
 								goto type_error;
 
 							if (value[i].type() == typeid(int))
@@ -1641,7 +1643,7 @@ namespace karapo::event {
 					if (Extract(1)) {
 						auto var_name = std::any_cast<std::wstring>(GetParam<true>(0));
 						auto* v = &Program::Instance().var_manager.Get<false>(var_name);
-						if (v->type() != typeid(std::nullptr_t)) {
+						if (v->type() != typeid(std::nullptr_t)) [[likely]] {
 							if (value[0].type() == typeid(int))
 								*v = std::any_cast<int>(value[0]);
 							else if (value[0].type() == typeid(Dec))
@@ -1674,7 +1676,7 @@ namespace karapo::event {
 						MATH_COMMAND_CALCULATE(+);
 
 						auto* v = &Program::Instance().var_manager.Get<false>(var_name);
-						if (v->type() != typeid(std::nullptr_t)) {
+						if (v->type() != typeid(std::nullptr_t)) [[likely]] {
 							if (Is_Only_Int)
 								*v = cal.i;
 							else
@@ -1701,7 +1703,7 @@ namespace karapo::event {
 						MATH_COMMAND_CALCULATE(-);
 
 						auto* v = &Program::Instance().var_manager.Get<false>(var_name);
-						if (v->type() != typeid(std::nullptr_t)) {
+						if (v->type() != typeid(std::nullptr_t)) [[likely]] {
 							if (Is_Only_Int)
 								*v = cal.i;
 							else
@@ -1728,7 +1730,7 @@ namespace karapo::event {
 						MATH_COMMAND_CALCULATE(*);
 
 						auto *v = &Program::Instance().var_manager.Get<false>(var_name);
-						if (v->type() != typeid(std::nullptr_t)) {
+						if (v->type() != typeid(std::nullptr_t)) [[likely]] {
 							if (Is_Only_Int)
 								*v = cal.i;
 							else
@@ -1755,7 +1757,7 @@ namespace karapo::event {
 						MATH_COMMAND_CALCULATE(/ );
 
 						auto* v = &Program::Instance().var_manager.Get<false>(var_name);
-						if (v->type() != typeid(std::nullptr_t)) {
+						if (v->type() != typeid(std::nullptr_t)) [[likely]] {
 							if (Is_Only_Int)
 								*v = cal.i;
 							else
@@ -1796,7 +1798,7 @@ namespace karapo::event {
 						}
 
 						auto* v = &Program::Instance().var_manager.Get<false>(var_name);
-						if (v->type() != typeid(std::nullptr_t)) {
+						if (v->type() != typeid(std::nullptr_t)) [[likely]] {
 							if (Is_Only_Int)
 								*v = cal.i;
 							else
@@ -1839,9 +1841,9 @@ namespace karapo::event {
 				}
 			public:
 				BitCommand(const std::vector<std::wstring>& Params) : MathCommand(Params) {
-					if (logic_operation_error_class == nullptr)
+					if (logic_operation_error_class == nullptr) [[unlikely]]
 						logic_operation_error_class = error::UserErrorHandler::MakeErrorClass(L"論理演算エラー");
-					if (not_integer_error == nullptr)
+					if (not_integer_error == nullptr) [[unlikely]]
 						not_integer_error = error::UserErrorHandler::MakeError(logic_operation_error_class, L"ビット演算に用いる変数の値が整数値ではありません。", MB_OK | MB_ICONERROR, 2);
 				}
 
@@ -1855,10 +1857,10 @@ namespace karapo::event {
 				~Or() final {}
 
 				void Execute() final {
-					if (Extract(2)) {
+					if (Extract(2)) [[likely]] {
 						const auto Is_Int = CheckValueType();
 
-						if (Is_Int.first && Is_Int.second) {
+						if (Is_Int.first && Is_Int.second) [[likely]] {
 							CalculateValue cal;
 							cal.i = std::any_cast<int>(value[0]) | std::any_cast<int>(value[1]);
 							auto* v = &Program::Instance().var_manager.Get<false>(var_name);
@@ -1882,9 +1884,9 @@ namespace karapo::event {
 				~And() final {}
 
 				void Execute() final {
-					if (Extract(2)) {
+					if (Extract(2)) [[likely]] {
 						const auto Is_Int = CheckValueType();
-						if (Is_Int.first && Is_Int.second) {
+						if (Is_Int.first && Is_Int.second) [[likely]] {
 							CalculateValue cal;
 							cal.i = std::any_cast<int>(value[0]) & std::any_cast<int>(value[1]);
 							auto* v = &Program::Instance().var_manager.Get<false>(var_name);
@@ -1908,10 +1910,10 @@ namespace karapo::event {
 				~Xor() final {}
 
 				void Execute() final {
-					if (Extract(2)) {
+					if (Extract(2)) [[likely]] {
 						const auto Is_Int = CheckValueType();
 
-						if (Is_Int.first && Is_Int.second) {
+						if (Is_Int.first && Is_Int.second) [[likely]] {
 							CalculateValue cal;
 							cal.i = std::any_cast<int>(value[0]) ^ std::any_cast<int>(value[1]);
 							auto* v = &Program::Instance().var_manager.Get<false>(var_name);
@@ -1935,11 +1937,11 @@ namespace karapo::event {
 				~Not() final {}
 
 				void Execute() final {
-					if (Extract(1)) {
+					if (Extract(1)) [[likely]] {
 						std::wstring var_name{};
 						var_name = std::any_cast<std::wstring>(GetParam<true>(0));
 
-						if (value[0].type() == typeid(int)) {
+						if (value[0].type() == typeid(int)) [[likely]] {
 							auto* v = &Program::Instance().var_manager.Get<false>(var_name);
 							CalculateValue cal;
 							cal.i = ~std::any_cast<int>(value[0]);
