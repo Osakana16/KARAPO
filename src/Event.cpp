@@ -261,7 +261,7 @@ namespace karapo::event {
 		public:
 			DYNAMIC_COMMAND_CONSTRUCTOR(Exist) {
 				if (assign_error == nullptr)
-					assign_error = error::UserErrorHandler::MakeError(event::Manager::Instance().error_class, L"代入先の変数が存在しません。\n新しく個の変数を作成しますか?", MB_YESNO | MB_ICONERROR, 2);
+					assign_error = error::UserErrorHandler::MakeError(event::Manager::Instance().error_class, L"代入先の変数が存在しません。\n新しくこの変数を作成しますか?", MB_YESNO | MB_ICONERROR, 2);
 			}
 
 			~Exist() noexcept final {}
