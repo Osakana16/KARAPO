@@ -93,7 +93,9 @@ namespace karapo::event {
 			inline static error::ErrorClass *command_error_class{};
 			inline static error::ErrorContent *incorrect_type_error{},
 				*lack_of_parameters_error{},
-				*empty_name_error{};
+				*empty_name_error{},
+				*entity_not_found_error{};
+
 			DynamicCommand() noexcept {
 				if (command_error_class == nullptr)
 					command_error_class = error::UserErrorHandler::MakeErrorClass(L"コマンドエラー");
@@ -103,6 +105,8 @@ namespace karapo::event {
 					lack_of_parameters_error = error::UserErrorHandler::MakeError(command_error_class, L"引数が足りない為、コマンドを実行できません。", MB_OK | MB_ICONERROR, 1);
 				if (empty_name_error == nullptr)
 					empty_name_error = error::UserErrorHandler::MakeError(command_error_class, L"名前を空にすることはできません。", MB_OK | MB_ICONERROR, 2);
+				if (entity_not_found_error == nullptr)
+					entity_not_found_error = error::UserErrorHandler::MakeError(command_error_class, L"Entityが見つかりません。", MB_OK | MB_ICONERROR, 2);
 			}
 
 			DynamicCommand(const decltype(param_names)& Param) noexcept : DynamicCommand() {
@@ -845,10 +849,16 @@ namespace karapo::event {
 					{
 						ReplaceFormat(&entity_name);
 						auto ent = Program::Instance().entity_manager.GetEntity(entity_name);
-						ent->Teleport(move);
+						if (ent != nullptr)
+							ent->Teleport(move);
+						else
+							goto entity_error;
 						StandardCommand::Execute();
-						return; 
 					}
+					return;
+				entity_error:
+					event::Manager::Instance().error_handler.SendLocalError(entity_not_found_error, L"コマンド名: teleport/瞬間移動");
+					goto end_of_function;
 				lack_error:
 					event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error, L"コマンド名: teleport/瞬間移動");
 					goto end_of_function;
@@ -1343,10 +1353,16 @@ namespace karapo::event {
 						ReplaceFormat(&entity_name);
 						ReplaceFormat(&layer_name);
 						auto ent = Program::Instance().entity_manager.GetEntity(entity_name);
+						if (ent == nullptr)
+							goto entity_error;
+
 						Program::Instance().canvas.SetBasis(ent, layer_name);
 						StandardCommand::Execute();
-						return;
 					}
+					return;
+				entity_error:
+					event::Manager::Instance().error_handler.SendLocalError(entity_not_found_error, L"コマンド名: setbasis/レイヤー基準");
+					goto end_of_function;
 				name_error:
 					event::Manager::Instance().error_handler.SendLocalError(empty_name_error, L"コマンド名: setbasis/レイヤー基準");
 					goto end_of_function;
