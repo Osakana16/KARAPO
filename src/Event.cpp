@@ -471,7 +471,7 @@ namespace karapo::event {
 			}
 		};
 
-		// 画像を読み込み、表示させる。
+		// 画像から一部をコピーする。
 		DYNAMIC_COMMAND(Capture) {
 			std::wstring variable_name{}, path{};
 			ScreenVector position{}, length{};
