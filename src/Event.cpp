@@ -4,6 +4,8 @@
 
 #include "Engine.hpp"
 
+#include "Animation.hpp"
+
 #include <queue>
 #include <chrono>
 #include <forward_list>
@@ -468,6 +470,27 @@ namespace karapo::event {
 				goto end_of_function;
 			end_of_function:
 				return;
+			}
+		};
+
+		// アニメーション用変数を作成する。
+		DYNAMIC_COMMAND(Animation final) {
+			std::wstring var_name{};
+		public:
+			Animation(const std::wstring& Var_Name) noexcept : DynamicCommand(std::vector<std::wstring>{}) {
+				var_name = Var_Name;
+			}
+
+			~Animation() noexcept final {}
+
+			void Execute() final {
+				if (var_name.empty())
+					goto name_error;
+				Program::Instance().var_manager.MakeNew(var_name) = animation::Animation();
+				StandardCommand::Execute();
+				return;
+			name_error:
+				event::Manager::Instance().error_handler.SendLocalError(empty_name_error, L"コマンド名: animation/アニメ");
 			}
 		};
 
@@ -2432,6 +2455,32 @@ namespace karapo::event {
 									case 4:
 										return KeywordInfo::ParamResult::Lack;
 									case 5:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"animation"] =
+						words[L"アニメ"] = [](const std::vector<std::wstring>& params) -> KeywordInfo 
+					{
+						return {
+							.Result = [&]() noexcept -> CommandPtr {
+								const auto [Var_Name, Var_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								if (Default_ProgramInterface.IsNoType(Var_Type))
+									return std::make_unique<command::Animation>(Var_Name);
+								else
+									return nullptr;
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+										return KeywordInfo::ParamResult::Lack;
+									case 1:
 										return KeywordInfo::ParamResult::Maximum;
 									default:
 										return KeywordInfo::ParamResult::Excess;
