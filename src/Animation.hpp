@@ -43,7 +43,17 @@ namespace karapo {
 
 		class FrameRef {
 			Sprite::iterator it, begin, end;
-			void Fix() noexcept;
+
+			template<const bool Increase>
+			void Fix() noexcept {
+				if constexpr (Increase) {
+					if (it >= end)
+						it = begin;
+				} else {
+					if (it <= begin)
+						it = end;
+				}
+			}
 		public:
 			FrameRef() = default;
 			FrameRef(Sprite::iterator b, Sprite::iterator e);

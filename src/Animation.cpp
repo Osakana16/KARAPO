@@ -87,32 +87,25 @@ namespace karapo::animation {
 
 	resource::Image& FrameRef::operator++(int) noexcept {
 		it++;
-		Fix();
+		Fix<true>();
 		return (*it);
 	}
 
 	resource::Image& FrameRef::operator--(int) noexcept {
+		Fix<false>();
 		it--;
-		Fix();
 		return (*it);
 	}
 
 	resource::Image& FrameRef::operator++() noexcept {
+		Fix<false>();
 		it--;
-		Fix();
 		return (*it);
 	}
 
 	resource::Image& FrameRef::operator--() noexcept {
 		it++;
-		Fix();
+		Fix<true>();
 		return (*it);
-	}
-
-	void FrameRef::Fix() noexcept {
-		if (it > end)
-			it = begin;
-		else if (it < begin)
-			it = end;
 	}
 }
