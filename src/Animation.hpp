@@ -1,12 +1,8 @@
 #pragma once
 
 namespace karapo {
-	using SImage = std::shared_ptr<resource::Image>;
-
-	/// <summary>
-	/// 画像の集合体
-	/// </summary>
-	using Sprite = std::deque<SImage>;
+	// スプライト
+	using Sprite = std::deque<resource::Image>;
 
 	namespace animation {
 		class BaseAnimation {
@@ -15,16 +11,16 @@ namespace karapo {
 			void RemoveInvalidImage()noexcept;
 		public:
 			BaseAnimation();
-			BaseAnimation(std::initializer_list<SImage>&);
+			BaseAnimation(std::initializer_list<resource::Image>&);
 
 			// フレームを末端に追加する。
-			void PushBack(SImage) noexcept;
+			void PushBack(resource::Image) noexcept;
 			// フレームを先端に追加する。
-			void PushFront(SImage) noexcept;
+			void PushFront(resource::Image) noexcept;
 			// フレームを任意の位置に追加する。
-			void PushTo(SImage, signed) noexcept;
+			void PushTo(resource::Image, signed) noexcept;
 			// フレームを任意の位置に追加する。
-			void PushTo(SImage, unsigned) noexcept;
+			void PushTo(resource::Image, unsigned) noexcept;
 
 
 			// フレーム数を返す。
@@ -37,10 +33,10 @@ namespace karapo {
 			using BaseAnimation::BaseAnimation;
 			// フレーム参照
 			// 
-			SImage& operator[](signed) noexcept;
+			resource::Image& operator[](signed) noexcept;
 
 			// フレーム参照(負数無し最適化版)
-			SImage& operator[](unsigned) noexcept;
+			resource::Image& operator[](unsigned) noexcept;
 
 			Sprite::iterator Begin(), End();
 		};
@@ -55,21 +51,21 @@ namespace karapo {
 			void InitFrame(Sprite::iterator b, Sprite::iterator e);
 
 			// 現在のフレームを参照する
-			SImage& operator*() noexcept;
+			resource::Image& operator*() noexcept;
 
 			// 現在のフレームをN個分次のフレームにする
-			SImage& operator<<(const int N) noexcept;
+			resource::Image& operator<<(const int N) noexcept;
 			// 現在のフレームをN個分前のフレームにする
-			SImage& operator>>(const int N) noexcept;
+			resource::Image& operator>>(const int N) noexcept;
 
 			// 現在のフレームを次のフレームにする
-			SImage& operator++(int) noexcept;
+			resource::Image& operator++(int) noexcept;
 			// 現在のフレームを前のフレームにする
-			SImage& operator--(int) noexcept;
+			resource::Image& operator--(int) noexcept;
 			// 現在のフレームを前のフレームにする
-			SImage& operator++() noexcept;
+			resource::Image& operator++() noexcept;
 			// 現在のフレームを次のフレームにする
-			SImage& operator--() noexcept;
+			resource::Image& operator--() noexcept;
 		};
 	}
 }
