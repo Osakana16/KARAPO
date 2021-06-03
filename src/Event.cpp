@@ -528,16 +528,14 @@ namespace karapo::event {
 					if (anime_var.type() != typeid(animation::Animation))
 						goto type_error;
 					else {
-						auto anime = std::any_cast<animation::Animation>(anime_var);
+						auto& anime = std::any_cast<animation::Animation&>(anime_var);
 						auto& frame_var = Program::Instance().var_manager.Get<false>(var_name + L".frame");
-						auto frame = std::any_cast<animation::FrameRef>(frame_var);
+						auto& frame = std::any_cast<animation::FrameRef&>(frame_var);
 
 						resource::Image image;
 						image = Program::Instance().engine.LoadImage(image_path);
 						anime.PushBack(image);
 						frame.InitFrame(anime.Begin(), anime.End());
-						anime_var = anime;
-						frame_var = frame;
 						StandardCommand::Execute();
 					}
 				}
@@ -574,9 +572,7 @@ namespace karapo::event {
 					if (frame_var.type() != typeid(animation::FrameRef))
 						goto type_error;
 					else {
-						auto frame = std::any_cast<animation::FrameRef>(frame_var);
-						frame++;
-						frame_var = frame;
+						std::any_cast<animation::FrameRef&>(frame_var)++;
 						StandardCommand::Execute();
 					}
 				}
@@ -608,9 +604,7 @@ namespace karapo::event {
 					if (frame_var.type() != typeid(animation::FrameRef))
 						goto type_error;
 					else {
-						auto frame = std::any_cast<animation::FrameRef>(frame_var);
-						frame--;
-						frame_var = frame;
+						std::any_cast<animation::FrameRef&>(frame_var)--;
 						StandardCommand::Execute();
 					}
 				}
