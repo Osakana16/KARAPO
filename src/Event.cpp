@@ -571,6 +571,7 @@ namespace karapo::event {
 						goto type_error;
 					else {
 						std::any_cast<animation::FrameRef&>(frame_var)++;
+						auto frame = std::any_cast<animation::FrameRef&>(frame_var);
 						StandardCommand::Execute();
 					}
 				}
@@ -783,7 +784,7 @@ namespace karapo::event {
 		// ƒ{ƒ^ƒ“
 		DYNAMIC_COMMAND(Button final) {
 			std::shared_ptr<karapo::entity::Button> button;
-			std::wstring path{};
+			std::any path{};
 		public:
 			Button(const std::wstring& Name,
 				const WorldVector& WV,
@@ -829,13 +830,25 @@ namespace karapo::event {
 					if (w_param.type() != typeid(std::nullptr_t) && h_param.type() != typeid(std::nullptr_t) && path_param.type() != typeid(std::nullptr_t)) {
 						w = (GetParam(3).type() == typeid(Dec) ? std::any_cast<Dec>(w_param) : std::any_cast<int>(w_param));
 						h = (GetParam(4).type() == typeid(Dec) ? std::any_cast<Dec>(h_param) : std::any_cast<int>(h_param));
-						path = std::any_cast<std::wstring>(path_param);
+						path = std::move(path_param);
 					}
 					ReplaceFormat(&name);
 					button = std::make_shared<karapo::entity::Button>(name, WorldVector{ x, y }, WorldVector{ w, h });
 				}
-				ReplaceFormat(&path);
-				button->Load(path);
+
+				if (path.type() == typeid(std::wstring)) {
+					auto path_string = std::any_cast<std::wstring>(path);
+					ReplaceFormat(&path_string);
+					button->Load(path_string);
+				} else if (path.type() == typeid(animation::FrameRef)) {
+					button->Load(&std::any_cast<animation::FrameRef&>(
+							Program::Instance().var_manager.Get<false>(
+								std::any_cast<std::wstring>(GetParam<true>(5))
+							)
+						)
+					);
+				}
+
 				Program::Instance().entity_manager.Register(button);
 				StandardCommand::Execute();
 				return;

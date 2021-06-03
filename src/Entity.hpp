@@ -17,9 +17,11 @@ namespace karapo::entity {
 		resource::Image image;
 		bool can_delete = false;
 		std::wstring path{};
+		animation::FrameRef *frame{};
 	protected:
 		WorldVector length{};
 		const decltype(path)& Path() const noexcept;
+		const decltype(frame)& Frame() const noexcept;
 	public:
 		Image(const WorldVector&, const WorldVector&);
 		inline int Main() override { return 0; }
@@ -28,7 +30,7 @@ namespace karapo::entity {
 		bool CanDelete() const noexcept override;
 		void Delete() override;
 		void Draw(WorldVector) override;
-		void Load(const std::wstring&);
+		void Load(const std::wstring&), Load(animation::FrameRef*);
 		WorldVector Length() const noexcept;
 	};
 
@@ -90,8 +92,10 @@ namespace karapo::entity {
 		void Update();
 		// è’ìÀéûÇÃèàóù
 		void Collide() noexcept;
+
 	public:
 		Button(const std::wstring&, const WorldVector&, const WorldVector&) noexcept;
+
 		int Main() override;
 		const wchar_t *Name() const noexcept override;
 		const wchar_t *KindName() const noexcept override;

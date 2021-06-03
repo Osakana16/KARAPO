@@ -161,6 +161,10 @@ namespace karapo::entity {
 		}
 		image = Program::Instance().engine.LoadImage(Path);
 	}
+	
+	void Image::Load(animation::FrameRef* frame_reference) {
+		frame = frame_reference;
+	}
 
 	WorldVector Image::Length() const noexcept {
 		return length;
@@ -168,6 +172,10 @@ namespace karapo::entity {
 
 	const decltype(Image::path)& Image::Path() const noexcept {
 		return path;
+	}
+
+	const decltype(Image::frame)& Image::Frame() const noexcept {
+		return frame;
 	}
 
 	void Image::Draw(WorldVector base) {
@@ -182,23 +190,33 @@ namespace karapo::entity {
 			y = Origin()[1];
 		}
 
-		if (image.IsValid()) {
+		if (frame != nullptr) {
 			Program::Instance().engine.DrawRect(Rect({
-					static_cast<int>(x),
-					static_cast<int>(y),
-					static_cast<int>(x + Length()[0]),
-					static_cast<int>(y + Length()[1])
+						static_cast<int>(x),
+						static_cast<int>(y),
+						static_cast<int>(x + Length()[0]),
+						static_cast<int>(y + Length()[1])
 				}),
-				image);
+				*(*frame));
 		} else {
-			Program::Instance().engine.DrawRect(Rect({
-					static_cast<int>(x),
-					static_cast<int>(y),
-					static_cast<int>(x + Length()[0]),
-					static_cast<int>(y + Length()[1])
-				}),
-				{ .r = 0xEC, .g = 0x00, .b = 0x8C },
-				true);
+			if (image.IsValid()) {
+				Program::Instance().engine.DrawRect(Rect({
+						static_cast<int>(x),
+						static_cast<int>(y),
+						static_cast<int>(x + Length()[0]),
+						static_cast<int>(y + Length()[1])
+					}),
+					image);
+			} else {
+				Program::Instance().engine.DrawRect(Rect({
+						static_cast<int>(x),
+						static_cast<int>(y),
+						static_cast<int>(x + Length()[0]),
+						static_cast<int>(y + Length()[1])
+					}),
+					{ .r = 0xEC, .g = 0x00, .b = 0x8C },
+					true);
+			}
 		}
 	}
 
@@ -336,9 +354,14 @@ namespace karapo::entity {
 	}
 
 	void Button::Update() {
-		auto path_var = std::any_cast<std::wstring>(Program::Instance().var_manager.Get<false>(std::wstring(name) + L".path"));
-		if (path_var != Path()) {
-			Load(path_var);
+		{
+			auto& path_var = Program::Instance().var_manager.Get<false>(std::wstring(name) + L".path");
+			
+			if (path_var.type() == typeid(std::wstring) && std::any_cast<std::wstring&>(path_var) != Path()) {
+				Load(std::any_cast<std::wstring&>(path_var));
+			} else if (path_var.type() == typeid(animation::FrameRef) && &std::any_cast<animation::FrameRef&>(path_var) != Frame()) {
+				Load(&std::any_cast<animation::FrameRef&>(path_var));
+			}
 		}
 
 		length[0] = std::any_cast<int>(Program::Instance().var_manager.Get<false>(std::wstring(name) + L".w"));
