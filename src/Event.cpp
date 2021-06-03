@@ -494,6 +494,63 @@ namespace karapo::event {
 			}
 		};
 
+		// アニメーション変数にフレームを追加する。
+		DYNAMIC_COMMAND(AddFrame final) {
+			std::wstring var_name{}, image_path{};
+		public:
+			AddFrame(const std::wstring& Var_Name, const std::wstring& Image_Path) noexcept : AddFrame(std::vector<std::wstring>{}) {
+				var_name = Var_Name;
+				image_path = Image_Path;
+			}
+
+			DYNAMIC_COMMAND_CONSTRUCTOR(AddFrame) {}
+
+			~AddFrame() noexcept final {}
+
+			void Execute() final {
+				if (MustSearch()) {
+					auto var_name_param = GetParam<true>(0),
+						path_param = GetParam(1);
+					if (var_name_param.type() == typeid(std::nullptr_t) || path_param.type() == typeid(std::nullptr_t)) [[unlikely]]
+						goto lack_error;
+					else if (var_name_param.type() != typeid(std::wstring) || path_param.type() != typeid(std::wstring)) [[unlikely]]
+						goto type_error;
+
+					var_name = std::any_cast<std::wstring>(var_name_param);
+					image_path = std::any_cast<std::wstring>(path_param);
+				}
+
+				if (var_name.empty() || image_path.empty())
+					goto name_error;
+				else {
+					auto& anime_var = Program::Instance().var_manager.Get<false>(var_name);
+					if (anime_var.type() != typeid(animation::Animation))
+						goto type_error;
+					else {
+						auto anime = std::any_cast<animation::Animation>(anime_var);
+						resource::Image image;
+						image = Program::Instance().engine.LoadImage(image_path);
+						
+						anime.PushBack(image);
+						anime_var = anime;
+						StandardCommand::Execute();
+					}
+				}
+				return;
+			lack_error:
+				event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error, L"コマンド名: addframe/フレーム追加");
+				goto end_of_function;
+			type_error:
+				event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error, L"コマンド名: addframe/フレーム追加");
+				goto end_of_function;
+			name_error:
+				event::Manager::Instance().error_handler.SendLocalError(empty_name_error, L"コマンド名: addframe/フレーム追加");
+				goto end_of_function;
+			end_of_function:
+				return;
+			}
+		};
+
 		// 画像から一部をコピーする。
 		DYNAMIC_COMMAND(Capture) {
 			std::wstring variable_name{}, path{};
@@ -2481,6 +2538,34 @@ namespace karapo::event {
 									case 0:
 										return KeywordInfo::ParamResult::Lack;
 									case 1:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"addframe"] =
+						words[L"フレーム追加"] = [](const std::vector<std::wstring>& params) -> KeywordInfo
+					{
+						return {
+							.Result = [&]() noexcept -> CommandPtr {
+								const auto [Var_Name, Var_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								const auto [Path, Path_Type] = Default_ProgramInterface.GetParamInfo(params[1]);
+								if (Default_ProgramInterface.IsNoType(Var_Type) && Default_ProgramInterface.IsStringType(Path_Type))
+									return std::make_unique<command::AddFrame>(Var_Name, Path);
+								else
+									return std::make_unique<command::AddFrame>(params);
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+									case 1:
+										return KeywordInfo::ParamResult::Lack;
+									case 2:
 										return KeywordInfo::ParamResult::Maximum;
 									default:
 										return KeywordInfo::ParamResult::Excess;
