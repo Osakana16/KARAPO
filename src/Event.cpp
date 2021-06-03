@@ -556,6 +556,74 @@ namespace karapo::event {
 			}
 		};
 
+		// フレームを次に進める。
+		DYNAMIC_COMMAND(NextFrame final) {
+			std::wstring var_name{};
+		public:
+			NextFrame(const std::wstring & Var_Name) noexcept : DynamicCommand(std::vector<std::wstring>{}) {
+				var_name = Var_Name;
+			}
+
+			~NextFrame() noexcept final {}
+
+			void Execute() final {
+				if (var_name.empty())
+					goto name_error;
+				else {
+					auto& frame_var = Program::Instance().var_manager.Get<false>(var_name + L".frame");
+					if (frame_var.type() != typeid(animation::FrameRef))
+						goto type_error;
+					else {
+						auto frame = std::any_cast<animation::FrameRef>(frame_var);
+						frame++;
+						frame_var = frame;
+						StandardCommand::Execute();
+					}
+				}
+				return;
+			name_error:
+				event::Manager::Instance().error_handler.SendLocalError(empty_name_error, L"コマンド名: nextframe/次フレーム");
+				return;
+			type_error:
+				event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error, L"コマンド名: nextframe/次フレーム");
+				return;
+			}
+		};
+
+		// フレームを前に戻す。
+		DYNAMIC_COMMAND(BackFrame final) {
+			std::wstring var_name{};
+		public:
+			BackFrame(const std::wstring & Var_Name) noexcept : DynamicCommand(std::vector<std::wstring>{}) {
+				var_name = Var_Name;
+			}
+
+			~BackFrame() noexcept final {}
+
+			void Execute() final {
+				if (var_name.empty())
+					goto name_error;
+				else {
+					auto& frame_var = Program::Instance().var_manager.Get<false>(var_name + L".frame");
+					if (frame_var.type() != typeid(animation::FrameRef))
+						goto type_error;
+					else {
+						auto frame = std::any_cast<animation::FrameRef>(frame_var);
+						frame--;
+						frame_var = frame;
+						StandardCommand::Execute();
+					}
+				}
+				return;
+			name_error:
+				event::Manager::Instance().error_handler.SendLocalError(empty_name_error, L"コマンド名: backframe/前フレーム");
+				return;
+			type_error:
+				event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error, L"コマンド名: backframe/前フレーム");
+				return;
+			}
+		};
+
 		// 画像から一部をコピーする。
 		DYNAMIC_COMMAND(Capture) {
 			std::wstring variable_name{}, path{};
@@ -2571,6 +2639,58 @@ namespace karapo::event {
 									case 1:
 										return KeywordInfo::ParamResult::Lack;
 									case 2:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"nextframe"] =
+						words[L"次フレーム"] = [](const std::vector<std::wstring>& params) -> KeywordInfo
+					{
+						return {
+							.Result = [&]() noexcept -> CommandPtr {
+								const auto [Var_Name, Var_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								if (Default_ProgramInterface.IsNoType(Var_Type))
+									return std::make_unique<command::NextFrame>(Var_Name);
+								else
+									return nullptr;
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+										return KeywordInfo::ParamResult::Lack;
+									case 1:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"backframe"] =
+						words[L"前フレーム"] = [](const std::vector<std::wstring>& params) -> KeywordInfo
+					{
+						return {
+							.Result = [&]() noexcept -> CommandPtr {
+								const auto [Var_Name, Var_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								if (Default_ProgramInterface.IsNoType(Var_Type))
+									return std::make_unique<command::BackFrame>(Var_Name);
+								else
+									return nullptr;
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+										return KeywordInfo::ParamResult::Lack;
+									case 1:
 										return KeywordInfo::ParamResult::Maximum;
 									default:
 										return KeywordInfo::ParamResult::Excess;
