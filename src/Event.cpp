@@ -487,6 +487,7 @@ namespace karapo::event {
 				if (var_name.empty())
 					goto name_error;
 				Program::Instance().var_manager.MakeNew(var_name) = animation::Animation();
+				Program::Instance().var_manager.MakeNew(var_name + L".frame") = animation::FrameRef();
 				StandardCommand::Execute();
 				return;
 			name_error:
@@ -528,11 +529,15 @@ namespace karapo::event {
 						goto type_error;
 					else {
 						auto anime = std::any_cast<animation::Animation>(anime_var);
+						auto& frame_var = Program::Instance().var_manager.Get<false>(var_name + L".frame");
+						auto frame = std::any_cast<animation::FrameRef>(frame_var);
+
 						resource::Image image;
 						image = Program::Instance().engine.LoadImage(image_path);
-						
 						anime.PushBack(image);
+						frame.InitFrame(anime.Begin(), anime.End());
 						anime_var = anime;
+						frame_var = frame;
 						StandardCommand::Execute();
 					}
 				}
