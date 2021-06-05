@@ -1759,7 +1759,7 @@ namespace karapo::event {
 							value[i] = GetParam(i + 1);
 							if (value[i].type() == typeid(std::nullptr_t)) [[unlikely]]
 								goto lack_error;
-							else if (value[i].type() != typeid(int) || value[i].type() != typeid(Dec)|| value[i].type() != typeid(std::wstring)) [[unlikely]]
+							else if (value[i].type() != typeid(int) && value[i].type() != typeid(Dec) && value[i].type() != typeid(std::wstring)) [[unlikely]]
 								goto type_error;
 
 							if (value[i].type() == typeid(int))
