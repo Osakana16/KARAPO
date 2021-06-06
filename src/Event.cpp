@@ -3245,10 +3245,8 @@ namespace karapo::event {
 								switch (params.size()) {
 									case 0:
 										return KeywordInfo::ParamResult::Lack;
-									case 1:
-										return KeywordInfo::ParamResult::Medium;
 									default:
-										return KeywordInfo::ParamResult::Excess;
+										return KeywordInfo::ParamResult::Medium;
 								}
 							},
 							.is_static = false,
