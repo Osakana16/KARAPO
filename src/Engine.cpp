@@ -186,6 +186,32 @@ namespace karapo {
 
 	value::Key Program::Engine::GetKeyValueByString(const std::wstring& Key_Name) {
 		std::unordered_map<std::wstring, int> special_key{
+			{ L"a", KEY_INPUT_A },
+			{ L"b", KEY_INPUT_B },
+			{ L"c", KEY_INPUT_C },
+			{ L"d", KEY_INPUT_D },
+			{ L"e", KEY_INPUT_E },
+			{ L"f", KEY_INPUT_F },
+			{ L"g", KEY_INPUT_G },
+			{ L"h", KEY_INPUT_H },
+			{ L"i", KEY_INPUT_I },
+			{ L"j", KEY_INPUT_J },
+			{ L"k", KEY_INPUT_K },
+			{ L"l", KEY_INPUT_L },
+			{ L"m", KEY_INPUT_M },
+			{ L"n", KEY_INPUT_N },
+			{ L"o", KEY_INPUT_O },
+			{ L"p", KEY_INPUT_P },
+			{ L"q", KEY_INPUT_Q },
+			{ L"r", KEY_INPUT_R },
+			{ L"s", KEY_INPUT_S },
+			{ L"t", KEY_INPUT_T },
+			{ L"u", KEY_INPUT_U },
+			{ L"v", KEY_INPUT_V },
+			{ L"w", KEY_INPUT_W },
+			{ L"x", KEY_INPUT_X },
+			{ L"y", KEY_INPUT_Y },
+			{ L"z", KEY_INPUT_Z },
 			{ L"tab", KEY_INPUT_TAB },
 			{ L"space", KEY_INPUT_SPACE },
 			{ L"enter", KEY_INPUT_RETURN },
@@ -240,9 +266,7 @@ namespace karapo {
 			{ L"’†‰›ƒNƒŠƒbƒN", MOUSE_INPUT_MIDDLE }
 		};
 
-		if (iswalpha(Key_Name[0])) {
-			return static_cast<value::Key>(std::abs(L'a' - std::tolower(Key_Name[0])) + KEY_INPUT_A);
-		} else if (iswdigit(Key_Name[0])) {
+		if (iswdigit(Key_Name[0])) {
 			if (Key_Name[0] == L'0')
 				return static_cast<value::Key>(KEY_INPUT_0);
 			else
