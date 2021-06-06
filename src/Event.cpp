@@ -998,15 +998,25 @@ namespace karapo::event {
 						{
 							goto lack_error;
 						} 
-						else if (name_param.type() != typeid(std::wstring) ||
-							x_param.type() != typeid(Dec) ||
-							y_param.type() != typeid(Dec)) [[unlikely]]
+						else if (name_param.type() != typeid(std::wstring)) [[unlikely]]
 						{
 							goto type_error;
 						}
 						entity_name = std::any_cast<std::wstring>(name_param);
-						auto x = std::any_cast<Dec>(x_param);
-						auto y = std::any_cast<Dec>(y_param);
+						Dec x{}, y{};
+						if (x_param.type() == typeid(Dec))
+							x = std::any_cast<Dec>(x_param);
+						else if (x_param.type() == typeid(int))
+							x = std::any_cast<int>(x_param);
+						else [[unlikely]]
+							goto type_error;
+
+						if (y_param.type() == typeid(Dec))
+							y = std::any_cast<Dec>(y_param);
+						else if (y_param.type() == typeid(int))
+							y = std::any_cast<int>(y_param);
+						else [[unlikely]]
+							goto type_error;
 						move = { x, y };
 					}
 
