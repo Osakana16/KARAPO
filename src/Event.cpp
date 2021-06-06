@@ -4235,12 +4235,11 @@ namespace karapo::event {
 	void Manager::Call(const std::wstring& EName) noexcept {
 		auto candidate = events.find(EName);
 		if (candidate != events.end()) {
-			auto event_name = std::any_cast<std::wstring>(Program::Instance().var_manager.Get<false>(variable::Executing_Event_Name));
+			auto event_name = std::any_cast<std::wstring>(Program::Instance().var_manager.Get<false>(variable::Executing_Event_Name));	
+			Program::Instance().var_manager.Get<false>(variable::Executing_Event_Name) = (event_name += std::wstring(EName) + L"\n");
 			CommandExecuter cmd_executer(&candidate->second.commands);
 			if (candidate->second.trigger_type == TriggerType::Load)
 				candidate->second.trigger_type = TriggerType::None;
-	
-			Program::Instance().var_manager.Get<false>(variable::Executing_Event_Name) = (event_name += std::wstring(EName) + L"\n");
 			event_name.erase(event_name.find(EName + L"\n"));
 			Program::Instance().var_manager.Get<false>(variable::Executing_Event_Name) = event_name;
 		} else {
