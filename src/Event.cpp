@@ -138,7 +138,10 @@ namespace karapo::event {
 						return Program::Instance().var_manager.Get<false>(var);
 					}
 				} else {
-					return var;
+					if (Default_ProgramInterface.IsStringType(type) || Default_ProgramInterface.IsNumberType(type))
+						return var;
+					else
+						return param_names[Index];
 				}
 			}
 
