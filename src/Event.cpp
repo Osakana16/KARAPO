@@ -2141,6 +2141,9 @@ namespace karapo::event {
 	class Manager::CommandExecuter final {
 	public:
 		CommandExecuter(std::list<CommandTree>* commands) {
+			if (commands->empty())
+				return;
+
 			Program::Instance().var_manager.MakeNew(L"of_state") = 1;
 			// ここから、コマンド実行。
 			{
