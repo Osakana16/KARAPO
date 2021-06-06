@@ -2467,6 +2467,8 @@ namespace karapo::event {
 					if (already_new_trigger_type_defined_error == nullptr)
 						already_new_trigger_type_defined_error = error::UserErrorHandler::MakeError(event::Manager::Instance().error_class, L"既に発生タイプが指定されています。", MB_OK | MB_ICONERROR, 1);
 			
+					Program::Instance().dll_manager.RegisterExternalCommand(&words);
+
 					words[L"text"] =
 						words[L"文章"] = [](const std::vector<std::wstring>& params) -> KeywordInfo
 					{
