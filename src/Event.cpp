@@ -135,7 +135,19 @@ namespace karapo::event {
 					} else if (Default_ProgramInterface.IsStringType(type)) {
 						return var;
 					} else {
-						return Program::Instance().var_manager.Get<false>(var);
+						auto event_name = std::any_cast<std::wstring>(Program::Instance().var_manager.Get<false>(variable::Executing_Event_Name));
+						event_name = event_name.substr(0, event_name.size() - 1);
+						if (auto pos = event_name.rfind(L'\n'); pos != std::wstring::npos)
+							event_name = event_name.substr(pos);
+						if (auto pos = event_name.find(L'\n'); pos != std::wstring::npos)
+							event_name.erase(event_name.begin());
+
+						auto& global_var = Program::Instance().var_manager.Get<false>(param_names[Index]);
+						auto& local_var = Program::Instance().var_manager.Get<false>(event_name + L'.' + param_names[Index]);
+						if (local_var.type() != typeid(std::nullptr_t))
+							return local_var;
+						else
+							return global_var;	// 
 					}
 				} else {
 					if (Default_ProgramInterface.IsStringType(type) || Default_ProgramInterface.IsNumberType(type))
