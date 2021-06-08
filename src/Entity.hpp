@@ -136,9 +136,9 @@ namespace karapo::entity {
 		// Entityを更新する。
 		void Update() noexcept;
 		// 該当する名前のEntityを入手する。
-		std::shared_ptr<Entity> GetEntity(const std::wstring& Name) noexcept;
+		std::shared_ptr<Entity> GetEntity(const std::wstring& Name) const noexcept;
 		// 関数内の条件に当てはまるEntityを入手する。
-		std::shared_ptr<Entity> GetEntity(std::function<bool(std::shared_ptr<Entity>)> Condition) noexcept;
+		std::shared_ptr<Entity> GetEntity(std::function<bool(std::shared_ptr<Entity>)> Condition) const noexcept;
 
 		// 該当する名前のEntityを殺す。
 		void Kill(const std::wstring&) noexcept;

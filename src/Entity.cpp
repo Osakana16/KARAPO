@@ -22,7 +22,7 @@ namespace karapo::entity {
 		return;
 	}
 
-	std::shared_ptr<Entity> Manager::GetEntity(const std::wstring& Name) noexcept {
+	std::shared_ptr<Entity> Manager::GetEntity(const std::wstring& Name) const noexcept {
 		for (auto& group : chunks) {
 			auto result = group.Get(Name);
 			if (result != nullptr)
@@ -31,8 +31,8 @@ namespace karapo::entity {
 		return nullptr;
 	}
 
-	std::shared_ptr<Entity> Manager::GetEntity(std::function<bool(std::shared_ptr<Entity>)> Condition) noexcept {
-		std::vector<std::shared_ptr<Entity>> results;
+	std::shared_ptr<Entity> Manager::GetEntity(std::function<bool(std::shared_ptr<Entity>)> Condition) const noexcept {
+		std::vector<std::shared_ptr<Entity>> results{};
 		for (auto& group : chunks) {
 			auto async = std::async(std::launch::async, [&group, Condition] { return group.Get(Condition); });
 			results.push_back(async.get());
