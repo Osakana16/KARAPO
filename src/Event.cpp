@@ -1239,9 +1239,18 @@ namespace karapo::event {
 
 		// イベント呼出
 		DYNAMIC_COMMAND(Call final) {
-			std::wstring event_name;
+			std::wstring event_name{};
+			inline static error::ErrorContent *event_not_found_error{};
 		public:
-			DYNAMIC_COMMAND_CONSTRUCTOR(Call) {}
+			DYNAMIC_COMMAND_CONSTRUCTOR(Call) {
+				if (event_not_found_error == nullptr)
+					event_not_found_error = error::UserErrorHandler::MakeError(
+						event::Manager::Instance().error_class,
+						L"指定されたイベントが見つかりません。",
+						MB_OK | MB_ICONERROR,
+						1
+					);
+			}
 
 			~Call() noexcept final {}
 
@@ -1258,11 +1267,12 @@ namespace karapo::event {
 				}
 				if (event_name.empty()) [[unlikely]]
 					goto name_error;
-
-				{
+				else {
 					ReplaceFormat(&event_name);
 					Event* e = Program::Instance().event_manager.GetEvent(event_name);
-					if (!params.empty()) {
+					if (e == nullptr)
+						goto event_error;
+					else if (!params.empty()) {
 						for (int i = 0; i < e->param_names.size(); i++) {
 							auto value = params[i + 1];
 							auto& newvar = Program::Instance().var_manager.MakeNew(event_name + std::wstring(L".") + e->param_names[i]);
@@ -1276,8 +1286,11 @@ namespace karapo::event {
 					}
 					Program::Instance().event_manager.Call(event_name);
 					StandardCommand::Execute();
-					return;
 				}
+				return;
+			event_error:
+				event::Manager::Instance().error_handler.SendLocalError(event_not_found_error, L"コマンド名: call/呼出");
+				goto end_of_function;
 			name_error:
 				event::Manager::Instance().error_handler.SendLocalError(empty_name_error, L"コマンド名: call/呼出");
 				goto end_of_function;
