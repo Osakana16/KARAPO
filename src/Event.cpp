@@ -4222,6 +4222,8 @@ namespace karapo::event {
 			}
 		}
 
+		error_handler.ShowLocalError(4);
+
 		while (!dead.empty()) {
 			events.erase(dead.front());
 			dead.pop();
