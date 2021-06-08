@@ -2332,6 +2332,7 @@ namespace karapo::event {
 										context.erase(it--);
 										context.insert(it, tmp);
 										context.erase(it++);
+										tmp.clear();
 									} else if (tmp == L"<>" || tmp == L"=>" || tmp == L"=<") {
 										// ˆµ‚¤‰‰ŽZŽq‚Å‚Í‚È‚¢‚Ì‚ÅˆêŽž•Û‘¶—p‚ð––½B
 										tmp.clear();
