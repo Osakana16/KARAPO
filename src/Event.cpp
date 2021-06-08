@@ -4045,7 +4045,7 @@ namespace karapo::event {
 		void Generate(const std::wstring& Path) noexcept {
 			CharCode cc;
 			char* plain_text;
-			ReadWTextFile((Path + L".ges").c_str(), &plain_text, &cc);
+			ReadWTextFile(Path.c_str(), &plain_text, &cc);
 			std::wstring sentence;
 			switch (cc) {
 				case CharCode::CP932:
