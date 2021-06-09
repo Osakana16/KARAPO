@@ -36,6 +36,8 @@ namespace karapo::event {
 				executing_name.pop_back();
 				if (auto pos = executing_name.rfind(L'\n'); pos != executing_name.npos)
 					executing_name = executing_name.substr(pos);
+				if (auto pos = executing_name.find(L'\n'); pos != executing_name.npos)
+					executing_name.erase(executing_name.begin());
 				auto var = Program::Instance().var_manager.Get<false>(executing_name + L'.' + str);
 				if (var.type() == typeid(std::wstring)) {
 					*sentence = begin + std::any_cast<std::wstring>(var) + end;
