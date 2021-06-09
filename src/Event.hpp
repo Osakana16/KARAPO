@@ -63,6 +63,7 @@ namespace karapo::event {
 		std::unordered_map<std::wstring, Event> events;
 		// イベントを生成する。
 		std::unordered_map<std::wstring, Event> GenerateEvent(const std::wstring&) noexcept;
+		void OnLoad() noexcept;
 
 		error::ErrorContent *call_error{};
 
