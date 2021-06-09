@@ -2177,14 +2177,14 @@ namespace karapo::event {
 	// イベントのコマンド実行クラス
 	class Manager::CommandExecuter final {
 	public:
-		CommandExecuter(std::list<CommandTree>* commands) {
+		CommandExecuter(const std::list<CommandTree>* commands) {
 			if (commands->empty())
 				return;
 
 			Program::Instance().var_manager.MakeNew(L"of_state") = 1;
 			// ここから、コマンド実行。
 			{
-				CommandTree *executing = &commands->front();
+				const CommandTree *executing = &commands->front();
 				const CommandTree *goal = &commands->back();
 				while (executing != nullptr) {
 					executing->command->Execute();
