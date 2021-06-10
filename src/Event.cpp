@@ -64,31 +64,9 @@ namespace karapo::event {
 			}
 		};
 
-		// 普通のコマンド
-		// executed変数により、実行云々の情報を管理する。
-		class StandardCommand : public Command {
-			bool executed = false;	// 実行したか否か。
-		public:
-			void Execute() override {
-				executed = true;
-			}
-
-			void Reset() noexcept override {
-				executed = false;
-			}
-
-			bool Executed() const noexcept override {
-				return executed;
-			}
-
-			bool IsUnnecessary() const noexcept override {
-				return Executed();
-			}
-		};
-
 		// 動的コマンド向け抽象クラス。
 		// 引数をコマンド実行時に読み込む為のメンバ関数を持つ。
-		class DynamicCommand : public StandardCommand {
+		class DynamicCommand : public Command {
 			// 読み込む予定の引数名。
 			std::vector<std::wstring> param_names{};
 		protected:
@@ -248,13 +226,11 @@ namespace karapo::event {
 
 			void Execute(const std::wstring& Var_Name) noexcept {
 				Program::Instance().var_manager.MakeNew(varname) = value;
-				StandardCommand::Execute();
 			}
 
 			void Execute() override {
 				if (CheckParams()) {
 					Program::Instance().var_manager.MakeNew(varname) = value;
-					StandardCommand::Execute();
 				}
 			}
 		};
@@ -323,7 +299,6 @@ namespace karapo::event {
 					Program::Instance().var_manager.MakeNew(L"__assignable") = name[1];
 					Program::Instance().var_manager.MakeNew(L"__calculated") = result;
 				}
-				StandardCommand::Execute();
 			}
 		};
 
@@ -349,7 +324,6 @@ namespace karapo::event {
 					value = GetParam(0);
 				}
 				Program::Instance().event_manager.NewCaseTarget(value);
-				StandardCommand::Execute();
 			}
 		};
 
@@ -386,7 +360,6 @@ namespace karapo::event {
 					}
 				}
 				Program::Instance().var_manager.Get<false>(L"of_state") = (int)Program::Instance().event_manager.Evalute(mode, value);
-				StandardCommand::Execute();
 			}
 		};
 
@@ -401,7 +374,6 @@ namespace karapo::event {
 
 			void Execute() override {
 				Program::Instance().var_manager.Get<false>(L"of_state") = (int)!std::any_cast<int>(Program::Instance().var_manager.Get<false>(L"of_state"));
-				StandardCommand::Execute();
 			}
 		};
 
@@ -415,11 +387,6 @@ namespace karapo::event {
 
 			void Execute() final {
 				Program::Instance().event_manager.FreeCase();
-				StandardCommand::Execute();
-			}
-
-			bool IgnoreCondition() const noexcept final {
-				return true;
 			}
 		};
 
@@ -474,7 +441,6 @@ namespace karapo::event {
 				}
 				image->Load(path.c_str());
 				Program::Instance().entity_manager.Register(image);
-				StandardCommand::Execute();
 				return;
 
 			lack_error:
@@ -503,7 +469,6 @@ namespace karapo::event {
 					goto name_error;
 				Program::Instance().var_manager.MakeNew(var_name) = animation::Animation();
 				Program::Instance().var_manager.MakeNew(var_name + L".frame") = animation::FrameRef();
-				StandardCommand::Execute();
 				return;
 			name_error:
 				event::Manager::Instance().error_handler.SendLocalError(empty_name_error, L"コマンド名: animation/アニメ");
@@ -551,7 +516,6 @@ namespace karapo::event {
 						image = Program::Instance().engine.LoadImage(image_path);
 						anime.PushBack(image);
 						frame.InitFrame(anime.Begin(), anime.End());
-						StandardCommand::Execute();
 					}
 				}
 				return;
@@ -589,7 +553,6 @@ namespace karapo::event {
 					else {
 						std::any_cast<animation::FrameRef&>(frame_var)++;
 						auto frame = std::any_cast<animation::FrameRef&>(frame_var);
-						StandardCommand::Execute();
 					}
 				}
 				return;
@@ -621,7 +584,6 @@ namespace karapo::event {
 						goto type_error;
 					else {
 						std::any_cast<animation::FrameRef&>(frame_var)--;
-						StandardCommand::Execute();
 					}
 				}
 				return;
@@ -689,7 +651,6 @@ namespace karapo::event {
 				}
 				Program::Instance().engine.CopyImage(&path, position, length);
 				Program::Instance().var_manager.Get<false>(variable_name) = path;
-				StandardCommand::Execute();
 				return;
 
 			lack_error:
@@ -731,7 +692,6 @@ namespace karapo::event {
 				ReplaceFormat(&path);
 				music->Load(path);
 				Program::Instance().entity_manager.Register(music);
-				StandardCommand::Execute();
 				return;
 
 			lack_error:
@@ -785,7 +745,6 @@ namespace karapo::event {
 				ReplaceFormat(&path);
 				sound->Load(path);
 				Program::Instance().entity_manager.Register(sound);
-				StandardCommand::Execute();
 				return;
 			lack_error:
 				event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error, L"コマンド名: Sound/効果音");
@@ -867,7 +826,6 @@ namespace karapo::event {
 				}
 
 				Program::Instance().entity_manager.Register(button);
-				StandardCommand::Execute();
 				return;
 			lack_error:
 				event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error, L"コマンド名: Button/ボタン");
@@ -922,7 +880,6 @@ namespace karapo::event {
 					text = std::make_shared<karapo::entity::Text>(name, WorldVector{ x, y });
 				}
 				Program::Instance().entity_manager.Register(text);
-				StandardCommand::Execute();
 				return;
 			lack_error:
 				event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error, L"コマンド名: text/文章");
@@ -973,7 +930,6 @@ namespace karapo::event {
 				wchar_t str[10000];
 				Program::Instance().engine.GetString(pos, str, length);
 				*var = std::wstring(str);
-				StandardCommand::Execute();
 				return;
 			lack_error:
 				event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error, L"コマンド名: input/入力");
@@ -1041,7 +997,7 @@ namespace karapo::event {
 							ent->Teleport(move);
 						else
 							goto entity_error;
-						StandardCommand::Execute();
+
 					}
 					return;
 				entity_error:
@@ -1106,7 +1062,7 @@ namespace karapo::event {
 					} else {
 						Program::Instance().entity_manager.Kill(entity_name);
 					}
-					StandardCommand::Execute();
+					
 					return;
 				name_error:
 					event::Manager::Instance().error_handler.SendLocalError(empty_name_error, L"コマンド名: kill/殺害");
@@ -1124,7 +1080,7 @@ namespace karapo::event {
 		}
 
 		// キー入力毎のコマンド割当
-		class Bind final : public StandardCommand {
+		class Bind final : public DynamicCommand {
 			std::wstring key_name{}, command_sentence{};
 		public:
 			Bind(const std::wstring& Key_Name, const std::wstring& Command_Sentence) noexcept {
@@ -1136,7 +1092,7 @@ namespace karapo::event {
 		};
 
 		// コマンドの別名
-		class Alias : public StandardCommand {
+		class Alias : public DynamicCommand {
 			std::wstring newone, original;
 		public:
 			Alias(std::wstring s1, std::wstring s2) noexcept {
@@ -1191,7 +1147,7 @@ namespace karapo::event {
 				ReplaceFormat(&layer_name);
 				ReplaceFormat(&kind_name);
 				Program::Instance().canvas.ApplyFilter(layer_name, kind_name, potency);
-				StandardCommand::Execute();
+				
 				return;
 			name_error:
 				event::Manager::Instance().error_handler.SendLocalError(empty_name_error, L"コマンド名: filter/フィルター");
@@ -1207,7 +1163,7 @@ namespace karapo::event {
 			}
 		};
 
-		class DLLCommand : public StandardCommand {
+		class DLLCommand : public DynamicCommand {
 		protected:
 			std::wstring dll_name;
 		public:
@@ -1225,7 +1181,7 @@ namespace karapo::event {
 			
 			void Execute() final {
 				Program::Instance().dll_manager.Load(dll_name);
-				StandardCommand::Execute();
+				
 			}
 		};
 
@@ -1235,7 +1191,7 @@ namespace karapo::event {
 
 			void Execute() final {
 				Program::Instance().dll_manager.Detach(dll_name);
-				StandardCommand::Execute();
+				
 			}
 		};
 
@@ -1287,7 +1243,7 @@ namespace karapo::event {
 						}
 					}
 					Program::Instance().event_manager.Call(event_name);
-					StandardCommand::Execute();
+					
 				}
 				return;
 			event_error:
@@ -1333,7 +1289,7 @@ namespace karapo::event {
 
 				ReplaceFormat(&file_name);
 				Program::Instance().event_manager.ImportEvent(file_name);
-				StandardCommand::Execute();
+				
 				return;
 			name_error:
 				event::Manager::Instance().error_handler.SendLocalError(empty_name_error, L"コマンド名: import/取込");
@@ -1375,7 +1331,7 @@ namespace karapo::event {
 
 				ReplaceFormat(&file_name);
 				Program::Instance().event_manager.RequestEvent(file_name);
-				StandardCommand::Execute();
+				
 				return;
 			name_error:
 				event::Manager::Instance().error_handler.SendLocalError(empty_name_error, L"コマンド名: load/読込");
@@ -1456,7 +1412,7 @@ namespace karapo::event {
 						} else
 							goto kind_not_found_error;
 
-						StandardCommand::Execute();
+
 					}
 					return;
 				kind_not_found_error:
@@ -1504,7 +1460,7 @@ namespace karapo::event {
 
 					ReplaceFormat(&layer_name);
 					Program::Instance().canvas.SelectLayer(layer_name);
-					StandardCommand::Execute();
+					
 					return;
 				name_error:
 					event::Manager::Instance().error_handler.SendLocalError(empty_name_error, L"コマンド名: selectlayer/レイヤー選択");
@@ -1558,7 +1514,6 @@ namespace karapo::event {
 							goto entity_error;
 
 						Program::Instance().canvas.SetBasis(ent, layer_name);
-						StandardCommand::Execute();
 					}
 					return;
 				entity_error:
@@ -1611,7 +1566,7 @@ namespace karapo::event {
 					} else {
 						Program::Instance().canvas.DeleteLayer(name);
 					}
-					StandardCommand::Execute();
+					
 					return;
 				name_error:
 					event::Manager::Instance().error_handler.SendLocalError(empty_name_error, L"コマンド名: deletelayer/レイヤー削除");
@@ -1652,7 +1607,7 @@ namespace karapo::event {
 						goto name_error;
 					ReplaceFormat(&name);
 					Program::Instance().canvas.Show(name);
-					StandardCommand::Execute();
+					
 					return;
 				name_error:
 					event::Manager::Instance().error_handler.SendLocalError(empty_name_error, L"コマンド名: showlayer/レイヤー表示");
@@ -1693,7 +1648,7 @@ namespace karapo::event {
 						goto name_error;
 					ReplaceFormat(&name);
 					Program::Instance().canvas.Hide(name);
-					StandardCommand::Execute();
+					
 					return;
 				name_error:
 					event::Manager::Instance().error_handler.SendLocalError(empty_name_error, L"コマンド名: hidelayer/レイヤー非表示");
@@ -1855,7 +1810,7 @@ namespace karapo::event {
 							SendAssignError(value[0]);
 						}
 					}
-					StandardCommand::Execute();
+					
 				}
 			};
 
@@ -1883,7 +1838,7 @@ namespace karapo::event {
 							SendAssignError(Is_Only_Int, cal);
 						}
 					}
-					StandardCommand::Execute();
+					
 				}
 			};
 
@@ -1910,7 +1865,7 @@ namespace karapo::event {
 							SendAssignError(Is_Only_Int, cal);
 						}
 					}
-					StandardCommand::Execute();
+					
 				}
 			};
 
@@ -1937,7 +1892,7 @@ namespace karapo::event {
 							SendAssignError(Is_Only_Int, cal);
 						}
 					}
-					StandardCommand::Execute();
+					
 				}
 			};
 
@@ -1964,7 +1919,7 @@ namespace karapo::event {
 							SendAssignError(Is_Only_Int, cal);
 						}
 					}
-					StandardCommand::Execute();
+					
 				}
 			};
 
@@ -2005,7 +1960,7 @@ namespace karapo::event {
 							SendAssignError(Is_Only_Int, cal);
 						}
 					}
-					StandardCommand::Execute();
+					
 				}
 			};
 
@@ -2071,7 +2026,7 @@ namespace karapo::event {
 							SendBitLogicError(L"演算: ビット論理和\n", Is_Int);
 						}
 					}
-					StandardCommand::Execute();
+					
 				}
 			};
 
@@ -2097,7 +2052,7 @@ namespace karapo::event {
 							SendBitLogicError(L"演算: ビット論理積\n", Is_Int);
 						}
 					}
-					StandardCommand::Execute();
+					
 				}
 			};
 
@@ -2124,7 +2079,7 @@ namespace karapo::event {
 							SendBitLogicError(L"演算: ビット排他的論理和\n", Is_Int);
 						}
 					}
-					StandardCommand::Execute();
+					
 				}
 			};
 
@@ -2152,14 +2107,14 @@ namespace karapo::event {
 							SendBitLogicError(L"演算: ビット論理否定\n", { false, true });
 						}
 					}
-					StandardCommand::Execute();
+					
 				}
 			};
 		}
 
 		namespace hidden {
 			// Entityが関わる全てのManagerを更新
-			class UpdateEntity final : public StandardCommand {
+			class UpdateEntity final : public DynamicCommand {
 			public:
 				UpdateEntity() noexcept {}
 				~UpdateEntity() noexcept final {}
@@ -2168,7 +2123,7 @@ namespace karapo::event {
 					Program::Instance().entity_manager.Update();
 					Program::Instance().canvas.Update();
 
-					StandardCommand::Execute();
+					
 				}
 			};
 		}
@@ -4352,7 +4307,7 @@ namespace karapo::event {
 	}
 
 	void command::Alias::Execute() {
-		StandardCommand::Execute();
+		
 	}
 
 	void command::Bind::Execute() {
@@ -4370,6 +4325,6 @@ namespace karapo::event {
 		Program::Instance().engine.BindKey(key_name, [Event_Name]() {
 			Program::Instance().event_manager.Call(Event_Name);
 		});
-		StandardCommand::Execute();
+		
 	}
 }
