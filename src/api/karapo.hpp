@@ -140,19 +140,6 @@ namespace karapo {
 
 			// コマンドを実行する。
 			virtual void Execute() = 0;
-
-			// コマンドの状態をリセットする。
-			virtual void Reset() noexcept = 0;
-
-			// 実行し終えたかどうか。
-			virtual bool Executed() const noexcept = 0;
-
-			// コマンドが不要になったかどうかを表す。
-			// trueを返す場合、再実行してはいけない事を意味する。
-			virtual bool IsUnnecessary() const noexcept = 0;
-
-			// 条件分岐の結果にかかわらず、強制的に実行すべきコマンドかを返す。
-			virtual bool IgnoreCondition() const noexcept { return false; }
 		};
 
 		using CommandPtr = std::unique_ptr<Command>;
