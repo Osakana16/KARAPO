@@ -364,6 +364,13 @@ namespace karapo {
 		.DeleteLayerByIndex = [](const int Index) { return Program::Instance().canvas.DeleteLayer(Index); },
 		.DeleteLayerByName = [](const std::wstring& Name) { return Program::Instance().canvas.DeleteLayer(Name); },
 		.GetLayerInfo = [](const int Index) { return Program::Instance().canvas.GetLayerInfo(Index); },
+		.MakeErrorClass = [](const wchar_t *Error_Title) { return error::UserErrorHandler::MakeErrorClass(Error_Title); },
+		.MakeError = [](error::ErrorClass* error_class, const wchar_t* Error_Message, const int MB_Type, const unsigned Level) {
+			return error::UserErrorHandler::MakeError(error_class, Error_Message, MB_Type, Level);
+		},
+		.SendGlobalError = [](error::ErrorContent* error_content, const std::wstring& Sub_Sentence, void(*func)(const int)) {
+			error::UserErrorHandler::SendGlobalError(error_content, Sub_Sentence, func);
+		},
 		.RegisterEntity = [](std::shared_ptr<Entity> entity) { Program::Instance().entity_manager.Register(entity); },
 		.RegisterEntityByLayerName = [](std::shared_ptr<Entity> entity, const std::wstring& Layer_Name) { Program::Instance().entity_manager.Register(entity, Layer_Name); },
 		.KillEntity = [](const std::wstring& Name) { Program::Instance().entity_manager.Kill(Name); },

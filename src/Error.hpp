@@ -3,11 +3,6 @@
 */
 #pragma once
 namespace karapo::error {
-	// エラーのグループ
-	struct ErrorClass;
-	// エラーの内容
-	struct ErrorContent;
-
 	// ユーザのエラーを扱うクラス。
 	class UserErrorHandler {
 		using ErrorElement = std::list<std::tuple<ErrorContent*, std::wstring, void(*)(const int)>>;

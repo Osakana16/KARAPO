@@ -117,6 +117,15 @@ namespace karapo {
 		virtual void Teleport(WorldVector) = 0;
 	};
 
+	namespace error {
+		// エラーのグループ
+		struct ErrorClass;
+		// エラーの内容
+		struct ErrorContent;
+		// ユーザのエラーを扱うクラス。
+		class UserErrorHandler;
+	}
+
 	namespace variable {
 		static constexpr const wchar_t* const Managing_Var_Name = L"__管理中変数";
 		static constexpr const wchar_t* const Managing_Entity_Name = L"__管理中キャラ";
@@ -206,6 +215,12 @@ namespace karapo {
 		std::function<void(const int)> DeleteLayerByIndex;
 		std::function<void(const std::wstring&)> DeleteLayerByName;
 		std::function<std::wstring(const int)> GetLayerInfo;
+		
+		// - Error系 -
+
+		error::ErrorClass* (*MakeErrorClass)(const wchar_t* Error_Title) = nullptr;
+		error::ErrorContent* (*MakeError)(error::ErrorClass*, const wchar_t* Error_Message, const int MB_Type, const unsigned Level) = nullptr;
+		void (*SendGlobalError)(error::ErrorContent*, const std::wstring&, void(*)(const int)) = nullptr;
 
 		// - Entity系 -
 
