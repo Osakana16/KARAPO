@@ -9,9 +9,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\Animation.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="src\Canvas.cpp">
       <Filter>src</Filter>
     </ClCompile>
@@ -42,11 +39,11 @@
     <ClCompile Include="src\Error.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\api\Animation.cpp">
+      <Filter>src\api</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\Animation.hpp">
-      <Filter>src</Filter>
-    </ClInclude>
     <ClInclude Include="src\Canvas.hpp">
       <Filter>src</Filter>
     </ClInclude>
@@ -73,6 +70,9 @@
     </ClInclude>
     <ClInclude Include="src\Error.hpp">
       <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\api\Animation.hpp">
+      <Filter>src\api</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -36,6 +36,11 @@ namespace karapo {
 	using Rect = RECT;
 	using Point = POINT;
 
+	namespace animation {
+		class Animation;
+		class FrameRef;
+	}
+
 	namespace resource {
 		enum class Resource : int { Invalid = -1 };
 

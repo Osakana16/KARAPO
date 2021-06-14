@@ -22,8 +22,8 @@
 #undef max
 
 #include "api/karapo.hpp"
+#include "api/Animation.hpp"
 #include "Util.hpp"
-#include "Animation.hpp"
 #include "Error.hpp"
 #include "Entity.hpp"
 #include "Event.hpp"

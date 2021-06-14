@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\Animation.cpp" />
+    <ClCompile Include="src\api\Animation.cpp" />
     <ClCompile Include="src\api\karapo.cpp" />
     <ClCompile Include="src\api\kio.cpp" />
     <ClCompile Include="src\Canvas.cpp" />
@@ -37,7 +37,7 @@
     <ClCompile Include="src\util.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\Animation.hpp" />
+    <ClInclude Include="src\api\Animation.hpp" />
     <ClInclude Include="src\api\karapo.hpp" />
     <ClInclude Include="src\api\kio.hpp" />
     <ClInclude Include="src\Canvas.hpp" />
