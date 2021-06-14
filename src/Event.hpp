@@ -80,7 +80,7 @@ namespace karapo::event {
 		// 座標からイベントを実行する。
 		void ExecuteEvent(const WorldVector) noexcept;
 		// イベント名からイベントを実行する。
-		void Call(const std::wstring&) noexcept;
+		bool Call(const std::wstring&) noexcept;
 		//
 		void Update() noexcept;
 

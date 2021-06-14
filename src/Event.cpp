@@ -1242,8 +1242,9 @@ namespace karapo::event {
 								newvar = std::any_cast<std::wstring>(value);
 						}
 					}
-					Program::Instance().event_manager.Call(event_name);
-					
+					if (!Program::Instance().event_manager.Call(event_name)) {
+						goto event_error;
+					}
 				}
 				return;
 			event_error:
@@ -4210,7 +4211,7 @@ namespace karapo::event {
 		}
 	}
 
-	void Manager::Call(const std::wstring& EName) noexcept {
+	bool Manager::Call(const std::wstring& EName) noexcept {
 		auto candidate = events.find(EName);
 		if (candidate != events.end()) {
 			auto event_name = std::any_cast<std::wstring>(Program::Instance().var_manager.Get<false>(variable::Executing_Event_Name));	
@@ -4218,10 +4219,9 @@ namespace karapo::event {
 			CommandExecuter cmd_executer(&candidate->second.commands);
 			event_name.erase(event_name.find(EName + L"\n"));
 			Program::Instance().var_manager.Get<false>(variable::Executing_Event_Name) = event_name;
-		} else {
-			error_handler.SendLocalError(call_error, L"ƒCƒxƒ“ƒg–¼: " + EName);
-			return;
+			return true;
 		}
+		return false;
 	}
 
 	void Manager::NewCaseTarget(std::any tv) {
