@@ -240,7 +240,7 @@ namespace karapo {
 	}
 
 	void Canvas::Register(std::shared_ptr<Entity>& d, const std::wstring& Name) {
-		auto it = std::find_if(layers.begin(), layers.end(), [Name](std::unique_ptr<ImageLayer>& layer) { return layer->Name() == Name; });
+		auto it = std::find_if(layers.begin(), layers.end(), FindLayerByName(Name));
 		if (it == layers.end())
 			return;
 
@@ -252,14 +252,14 @@ namespace karapo {
 	}
 
 	void Canvas::SelectLayer(const std::wstring& Name) noexcept {
-		auto it = std::find_if(layers.begin(), layers.end(), [Name](std::unique_ptr<ImageLayer>& layer) { return layer->Name() == Name; });
+		auto it = std::find_if(layers.begin(), layers.end(), FindLayerByName(Name));
 		if (it != layers.end()) {
 			selecting_layer = it;
 		}
 	}
 
 	bool Canvas::DeleteLayer(const std::wstring& Name) noexcept {
-		auto layer = std::find_if(layers.begin(), layers.end(), [Name](std::unique_ptr<ImageLayer>& layer) { return layer->Name() == Name; });
+		auto layer = std::find_if(layers.begin(), layers.end(), FindLayerByName(Name));
 		if (layer == layers.end())
 			return false;
 
@@ -270,7 +270,7 @@ namespace karapo {
 		const std::wstring&& Selecting_Name = (selecting_layer != layers.end() ? (*selecting_layer)->Name() : L"");
 		layers.erase(layer);
 		if (!Selecting_Name.empty())
-			selecting_layer = std::find_if(layers.begin(), layers.end(), [&Selecting_Name](std::unique_ptr<ImageLayer>& candidate) { return Selecting_Name == candidate->Name(); });
+			selecting_layer = std::find_if(layers.begin(), layers.end(), FindLayerByName(Selecting_Name));
 		return true;
 	}
 
@@ -286,12 +286,12 @@ namespace karapo {
 		const std::wstring&& Selecting_Name = (selecting_layer != layers.end() ? (*selecting_layer)->Name() : L"");
 		layers.erase(layers.begin() + Index);
 		if (!Selecting_Name.empty())
-			selecting_layer = std::find_if(layers.begin(), layers.end(), [&Selecting_Name](std::unique_ptr<ImageLayer>& candidate) { return Selecting_Name == candidate->Name(); });
+			selecting_layer = std::find_if(layers.begin(), layers.end(), FindLayerByName(Selecting_Name));
 		return true;
 	}
 
 	void Canvas::SetBasis(std::shared_ptr<Entity>& base, const std::wstring& Layer_Name) {
-		auto it = std::find_if(layers.begin(), layers.end(), [Layer_Name](std::unique_ptr<ImageLayer>& layer) { return layer->Name() == Layer_Name; });
+		auto it = std::find_if(layers.begin(), layers.end(), FindLayerByName(Layer_Name));
 		if (it == layers.end())
 			return;
 		static_cast<RelativeLayer*>(it->get())->SetBase(base);
@@ -306,27 +306,27 @@ namespace karapo {
 	}
 
 	void Canvas::Show(const std::wstring& Name) noexcept {
-		auto it = std::find_if(layers.begin(), layers.end(), [Name](std::unique_ptr<ImageLayer>& layer) { return layer->Name() == Name; });
+		auto it = std::find_if(layers.begin(), layers.end(), FindLayerByName(Name));
 		if (it != layers.end())
 			(*it)->Show();
 	}
 
 	void Canvas::Hide(const std::wstring& Name) noexcept {
-		auto it = std::find_if(layers.begin(), layers.end(), [Name](std::unique_ptr<ImageLayer>& layer) { return layer->Name() == Name; });
+		auto it = std::find_if(layers.begin(), layers.end(), FindLayerByName(Name));
 		if (it != layers.end())
 			(*it)->Hide();
 	}
 
 	void Canvas::ApplyFilter(const std::wstring& Name, const std::wstring& Filter_Name, const int Potency) {
 		FilterMaker filter_maker(Potency);
-		auto it = std::find_if(layers.begin(), layers.end(), [Name](std::unique_ptr<ImageLayer>& layer) { return layer->Name() == Name; });
+		auto it = std::find_if(layers.begin(), layers.end(), FindLayerByName(Name));
 		if (it != layers.end())
 			(*it)->SetFilter(filter_maker.Generate(Filter_Name));
 	}
 
 	bool Canvas::CreateLayer(std::unique_ptr<ImageLayer> layer, const int Index) {
 		if (layer == nullptr ||
-			std::find_if(layers.begin(), layers.end(), [&layer](std::unique_ptr<ImageLayer>& candidate) { return layer->Name() == candidate->Name(); }) != layers.end())
+			std::find_if(layers.begin(), layers.end(), FindLayerByName(layer)) != layers.end())
 		{
 			if (!layers.empty() && (Index < 0 || Index >= layers.size()))
 				return false;
@@ -334,7 +334,7 @@ namespace karapo {
 		const std::wstring&& Selecting_Name = (!layers.empty() && selecting_layer != layers.end() ? (*selecting_layer)->Name() : L"");
 		layers.insert(layers.begin() + Index, std::move(layer));
 		if (!Selecting_Name.empty())
-			selecting_layer = std::find_if(layers.begin(), layers.end(), [&Selecting_Name](std::unique_ptr<ImageLayer>& candidate) { return Selecting_Name == candidate->Name(); });
+			selecting_layer = std::find_if(layers.begin(), layers.end(), FindLayerByName(Selecting_Name));
 		return true;
 	}
 

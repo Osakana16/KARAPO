@@ -62,6 +62,20 @@ namespace karapo {
 
 		// ‘€ì‘ÎÛ‚ÌƒŒƒCƒ„[
 		Layers::iterator selecting_layer{};
+
+		template<typename T>
+		static std::function<bool(const std::unique_ptr<ImageLayer>&)> FindLayerByName(const T& Findable) noexcept {
+			if constexpr (std::is_same_v<std::wstring, T>) {
+				return [&Findable](const std::unique_ptr<ImageLayer>& layer) noexcept -> bool {
+					return layer->Name() == Findable;
+				};
+			} else if constexpr (std::is_same_v<std::unique_ptr<ImageLayer>, T>) {
+				return [&Findable](const std::unique_ptr<ImageLayer>& layer) noexcept -> bool {
+					return layer->Name() == Findable->Name();
+				};
+			} else
+				static_assert(0);
+		}
 	public:
 		void Update() noexcept;
 		void Register(std::shared_ptr<Entity>&),
