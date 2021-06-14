@@ -142,7 +142,7 @@ namespace karapo {
 		inline void Frame();
 		Program() = default;
 		~Program() = default;
-		std::vector<event::EventEditor> editors;
+		std::list<event::EventEditor> editors{};
 	public:
 		static inline Program& Instance() noexcept {
 			static Program instance;
