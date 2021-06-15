@@ -69,6 +69,8 @@ namespace karapo {
 			} else
 				static_assert(0);
 		}
+
+		bool IsIndexValid(const int) const noexcept;
 	public:
 		void Update() noexcept;
 		void Register(std::shared_ptr<Entity>&),

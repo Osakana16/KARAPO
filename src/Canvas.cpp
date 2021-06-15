@@ -227,7 +227,7 @@ namespace karapo {
 	}
 
 	void Canvas::Register(std::shared_ptr<Entity>& d, const int Index) {
-		if (Index < 0 || Index >= layers.size())
+		if (!IsIndexValid(Index))
 			return;
 
 		layers[Index]->Register(d);
@@ -242,6 +242,9 @@ namespace karapo {
 	}
 
 	void Canvas::SelectLayer(const int Index) noexcept {
+		if (!IsIndexValid(Index))
+			return;
+
 		selecting_layer = layers.begin() + Index;
 	}
 
@@ -269,7 +272,7 @@ namespace karapo {
 	}
 
 	bool Canvas::DeleteLayer(const int Index) noexcept {
-		if (layers.empty() || Index < 0 || Index >= layers.size())
+		if (!IsIndexValid(Index))
 			return false;
 
 		if (selecting_layer != layers.end() && (*selecting_layer)->Name() == (*(layers.begin() + Index))->Name())
@@ -292,10 +295,16 @@ namespace karapo {
 	}
 
 	void Canvas::Show(const int Index) noexcept {
+		if (!IsIndexValid(Index))
+			return;
+
 		layers[Index]->Show();
 	}
 
 	void Canvas::Hide(const int Index) noexcept {
+		if (!IsIndexValid(Index))
+			return;
+
 		layers[Index]->Hide();
 	}
 
@@ -349,7 +358,7 @@ namespace karapo {
 	}
 
 	std::wstring Canvas::GetLayerInfo(const int Index) {
-		if (Index >= layers.size()) {
+		if (!IsIndexValid(Index)) {
 			return L"";
 		}
 
@@ -358,5 +367,9 @@ namespace karapo {
 		sen += std::wstring(layers[Index]->KindName()) + L':';		// Ží—Þ–¼
 		sen += std::to_wstring(Index);								// —v‘fˆÊ’u
 		return sen;
+	}
+
+	bool Canvas::IsIndexValid(const int Index) const noexcept {
+		return (!layers.empty() && Index >= 0 && Index < layers.size());
 	}
 }
