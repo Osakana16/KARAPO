@@ -119,12 +119,16 @@ namespace karapo::entity {
 		// 管理中の数を返す。
 		size_t Size() const noexcept;
 		// Entityを殺す。
-		void Kill(const std::wstring& name) noexcept;
+		void Kill(const std::wstring& Entity_Name) noexcept;
+		// 該当する名前のEntityをChunkから除外する。
+		void Remove(const std::shared_ptr<Entity>& Target) noexcept;
 	};
 
 	// Entityを管理するクラス。
 	class Manager final : private Singleton {
-		std::vector<Chunk> chunks;
+		std::unordered_set<std::wstring> freezable_entity_kind{};
+		std::vector<Chunk> chunks{};	// Entityを更新するチャンク。
+		Chunk glacial_chunk{};			// Entityを更新しないチャンク。
 
 		error::UserErrorHandler error_handler{};
 		error::ErrorClass *entity_error_class{};
@@ -148,6 +152,15 @@ namespace karapo::entity {
 
 		// Entityを管理下に置く。
 		void Register(std::shared_ptr<Entity>) noexcept, Register(std::shared_ptr<Entity>, const std::wstring&) noexcept;
+
+		// 該当する名前のEntityを更新対象から外す。
+		bool Freeze(std::shared_ptr<Entity>& target) noexcept;
+		// 該当するEntityの種類を更新対象から外す。
+		bool Freeze(const std::wstring& Entity_Name) noexcept;
+		// 該当する名前のEntityを更新対象にする。
+		bool Defrost(std::shared_ptr<Entity>& target) noexcept;
+		// 該当するEntityの種類を更新対象にする。
+		bool Defrost(const std::wstring& Entity_Name) noexcept;
 
 		static Manager& Instance() noexcept {
 			static Manager manager;

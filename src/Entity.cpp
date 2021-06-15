@@ -28,7 +28,7 @@ namespace karapo::entity {
 			if (result != nullptr)
 				return result;
 		}
-		return nullptr;
+		return glacial_chunk.Get(Name);
 	}
 
 	std::shared_ptr<Entity> Manager::GetEntity(std::function<bool(std::shared_ptr<Entity>)> Condition) const noexcept {
@@ -38,13 +38,14 @@ namespace karapo::entity {
 			results.push_back(async.get());
 		}
 		auto it = std::find_if(results.begin(), results.end(), [](std::shared_ptr<Entity> se) { return se != nullptr; });
-		return (it != results.end() ? *it : nullptr);
+		return (it != results.end() ? *it : glacial_chunk.Get(Condition));
 	}
 
 	void Manager::Kill(const std::wstring& Name) noexcept {
 		for (auto& group : chunks) {
 			group.Kill(Name);
 		}
+		glacial_chunk.Kill(Name);
 	}
 
 	// Entityの登録
@@ -58,7 +59,12 @@ namespace karapo::entity {
 		}
 
 		if (GetEntity(entity->Name()) == nullptr) {
-			auto candidate = chunks.begin();
+			Chunk *candidate{};
+			if (freezable_entity_kind.find(entity->KindName()) != freezable_entity_kind.end()) {
+				candidate = &glacial_chunk;
+			} else {
+				candidate = &chunks.front();
+			}
 			candidate->Register(entity);
 			auto var = std::any_cast<std::wstring>(Program::Instance().var_manager.Get<false>(variable::Managing_Entity_Name));
 			var += std::wstring(entity->Name()) + L"=" + std::wstring(entity->KindName()) + L"\n";
@@ -79,6 +85,40 @@ namespace karapo::entity {
 			amount += group.Size();
 		}
 		return amount;
+	}
+
+	// 該当する名前のEntityをchunksから除外し、glacial_chunkに移動する。
+	bool Manager::Freeze(std::shared_ptr<Entity>& target) noexcept {
+		if (target != nullptr) {
+			glacial_chunk.Register(target);
+			for (auto& chunk : chunks) {
+				chunk.Remove(target);
+			}
+			return true;
+		}
+		return false;
+	}
+
+
+	bool Manager::Freeze(const std::wstring& Entity_Name) noexcept {
+		freezable_entity_kind.insert(Entity_Name);
+		return true;
+	}
+
+	// 該当する名前のEntityをglacial_chunkから外し、chunksに移動する。
+	bool Manager::Defrost(std::shared_ptr<Entity>& target) noexcept {
+		if (target != nullptr) {
+			glacial_chunk.Remove(target);
+			chunks.begin()->Register(target);
+			return true;
+		}
+		return false;
+	}
+
+	// 該当する名前のEntityをglacial_chunkから外し、chunksに移動する。
+	bool Manager::Defrost(const std::wstring& Entity_Name) noexcept {
+		freezable_entity_kind.erase(Entity_Name);
+		return true;
 	}
 
 	void Chunk::Update() noexcept {
@@ -135,6 +175,12 @@ namespace karapo::entity {
 		auto ent = entities.find(Name);
 		if (ent != entities.end())
 			ent->second->Delete();
+	}
+
+	// 該当する名前のEntityをChunkの更新対象から外す。
+	// Entity::Deleteは実行しない為、ゲームから削除するものではない。
+	void Chunk::Remove(const std::shared_ptr<Entity>& Target) noexcept {
+		entities.erase(Target->Name());
 	}
 
 	WorldVector Object::Origin() const noexcept {
