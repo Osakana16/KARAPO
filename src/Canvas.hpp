@@ -33,8 +33,8 @@ namespace karapo {
 
 		virtual void Execute() noexcept;
 		// リソースを登録する。
-		virtual void Register(std::shared_ptr<Entity>) noexcept;
-		bool IsRegistered(std::shared_ptr<Entity>) const noexcept;
+		virtual void Register(std::shared_ptr<Entity>&) noexcept;
+		bool IsRegistered(const std::shared_ptr<Entity>&) const noexcept;
 		inline auto Name() const noexcept { return name; }
 		void Show() noexcept { hide = true; }
 		void Hide() noexcept { hide = false; }

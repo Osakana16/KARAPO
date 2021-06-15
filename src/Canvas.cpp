@@ -117,19 +117,19 @@ namespace karapo {
 			Draw();
 	}
 
-	void Layer::Register(std::shared_ptr<Entity> d) noexcept {
-		if (IsRegistered(d))
+	void Layer::Register(std::shared_ptr<Entity>& drawable_entity) noexcept {
+		if (IsRegistered(drawable_entity))
 			return;
 
 		auto& var = Program::Instance().var_manager.Get<false>(Name() + L".__ŠÇ—’†");
 		auto str = std::any_cast<std::wstring>(var);
-		str += std::wstring(d->Name()) + L'\\';
+		str += std::wstring(drawable_entity->Name()) + L'\\';
 		var = str;
-		drawing.push_back(d);
+		drawing.push_back(drawable_entity);
 	}
 
-	bool Layer::IsRegistered(std::shared_ptr<Entity> d) const noexcept {
-		return std::find(drawing.begin(), drawing.end(), d) != drawing.end();
+	bool Layer::IsRegistered(const std::shared_ptr<Entity>& Drawable_Entity) const noexcept {
+		return std::find(drawing.begin(), drawing.end(), Drawable_Entity) != drawing.end();
 	}
 
 	/**
