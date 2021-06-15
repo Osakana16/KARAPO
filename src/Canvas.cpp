@@ -113,7 +113,8 @@ namespace karapo {
 				var = str;
 			}
 		}
-		Draw();
+		if (IsShowing())
+			Draw();
 	}
 
 	void Layer::Register(std::shared_ptr<Entity> d) {
@@ -199,7 +200,6 @@ namespace karapo {
 
 		void Draw() override {
 			auto& p = Program::Instance();
-			std::vector<std::shared_ptr<Entity>> deadmen;
 			p.engine.ChangeTargetScreen(Screen);
 			p.engine.ClearScreen();
 			for (auto drawer : drawing) {
@@ -218,7 +218,7 @@ namespace karapo {
 namespace karapo {
 	void Canvas::Update() noexcept {
 		for (auto& layer : layers) {
-			if (layer->IsShowing()) layer->Execute();
+			layer->Execute();
 		}
 	}
 

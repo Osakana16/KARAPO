@@ -22,6 +22,7 @@ namespace karapo {
 		TargetRender screen;
 		std::wstring name{};	// ÉåÉCÉÑÅ[ñº
 		bool hide = false;
+		bool IsShowing() const noexcept { return !hide; }
 	protected:
 		std::vector<std::shared_ptr<Entity>> drawing{};
 		Layer(const std::wstring& Layer_Name) noexcept;
@@ -37,7 +38,6 @@ namespace karapo {
 		inline auto Name() const noexcept { return name; }
 		void Show() noexcept { hide = true; }
 		void Hide() noexcept { hide = false; }
-		bool IsShowing() const noexcept { return !hide; }
 
 		virtual void Draw() = 0;
 		virtual const wchar_t* KindName() const noexcept = 0;
