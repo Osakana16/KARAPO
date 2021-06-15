@@ -20,26 +20,19 @@ namespace karapo {
 	// レイヤー
 	class Layer {
 		TargetRender screen;
-	protected:
-		Layer();
-		const TargetRender& Screen = screen;
-		std::unique_ptr<Filter> filter;
-	public:
-		// リソースを登録する。
-		virtual void Register(std::shared_ptr<Entity>) = 0;
-		virtual void Execute() = 0;
-		void SetFilter(std::unique_ptr<Filter>);
-	};
-
-	class ImageLayer : public Layer {
 		std::wstring name{};	// レイヤー名
 		bool hide = false;
 	protected:
-		std::vector<std::shared_ptr<Entity>> drawing;
+		std::vector<std::shared_ptr<Entity>> drawing{};
+		Layer(const std::wstring& Layer_Name) noexcept;
+		const TargetRender& Screen = screen;
+		std::unique_ptr<Filter> filter;
 	public:
-		ImageLayer(const std::wstring& lname);
-		virtual void Execute() override;
-		void Register(std::shared_ptr<Entity>);
+		void SetFilter(std::unique_ptr<Filter>);
+
+		virtual void Execute();
+		// リソースを登録する。
+		virtual void Register(std::shared_ptr<Entity>);
 		bool IsRegistered(std::shared_ptr<Entity>) const noexcept;
 		inline auto Name() const noexcept { return name; }
 		void Show() noexcept { hide = true; }
@@ -53,7 +46,7 @@ namespace karapo {
 	// キャンバス
 	class Canvas final : private Singleton {
 		// レイヤーのポインタ
-		using LayerPtr = std::unique_ptr<ImageLayer>;
+		using LayerPtr = std::unique_ptr<Layer>;
 		// レイヤー
 		using Layers = std::vector<LayerPtr>;
 		// 管理中レイヤー
@@ -64,13 +57,13 @@ namespace karapo {
 		Layers::iterator selecting_layer{};
 
 		template<typename T>
-		static std::function<bool(const std::unique_ptr<ImageLayer>&)> FindLayerByName(const T& Findable) noexcept {
+		static std::function<bool(const std::unique_ptr<Layer>&)> FindLayerByName(const T& Findable) noexcept {
 			if constexpr (std::is_same_v<std::wstring, T>) {
-				return [&Findable](const std::unique_ptr<ImageLayer>& layer) noexcept -> bool {
+				return [&Findable](const std::unique_ptr<Layer>& layer) noexcept -> bool {
 					return layer->Name() == Findable;
 				};
-			} else if constexpr (std::is_same_v<std::unique_ptr<ImageLayer>, T>) {
-				return [&Findable](const std::unique_ptr<ImageLayer>& layer) noexcept -> bool {
+			} else if constexpr (std::is_same_v<std::unique_ptr<Layer>, T>) {
+				return [&Findable](const std::unique_ptr<Layer>& layer) noexcept -> bool {
 					return layer->Name() == Findable->Name();
 				};
 			} else
@@ -85,7 +78,7 @@ namespace karapo {
 		// レイヤーを作成し、追加する。
 		bool CreateRelativeLayer(const std::wstring&), CreateAbsoluteLayer(const std::wstring&);
 		bool CreateRelativeLayer(const std::wstring&, const int), CreateAbsoluteLayer(const std::wstring&, const int);
-		bool CreateLayer(std::unique_ptr<ImageLayer>, const int);
+		bool CreateLayer(std::unique_ptr<Layer>, const int);
 		bool DeleteLayer(const std::wstring&) noexcept, DeleteLayer(const int) noexcept;
 		// 操作対象のレイヤーを選択する。
 		void SelectLayer(const int) noexcept, SelectLayer(const std::wstring&) noexcept;

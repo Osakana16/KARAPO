@@ -84,20 +84,17 @@ namespace karapo {
 		return filters.at(Filter_Name)();
 	}
 
-	Layer::Layer() {
+	Layer::Layer(const std::wstring& Layer_Name) noexcept {
 		screen = Program::Instance().engine.MakeScreen();
+		name = Layer_Name;
+		Program::Instance().var_manager.MakeNew(Name() + L".__管理中") = std::wstring(L"");
 	}
 
 	void Layer::SetFilter(std::unique_ptr<Filter> new_filter) {
 		filter = std::move(new_filter);
 	}
 
-	ImageLayer::ImageLayer(const std::wstring& lname) : Layer() { 
-		name = lname;
-		Program::Instance().var_manager.MakeNew(Name() + L".__管理中") = std::wstring(L"");
-	}
-
-	void ImageLayer::Execute() {
+	void Layer::Execute() {
 		auto& p = Program::Instance();
 		{
 			std::vector<std::shared_ptr<Entity>> dels{};
@@ -119,7 +116,7 @@ namespace karapo {
 		Draw();
 	}
 
-	void ImageLayer::Register(std::shared_ptr<Entity> d) {
+	void Layer::Register(std::shared_ptr<Entity> d) {
 		if (IsRegistered(d))
 			return;
 
@@ -130,7 +127,7 @@ namespace karapo {
 		drawing.push_back(d);
 	}
 
-	bool ImageLayer::IsRegistered(std::shared_ptr<Entity> d) const noexcept {
+	bool Layer::IsRegistered(std::shared_ptr<Entity> d) const noexcept {
 		return std::find(drawing.begin(), drawing.end(), d) != drawing.end();
 	}
 
@@ -138,10 +135,10 @@ namespace karapo {
 	* 相対位置型レイヤー
 	* baseを中心として周囲の描写を行うレイヤー。
 	*/
-	class RelativeLayer : public ImageLayer {
+	class RelativeLayer : public Layer {
 		std::shared_ptr<Entity> base = nullptr;
 	public:
-		inline RelativeLayer(const std::wstring& lname) : ImageLayer(lname) {
+		inline RelativeLayer(const std::wstring& lname) : Layer(lname) {
 			SetFilter(std::make_unique<filter::None>());
 			Program::Instance().var_manager.MakeNew(lname + L".ベース") = std::wstring(L"");
 		}
@@ -151,7 +148,7 @@ namespace karapo {
 		}
 
 		void Execute() override {
-			ImageLayer::Execute();
+			Layer::Execute();
 			if (base != nullptr && base->CanDelete()) {
 				Program::Instance().var_manager.Get<false>(Name() + L".ベース") = std::wstring(L"");
 				base = nullptr;
@@ -194,9 +191,9 @@ namespace karapo {
 	/**
 	* 絶対位置型レイヤー
 	*/
-	class AbsoluteLayer : public ImageLayer {
+	class AbsoluteLayer : public Layer {
 	public:
-		inline AbsoluteLayer(const std::wstring& lname) : ImageLayer(lname) {
+		inline AbsoluteLayer(const std::wstring& lname) : Layer(lname) {
 			SetFilter(std::make_unique<filter::None>());
 		}
 
@@ -324,7 +321,7 @@ namespace karapo {
 			(*it)->SetFilter(filter_maker.Generate(Filter_Name));
 	}
 
-	bool Canvas::CreateLayer(std::unique_ptr<ImageLayer> layer, const int Index) {
+	bool Canvas::CreateLayer(std::unique_ptr<Layer> layer, const int Index) {
 		if (layer == nullptr ||
 			std::find_if(layers.begin(), layers.end(), FindLayerByName(layer)) != layers.end())
 		{
