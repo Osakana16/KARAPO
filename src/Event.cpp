@@ -1077,6 +1077,101 @@ namespace karapo::event {
 					return;
 				}
 			};
+
+			// EntityまたはEntityの種類の更新凍結。
+			DYNAMIC_COMMAND(Freeze final) {
+				std::wstring candidate_name{};
+			public:
+				Freeze(const std::wstring& ename) noexcept : Freeze(std::vector<std::wstring>{}) {
+					candidate_name = ename;
+				}
+
+				DYNAMIC_COMMAND_CONSTRUCTOR(Freeze) {}
+
+				~Freeze() final {}
+
+				void Execute() override {
+					if (MustSearch()) {
+						auto candidate_name_param = GetParam(0);
+						if (candidate_name_param.type() != typeid(std::wstring)) {
+							goto type_error;
+						}
+						candidate_name = std::any_cast<std::wstring>(candidate_name_param);
+					}
+
+					if (candidate_name.empty()) {
+						goto name_error;
+					} else {
+						auto ent = karapo::entity::Manager::Instance().GetEntity(candidate_name);
+						if (ent != nullptr) {
+							karapo::entity::Manager::Instance().Freeze(ent);
+						} else {
+							karapo::entity::Manager::Instance().Freeze(candidate_name);
+						}
+					}
+					goto end_of_function;
+				name_error:
+					event::Manager::Instance().error_handler.SendLocalError(empty_name_error, L"コマンド名: freeze/凍結");
+					goto end_of_function;
+				lack_error:
+					event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error, L"コマンド名: freeze/凍結");
+					goto end_of_function;
+				type_error:
+					event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error, L"コマンド名: freeze/凍結");
+					goto end_of_function;
+				end_of_function:
+					return;
+				}
+			};
+
+			// EntityまたはEntityの種類の更新再開。
+			DYNAMIC_COMMAND(Defrost final) {
+				std::wstring candidate_name{};
+			public:
+				Defrost(const std::wstring& ename) noexcept : Defrost(std::vector<std::wstring>{}) {
+					candidate_name = ename;
+				}
+
+				DYNAMIC_COMMAND_CONSTRUCTOR(Defrost) {}
+
+				~Defrost() final {}
+
+				void Execute() override {
+					if (MustSearch()) {
+						auto candidate_name_param = GetParam(0);
+						if (candidate_name_param.type() != typeid(std::wstring)) {
+							goto type_error;
+						}
+						candidate_name = std::any_cast<std::wstring>(candidate_name_param);
+					}
+					if (candidate_name.empty()) {
+						goto name_error;
+					} else {
+						if (candidate_name.empty()) {
+							goto name_error;
+						} else {
+							auto ent = karapo::entity::Manager::Instance().GetEntity(candidate_name);
+							if (ent != nullptr) {
+								karapo::entity::Manager::Instance().Defrost(ent);
+							} else {
+								karapo::entity::Manager::Instance().Defrost(candidate_name);
+							}
+						}
+					}
+					goto end_of_function;
+				name_error:
+					event::Manager::Instance().error_handler.SendLocalError(empty_name_error, L"コマンド名: defrost/解凍");
+					goto end_of_function;
+				lack_error:
+					event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error, L"コマンド名: defrost/解凍");
+					goto end_of_function;
+				type_error:
+					event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error, L"コマンド名: defrost/解凍");
+					goto end_of_function;
+				end_of_function:
+					return;
+				}
+			};
 		}
 
 		// キー入力毎のコマンド割当
@@ -2592,6 +2687,60 @@ namespace karapo::event {
 									case 4:
 										return KeywordInfo::ParamResult::Lack;
 									case 5:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"freeze"] =
+						words[L"凍結"] = [](const std::vector<std::wstring>& params) -> KeywordInfo
+					{
+						return {
+							.Result = [&]() noexcept -> CommandPtr {
+								const auto [Name, Name_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								if (Default_ProgramInterface.IsStringType(Name_Type)) {
+									return std::make_unique<command::entity::Freeze>(Name);
+								} else {
+									return std::make_unique<command::entity::Freeze>(params);
+								}
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+										return KeywordInfo::ParamResult::Lack;
+									case 1:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"defrost"] =
+						words[L"解凍"] = [](const std::vector<std::wstring>& params) -> KeywordInfo
+					{
+						return {
+							.Result = [&]() noexcept -> CommandPtr {
+								const auto [Name, Name_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								if (Default_ProgramInterface.IsStringType(Name_Type)) {
+									return std::make_unique<command::entity::Defrost>(Name);
+								} else {
+									return std::make_unique<command::entity::Defrost>(params);
+								}
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+										return KeywordInfo::ParamResult::Lack;
+									case 1:
 										return KeywordInfo::ParamResult::Maximum;
 									default:
 										return KeywordInfo::ParamResult::Excess;
