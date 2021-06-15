@@ -29,17 +29,17 @@ namespace karapo {
 		const TargetRender& Screen = screen;
 		std::unique_ptr<Filter> filter;
 	public:
-		void SetFilter(std::unique_ptr<Filter>);
+		void SetFilter(std::unique_ptr<Filter>) noexcept;
 
-		virtual void Execute();
+		virtual void Execute() noexcept;
 		// リソースを登録する。
-		virtual void Register(std::shared_ptr<Entity>);
+		virtual void Register(std::shared_ptr<Entity>) noexcept;
 		bool IsRegistered(std::shared_ptr<Entity>) const noexcept;
 		inline auto Name() const noexcept { return name; }
 		void Show() noexcept { hide = true; }
 		void Hide() noexcept { hide = false; }
 
-		virtual void Draw() = 0;
+		virtual void Draw() noexcept = 0;
 		virtual const wchar_t* KindName() const noexcept = 0;
 	};
 

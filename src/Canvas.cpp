@@ -90,11 +90,11 @@ namespace karapo {
 		Program::Instance().var_manager.MakeNew(Name() + L".__管理中") = std::wstring(L"");
 	}
 
-	void Layer::SetFilter(std::unique_ptr<Filter> new_filter) {
+	void Layer::SetFilter(std::unique_ptr<Filter> new_filter) noexcept {
 		filter = std::move(new_filter);
 	}
 
-	void Layer::Execute() {
+	void Layer::Execute() noexcept {
 		auto& p = Program::Instance();
 		{
 			std::vector<std::shared_ptr<Entity>> dels{};
@@ -117,7 +117,7 @@ namespace karapo {
 			Draw();
 	}
 
-	void Layer::Register(std::shared_ptr<Entity> d) {
+	void Layer::Register(std::shared_ptr<Entity> d) noexcept {
 		if (IsRegistered(d))
 			return;
 
@@ -139,7 +139,7 @@ namespace karapo {
 	class RelativeLayer : public Layer {
 		std::shared_ptr<Entity> base = nullptr;
 	public:
-		inline RelativeLayer(const std::wstring& lname) : Layer(lname) {
+		inline RelativeLayer(const std::wstring& lname) noexcept : Layer(lname) {
 			SetFilter(std::make_unique<filter::None>());
 			Program::Instance().var_manager.MakeNew(lname + L".ベース") = std::wstring(L"");
 		}
@@ -148,7 +148,7 @@ namespace karapo {
 			Program::Instance().var_manager.Delete(Name() + L".ベース");
 		}
 
-		void Execute() override {
+		void Execute() noexcept override {
 			Layer::Execute();
 			if (base != nullptr && base->CanDelete()) {
 				Program::Instance().var_manager.Get<false>(Name() + L".ベース") = std::wstring(L"");
@@ -166,7 +166,7 @@ namespace karapo {
 		* 描写
 		* (0,0) <= base_origin <= (W, H)を満たすように画面描写を行う。
 		*/
-		void Draw() override {
+		void Draw() noexcept override {
 			static WorldVector old_origin = { 0.0, 0.0 };
 			auto& p = Program::Instance();
 			const ScreenVector Screen_Size { p.WindowSize().first, p.WindowSize().second };
@@ -198,7 +198,7 @@ namespace karapo {
 			SetFilter(std::make_unique<filter::None>());
 		}
 
-		void Draw() override {
+		void Draw() noexcept override {
 			auto& p = Program::Instance();
 			p.engine.ChangeTargetScreen(Screen);
 			p.engine.ClearScreen();
