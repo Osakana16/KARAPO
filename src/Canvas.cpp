@@ -107,10 +107,9 @@ namespace karapo {
 			for (auto ent : dels) {
 				drawing.erase(std::find(drawing.begin(), drawing.end(), ent));
 				auto& var = Program::Instance().var_manager.Get<false>(Name() + L".__ŠÇ—’†");
-				auto str = std::any_cast<std::wstring>(var);
-				auto it = str.find(ent->Name());
-				str.erase(it, it + wcslen(ent->Name()) + 1);
-				var = str;
+				auto& str = std::any_cast<std::wstring&>(var);
+				const auto Position = str.find(ent->Name());
+				str.erase(Position, Position + wcslen(ent->Name()) + 1);
 			}
 		}
 		if (IsShowing())
@@ -122,9 +121,7 @@ namespace karapo {
 			return;
 
 		auto& var = Program::Instance().var_manager.Get<false>(Name() + L".__ŠÇ—’†");
-		auto str = std::any_cast<std::wstring>(var);
-		str += std::wstring(drawable_entity->Name()) + L'\\';
-		var = str;
+		std::any_cast<std::wstring&>(var) += std::wstring(drawable_entity->Name()) + L'\\';
 		drawing.push_back(drawable_entity);
 	}
 
