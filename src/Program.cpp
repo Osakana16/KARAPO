@@ -5,9 +5,6 @@
 
 namespace karapo {
 	void Program::OnInit() {
-		if (engine.Failed())
-			throw;
-
 		engine.OnInit(this);
 		canvas.CreateAbsoluteLayer(L"デフォルトレイヤー");
 		canvas.SelectLayer(L"デフォルトレイヤー");
@@ -157,6 +154,9 @@ namespace karapo {
 }
 
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
-	karapo::Program::Instance().OnInit();
-	return karapo::Program::Instance().Main();
+	if (!karapo::Program::Instance().engine.Failed()) {
+		karapo::Program::Instance().OnInit();
+		return karapo::Program::Instance().Main();
+	} else
+		return 1;
 }
