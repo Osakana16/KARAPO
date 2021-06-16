@@ -15,6 +15,16 @@ namespace karapo::entity {
 	}
 
 	void Manager::Update() noexcept {
+		if (!killable_entities.empty()) {
+			for (const auto& Name : killable_entities) {
+				for (auto& group : chunks) {
+					group.Kill(Name);
+				}
+				glacial_chunk.Kill(Name);
+			}
+			killable_entities.clear();
+		}
+
 		for (auto& group : chunks) {
 			std::thread th(&Chunk::Update, &group);
 			th.join();
@@ -42,12 +52,7 @@ namespace karapo::entity {
 	}
 
 	void Manager::Kill(const std::wstring& Name) noexcept {
-		for (auto& group : chunks) {
-			group.Kill(Name);
-		}
-		glacial_chunk.Kill(Name);
-		if (auto ent = GetEntity(Name); ent != nullptr)
-			Program::Instance().canvas.Remove(ent);
+		killable_entities.insert(Name);
 	}
 
 	// Entityの登録
@@ -124,27 +129,8 @@ namespace karapo::entity {
 	}
 
 	void Chunk::Update() noexcept {
-		std::vector<const std::wstring*> deadmen;
 		for (auto& ent : entities) {
-			if (!ent.second->CanDelete())
-				ent.second->Main();
-			else
-				deadmen.push_back(&ent.first);
-		}
-
-		if (!deadmen.empty()) {
-			auto& var = Program::Instance().var_manager.Get<false>(variable::Managing_Entity_Name);
-			auto str = std::any_cast<std::wstring>(var);
-			for (auto& dead : deadmen) {
-				auto pos = str.find(*dead);
-				if (pos != str.npos) {
-					auto name_begin = str.substr(0, pos - 1);
-					auto name_end = str.substr(pos + dead->size());
-					str = name_begin + name_end;
-				}
-				entities.erase(entities.find(*dead));
-			}
-			var = str;
+			ent.second->Main();
 		}
 	}
 
@@ -175,8 +161,18 @@ namespace karapo::entity {
 	// Entityを殺す。
 	void Chunk::Kill(const std::wstring& Name) noexcept {
 		auto ent = entities.find(Name);
-		if (ent != entities.end())
-			ent->second->Delete();
+		if (ent != entities.end()) {
+			auto& var = Program::Instance().var_manager.Get<false>(variable::Managing_Entity_Name);
+			auto& str = std::any_cast<std::wstring&>(var);
+			auto pos = str.find(Name);
+			if (pos != str.npos) {
+				auto name_begin = str.substr(0, pos - 1);
+				auto name_end = str.substr(pos + Name.size());
+				str = name_begin + name_end;
+			}
+			Program::Instance().canvas.Remove(ent->second);
+			entities.erase(ent);
+		}
 	}
 
 	// 該当する名前のEntityをChunkの更新対象から外す。
