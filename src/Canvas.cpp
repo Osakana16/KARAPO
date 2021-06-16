@@ -95,23 +95,6 @@ namespace karapo {
 	}
 
 	void Layer::Execute() noexcept {
-		auto& p = Program::Instance();
-		{
-			std::vector<std::shared_ptr<Entity>> dels{};
-			for (auto& ent : drawing) {
-				if (ent->CanDelete()) {
-					dels.push_back(ent);
-				}
-			}
-
-			for (auto ent : dels) {
-				drawing.erase(std::find(drawing.begin(), drawing.end(), ent));
-				auto& var = Program::Instance().var_manager.Get<false>(Name() + L".__ŠÇ—’†");
-				auto& str = std::any_cast<std::wstring&>(var);
-				const auto Position = str.find(ent->Name());
-				str.erase(Position, Position + wcslen(ent->Name()) + 1);
-			}
-		}
 		if (IsShowing())
 			Draw();
 	}
@@ -127,6 +110,17 @@ namespace karapo {
 
 	bool Layer::IsRegistered(const std::shared_ptr<Entity>& Drawable_Entity) const noexcept {
 		return std::find(drawing.begin(), drawing.end(), Drawable_Entity) != drawing.end();
+	}
+
+	void Layer::Remove(const std::shared_ptr<Entity>& Target_Entity) noexcept {
+		auto iterator = std::find(drawing.begin(), drawing.end(), Target_Entity);
+		if (iterator != drawing.end()) {
+			drawing.erase(iterator);
+			auto& var = Program::Instance().var_manager.Get<false>(Name() + L".__ŠÇ—’†");
+			auto& str = std::any_cast<std::wstring&>(var);
+			const auto Position = str.find(Target_Entity->Name());
+			str.erase(Position, Position + wcslen(Target_Entity->Name()) + 1);
+		}
 	}
 
 	/**
@@ -371,5 +365,11 @@ namespace karapo {
 
 	bool Canvas::IsIndexValid(const int Index) const noexcept {
 		return (!layers.empty() && Index >= 0 && Index < layers.size());
+	}
+
+	void Canvas::Remove(const std::shared_ptr<Entity>& Target_Entity) noexcept {
+		for (auto& layer : layers) {
+			layer->Remove(Target_Entity);
+		}
 	}
 }

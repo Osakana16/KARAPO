@@ -35,6 +35,9 @@ namespace karapo {
 		// リソースを登録する。
 		virtual void Register(std::shared_ptr<Entity>&) noexcept;
 		bool IsRegistered(const std::shared_ptr<Entity>&) const noexcept;
+		void Remove(const std::shared_ptr<Entity>&) noexcept;
+
+
 		inline auto Name() const noexcept { return name; }
 		void Show() noexcept { hide = true; }
 		void Hide() noexcept { hide = false; }
@@ -90,6 +93,8 @@ namespace karapo {
 
 		void Show(const int) noexcept, Hide(const int) noexcept,
 			Show(const std::wstring&) noexcept, Hide(const std::wstring&) noexcept;
+
+		void Remove(const std::shared_ptr<Entity>&) noexcept;
 
 		std::wstring GetLayerInfo(const int);
 

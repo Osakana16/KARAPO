@@ -46,6 +46,8 @@ namespace karapo::entity {
 			group.Kill(Name);
 		}
 		glacial_chunk.Kill(Name);
+		if (auto ent = GetEntity(Name); ent != nullptr)
+			Program::Instance().canvas.Remove(ent);
 	}
 
 	// Entityの登録
