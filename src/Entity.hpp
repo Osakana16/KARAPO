@@ -31,7 +31,7 @@ namespace karapo::entity {
 		void Delete() override;
 		void Draw(WorldVector) override;
 		void Load(const std::wstring&), Load(animation::FrameRef*);
-		WorldVector Length() const noexcept;
+		WorldVector Length() const noexcept final;
 	};
 
 	// 音Entityクラス
@@ -51,6 +51,7 @@ namespace karapo::entity {
 		void Delete() override;
 		void Play(const PlayType) noexcept;
 		void Load(const std::wstring&);
+		WorldVector Length() const noexcept final { return { 0.0, 0.0 }; }
 	};
 
 	class Text : public Object {
@@ -69,6 +70,7 @@ namespace karapo::entity {
 		void Delete() override;
 
 		void Print(const std::wstring&);
+		WorldVector Length() const noexcept final { return { 0.0, 0.0 }; }
 	};
 
 	class Mouse : public Object {
@@ -82,6 +84,7 @@ namespace karapo::entity {
 		bool CanDelete() const noexcept final { return can_delete; }
 		void Delete() final { can_delete = true; }
 		void Draw(WorldVector) final {}
+		WorldVector Length() const noexcept final { return { 0.0, 0.0 }; }
 	};
 
 	// ボタン

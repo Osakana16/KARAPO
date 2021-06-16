@@ -106,7 +106,7 @@ namespace karapo {
 		// Entity実行関数
 		virtual int Main() = 0;
 		// 自身の位置
-		virtual WorldVector Origin() const noexcept = 0;
+		virtual WorldVector Origin() const noexcept = 0, Length() const noexcept = 0;
 		// 自身の名前
 		virtual const wchar_t* Name() const noexcept = 0;
 		// 種類名
