@@ -194,6 +194,10 @@ namespace karapo {
 			p.engine.ChangeTargetScreen(Screen);
 			p.engine.ClearScreen();
 			for (auto drawer : drawing) {
+				if (drawer->Origin()[0] + drawer->Length()[0] < 0 || drawer->Origin()[0] > Program::Instance().WindowSize().first ||
+					drawer->Origin()[1] + drawer->Length()[1] < 0 || drawer->Origin()[1] > Program::Instance().WindowSize().second)
+					continue;
+
 				drawer->Draw(WorldVector{ 0.0, 0.0 });
 			}
 			p.engine.ChangeTargetScreen(p.engine.GetBackScreen());
