@@ -144,11 +144,11 @@ namespace karapo {
 		}
 
 		HMODULE Manager::Get(const std::wstring& Name) noexcept {
-			try {
-				return dlls.at(Name).mod;
-			} catch (std::out_of_range&) {
+			auto dll = dlls.find(Name);
+			if (dll != dlls.end())
+				dll->second.mod;
+			else
 				return nullptr;
-			}
 		}
 	}
 }
