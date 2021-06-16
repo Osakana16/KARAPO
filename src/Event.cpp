@@ -1892,16 +1892,19 @@ namespace karapo::event {
 				void Execute() final {
 					if (Extract(1)) {
 						auto var_name = std::any_cast<std::wstring>(GetParam<true>(0));
-						auto* v = &Program::Instance().var_manager.Get<false>(var_name);
-						if (v->type() != typeid(std::nullptr_t)) [[likely]] {
+						auto& v = Program::Instance().var_manager.Get<false>(var_name);
+						if (v.type() != typeid(std::nullptr_t)) [[likely]] {
 							if (value[0].type() == typeid(int))
-								*v = std::any_cast<int>(value[0]);
+								v = std::any_cast<int>(value[0]);
 							else if (value[0].type() == typeid(Dec))
-								*v = std::any_cast<Dec>(value[0]);
+								v = std::any_cast<Dec>(value[0]);
 							else if (value[0].type() == typeid(std::wstring)) {
 								auto txt = std::any_cast<std::wstring>(value[0]);
 								ReplaceFormat(&txt);
-								*v = txt;
+								v = txt;
+							} else if (value[0].type() == typeid(std::reference_wrapper<animation::FrameRef>)) {
+								int i = 0;
+								v = std::any_cast<std::reference_wrapper<animation::FrameRef>&>(value[0]);
 							}
 						} else {
 							SendAssignError(value[0]);
