@@ -1848,16 +1848,8 @@ namespace karapo::event {
 						var_name = std::any_cast<std::wstring>(GetParam<true>(0));
 						for (int i = 0; i < Length; i++) {
 							value[i] = GetParam(i + 1);
-							if (value[i].type() == typeid(std::nullptr_t)) [[unlikely]]
-								goto lack_error;
-							else if (value[i].type() != typeid(int) && value[i].type() != typeid(Dec) && value[i].type() != typeid(std::wstring)) [[unlikely]]
-								goto type_error;
-
-							if (value[i].type() == typeid(int))
-								value[i] = std::any_cast<int>(value[i]);
-							else if (value[i].type() == typeid(Dec))
-								value[i] = std::any_cast<Dec>(value[i]);
-							else {
+							// 型チェック
+							if (value[i].type() == typeid(std::wstring)) {
 								value[i] = std::any_cast<std::wstring>(GetParam<true>(i + 1));
 								auto tmp = std::any_cast<std::wstring>(value[i]);
 								auto [iv, ip] = ToInt(tmp.c_str());
@@ -1866,9 +1858,18 @@ namespace karapo::event {
 									value[i] = iv;
 								else if (wcslen(fp) <= 0)
 									value[i] = fv;
-								else
-									value[i] = tmp;
-							}
+							} else if (value[i].type() == typeid(int) || value[i].type() == typeid(Dec)) {
+								continue;
+							} else if (value[i].type() == typeid(animation::FrameRef)) {
+								value[i] = std::ref(
+									std::any_cast<animation::FrameRef&>(
+										Program::Instance().var_manager.Get<false>(std::any_cast<std::wstring>(GetParam<true>(i + 1)))
+									)
+								);
+							} else if (value[i].type() == typeid(std::nullptr_t)) [[unlikely]]
+								goto lack_error;
+							else
+								goto type_error;
 						}
 					}
 					return true;
@@ -1906,7 +1907,7 @@ namespace karapo::event {
 							SendAssignError(value[0]);
 						}
 					}
-					
+
 				}
 			};
 
