@@ -122,12 +122,7 @@ namespace karapo::event {
 						if (auto pos = event_name.find(L'\n'); pos != std::wstring::npos)
 							event_name.erase(event_name.begin());
 
-						auto& global_var = Program::Instance().var_manager.Get<false>(param_names[Index]);
-						auto& local_var = Program::Instance().var_manager.Get<false>(event_name + L'.' + param_names[Index]);
-						if (local_var.type() != typeid(std::nullptr_t))
-							return local_var;
-						else
-							return global_var;	// 
+						return Program::Instance().var_manager.Get<false>(param_names[Index]);
 					}
 				} else {
 					if (Default_ProgramInterface.IsStringType(type) || Default_ProgramInterface.IsNumberType(type))
