@@ -19,17 +19,17 @@ namespace karapo {
 				} else {
 					auto var = vars.find(Var_Name);
 					if (var == vars.end()) {
+						auto event_name = std::any_cast<std::wstring>(Get<false>(variable::Executing_Event_Name));
+						event_name.pop_back();
+						auto pos = event_name.rfind(L'\n');
+						if (pos != std::wstring::npos)
+							event_name = event_name.substr(pos + 1);
+
 						// 変数が見つからなかった場合、
 						// ローカル変数を探す。
-						auto it = Var_Name.find(L'@');
-						if (it != Var_Name.npos) {
-							auto alternative = Var_Name.substr(it + 1);
-							var = vars.find(alternative);
-							if (var == vars.end())
-								var = vars.find(L"null");
-						} else {
+						var = vars.find(event_name + L'@' + Var_Name);
+						if (var == vars.end())
 							var = vars.find(L"null");
-						}
 					}
 					return var->second;
 				}
