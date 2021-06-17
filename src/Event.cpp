@@ -225,12 +225,16 @@ namespace karapo::event {
 			}
 
 			void Execute(const std::wstring& Var_Name) noexcept {
-				Program::Instance().var_manager.MakeNew(varname) = value;
+				Program::Instance().var_manager.MakeNew(Var_Name) = value;
 			}
-
 			void Execute() override {
 				if (CheckParams()) {
-					Program::Instance().var_manager.MakeNew(varname) = value;
+					auto event_name = std::any_cast<std::wstring>(Program::Instance().var_manager.Get<false>(variable::Executing_Event_Name));
+					event_name.pop_back();
+					auto pos = event_name.rfind(L'\n');
+					if (pos != std::wstring::npos)
+						event_name = event_name.substr(pos + 1);
+					Program::Instance().var_manager.MakeNew(event_name + std::wstring(L"@") + varname) = value;
 				}
 			}
 		};
@@ -242,7 +246,6 @@ namespace karapo::event {
 
 			void Execute() override {
 				if (CheckParams()) {
-					varname = varname.substr(varname.find(L'@') + 1);
 					Variable::Execute(varname);
 				}
 			}
