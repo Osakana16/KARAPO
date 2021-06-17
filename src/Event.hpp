@@ -7,9 +7,8 @@ namespace karapo::event {
 	namespace innertype {
 		constexpr const wchar_t *const Number = L"number";			// 数値型(整数または浮動小数点数)
 		constexpr const wchar_t *const String = L"string";			// 文字列型(文字または文字列)
-		constexpr const wchar_t *const Undecided = L"";	// 未決定型
+		constexpr const wchar_t *const Undecided = L"";				// 未決定型
 		constexpr const wchar_t *const None = L"";					// 型無し(変数や特定の記号)
-		constexpr const wchar_t *const Block = L"scope";			// スコープ型({ または })
 	}
 
 	// イベント発生タイプ

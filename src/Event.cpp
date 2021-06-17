@@ -2406,30 +2406,6 @@ namespace karapo::event {
 				}
 			};
 
-			class TypeDeterminer final {
-				Context compiled{};
-			public:
-				TypeDeterminer(Context& context) {
-					while (!context.empty()) {
-						auto&& word = std::move(context.front());
-						if (iswdigit(word[0]) || word[0] == L'-') {
-							word += std::wstring(L":") + innertype::Number;
-						} else if (word[0] == L'\'') {
-							word += std::wstring(L":") + innertype::String;
-							for (size_t pos = word.find(L'\''); pos != std::wstring::npos; pos = word.find(L'\'')) {
-								word.erase(pos, 1);
-							}
-						}
-						compiled.push_back(std::move(word));
-						context.pop_front();
-					}
-				}
-
-				auto Result() noexcept {
-					return std::move(compiled);
-				}
-			};
-
 			// 構文木解析
 			class SyntaxParser final {
 				std::list<Syntax> tree{};
@@ -3968,7 +3944,16 @@ namespace karapo::event {
 										command_name = stack.front();
 										generator_candidate = it->second;
 									} else {
-										command_parameters.push_back(stack.front());
+										auto&& param = stack.front();
+										if (iswdigit(param[0]) || param[0] == L'-') {
+											param += std::wstring(L":") + innertype::Number;
+										} else if (param[0] == L'\'') {
+											param += std::wstring(L":") + innertype::String;
+											for (size_t pos = param.find(L'\''); pos != std::wstring::npos; pos = param.find(L'\'')) {
+												param.erase(pos, 1);
+											}
+										}
+										command_parameters.push_back(param);
 									}
 									stack.pop_front();
 								}
@@ -4131,15 +4116,9 @@ namespace karapo::event {
 				return lexparser.Result();
 			}
 
-			// 型を決定し、その結果を返す。
-			Context DetermineType(Context context) const noexcept {
-				TypeDeterminer type_determiner(context);
-				return type_determiner.Result();
-			}
-
 			// 字句解析と型決定を行い、その結果を返す。
 			Context ParseBasic(const std::wstring& Sentence) const noexcept {
-				return DetermineType(ParseLexical(Sentence));
+				return ParseLexical(Sentence);
 			}
 
 			Parser() {
