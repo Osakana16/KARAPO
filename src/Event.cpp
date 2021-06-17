@@ -242,7 +242,7 @@ namespace karapo::event {
 
 			void Execute() override {
 				if (CheckParams()) {
-					varname = varname.substr(varname.find(L'.') + 1);
+					varname = varname.substr(varname.find(L'@') + 1);
 					Variable::Execute(varname);
 				}
 			}
@@ -1328,7 +1328,7 @@ namespace karapo::event {
 					else if (!params.empty()) {
 						for (int i = 0; i < e->param_names.size(); i++) {
 							auto value = params[i + 1];
-							auto& newvar = Program::Instance().var_manager.MakeNew(event_name + std::wstring(L".") + e->param_names[i]);
+							auto& newvar = Program::Instance().var_manager.MakeNew(event_name + std::wstring(L"@") + e->param_names[i]);
 							if (value.type() == typeid(int))
 								newvar = std::any_cast<int>(value);
 							else if (value.type() == typeid(Dec))

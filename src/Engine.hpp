@@ -19,7 +19,9 @@ namespace karapo {
 				} else {
 					auto var = vars.find(Var_Name);
 					if (var == vars.end()) {
-						auto it = Var_Name.find(L'.');
+						// 変数が見つからなかった場合、
+						// ローカル変数を探す。
+						auto it = Var_Name.find(L'@');
 						if (it != Var_Name.npos) {
 							auto alternative = Var_Name.substr(it + 1);
 							var = vars.find(alternative);
