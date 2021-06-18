@@ -4,12 +4,19 @@
 
 namespace karapo {
 	namespace variable {
+		// 構造体型
+		struct Record final {
+			std::unordered_map<std::wstring, std::any> members{};
+		};
+
 		class Manager final : private Singleton {
 			std::unordered_map<std::wstring, std::any> vars;
 			Manager();
 			~Manager() = default;
+
+			bool IsRecord(const std::wstring&) const noexcept;
 		public:
-			std::any& MakeNew(const std::wstring&);
+			std::any& MakeNew(std::wstring);
 			void Delete(const std::wstring&) noexcept;
 
 			template<bool throw_except>
@@ -17,21 +24,37 @@ namespace karapo {
 				if constexpr (throw_except) {
 					return vars.at(Var_Name);
 				} else {
-					auto var = vars.find(Var_Name);
-					if (var == vars.end()) {
-						auto event_name = std::any_cast<std::wstring>(Get<false>(variable::Executing_Event_Name));
-						event_name.pop_back();
-						auto pos = event_name.rfind(L'\n');
-						if (pos != std::wstring::npos)
-							event_name = event_name.substr(pos + 1);
+					if (IsRecord(Var_Name)) {
+						const auto&& Record_Name = Var_Name.substr(0, Var_Name.find(L'.'));
+						auto var = vars.find(Record_Name);
+						if (var != vars.end()) {
+							const auto&& Member_Name = Var_Name.substr(Var_Name.find(L'.') + 1);
+							auto& record = std::any_cast<Record&>(var->second);
+							auto mvar = record.members.find(Member_Name);
+							if (mvar == record.members.end()) {
+								goto no_member;
+							}
+							return mvar->second;
+						}
+					} else {
+						auto var = vars.find(Var_Name);
+						if (var == vars.end()) {
+							auto event_name = std::any_cast<std::wstring>(Get<false>(variable::Executing_Event_Name));
+							event_name.pop_back();
+							auto pos = event_name.rfind(L'\n');
+							if (pos != std::wstring::npos)
+								event_name = event_name.substr(pos + 1);
 
-						// 変数が見つからなかった場合、
-						// ローカル変数を探す。
-						var = vars.find(event_name + L'@' + Var_Name);
-						if (var == vars.end())
-							var = vars.find(L"null");
+							// 変数が見つからなかった場合、
+							// ローカル変数を探す。
+							var = vars.find(event_name + L'@' + Var_Name);
+							if (var == vars.end())
+								goto no_member;
+						}
+						return var->second;
 					}
-					return var->second;
+				no_member:
+					return vars[L"null"];
 				}
 			}
 

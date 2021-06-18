@@ -80,11 +80,19 @@ namespace karapo {
 			vars[L"__ƒLƒƒƒ‰‘¶İ"] = 1 << 2;					// 
 		}
 
-		std::any& Manager::MakeNew(const std::wstring& Name) {
-			auto var = std::any_cast<std::wstring>(vars[Managing_Var_Name]);
-			var += Name + L"\n";
-			vars[Managing_Var_Name] = var;
-			return vars[Name];
+		std::any& Manager::MakeNew(std::wstring name) {
+			std::any_cast<std::wstring&>(vars[Managing_Var_Name]) += name + L"\n";
+			std::any *candidate = &vars[name];
+
+			size_t pos = name.find(L'.');
+			if (pos != std::wstring::npos) {
+				const auto&& Record_Name = name.substr(0, pos);
+				if (vars.find(Record_Name) == vars.end())
+					vars[Record_Name] = Record();
+				name = name.substr(pos + 1);
+				candidate = &std::any_cast<Record&>(vars[Record_Name]).members[name];
+			}
+			return *candidate;
 		}
 
 		void Manager::Delete(const std::wstring& Name) noexcept {
@@ -95,6 +103,10 @@ namespace karapo {
 				vars[Managing_Var_Name] = var;
 				vars.erase(Name);
 			}
+		}
+
+		bool Manager::IsRecord(const std::wstring& Var_Name) const noexcept {
+			return (Var_Name.find(L'.') != Var_Name.npos);
 		}
 	}
 
