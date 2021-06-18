@@ -465,7 +465,9 @@ namespace karapo::event {
 			void Execute() final {
 				if (var_name.empty())
 					goto name_error;
-				Program::Instance().var_manager.MakeNew(var_name) = animation::Animation();
+
+
+				Program::Instance().var_manager.MakeNew(var_name + L".animation") = animation::Animation();
 				Program::Instance().var_manager.MakeNew(var_name + L".frame") = animation::FrameRef();
 				return;
 			name_error:
@@ -502,7 +504,7 @@ namespace karapo::event {
 				if (var_name.empty() || image_path.empty())
 					goto name_error;
 				else {
-					auto& anime_var = Program::Instance().var_manager.Get<false>(var_name);
+					auto& anime_var = Program::Instance().var_manager.Get<false>(var_name + L".animation");
 					if (anime_var.type() != typeid(animation::Animation))
 						goto type_error;
 					else {
