@@ -158,7 +158,7 @@ namespace karapo::event {
 			std::wstring varname;
 			std::any value;
 		public:
-			Variable(const std::wstring& VName, const std::wstring& Any_Value) noexcept : Variable(std::vector<std::wstring>{}) {
+			Variable(const std::wstring & VName, const std::wstring & Any_Value) noexcept : Variable(std::vector<std::wstring>{}) {
 				varname = VName;
 				auto [iv, ir] = ToInt<int>(Any_Value.c_str());
 				auto [fv, fr] = ToDec<Dec>(Any_Value.c_str());
@@ -209,9 +209,9 @@ namespace karapo::event {
 				}
 				return true;
 
-			// 変数名が書かれていない場合のエラー(=引数が0個)。
+				// 変数名が書かれていない場合のエラー(=引数が0個)。
 			noname_error:
-			// 初期値が指定されていない場合のエラー(=引数が1個)。 
+				// 初期値が指定されていない場合のエラー(=引数が1個)。 
 			novalue_error:
 				event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error, L"コマンド名: var/変数");
 				goto return_failed;
@@ -219,8 +219,11 @@ namespace karapo::event {
 				return false;
 			}
 
-			void Execute(const std::wstring& Var_Name) noexcept {
-				Program::Instance().var_manager.MakeNew(Var_Name) = value;
+			void Execute(const std::wstring & Var_Name) noexcept {
+				if (Var_Name[0] == L'&')
+					Program::Instance().var_manager.MakeNew(Var_Name.substr(1)) = std::ref(value);
+				else
+					Program::Instance().var_manager.MakeNew(Var_Name) = value;
 			}
 			void Execute() override {
 				if (CheckParams()) {
@@ -229,7 +232,11 @@ namespace karapo::event {
 					auto pos = event_name.rfind(L'\n');
 					if (pos != std::wstring::npos)
 						event_name = event_name.substr(pos + 1);
-					Program::Instance().var_manager.MakeNew(event_name + std::wstring(L"@") + varname) = value;
+
+					if (varname[0] == L'&')
+						Execute(L'&' + event_name + std::wstring(L"@") + varname.substr(1));
+					else
+						Execute(event_name + std::wstring(L"@") + varname);
 				}
 			}
 		};
