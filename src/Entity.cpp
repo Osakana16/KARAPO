@@ -281,7 +281,8 @@ namespace karapo::entity {
 	}
 
 	int Sound::Main() {
-		Play();
+		if (play_type == PlayType::Normal || (play_type == PlayType::Loop && !Program::Instance().engine.IsPlayingSound(sound)))
+			Play();
 		return 0;
 	}
 
