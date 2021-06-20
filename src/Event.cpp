@@ -152,6 +152,7 @@ namespace karapo::event {
 			}
 		};
 
+
 		// ïœêî
 		DYNAMIC_COMMAND(Variable) {
 		protected:
@@ -205,6 +206,10 @@ namespace karapo::event {
 							ReplaceFormat(&value_name);
 							value = value_name;
 						}
+					} else {
+						if (varname[0] == L'&') {
+							value = std::ref(Program::Instance().var_manager.Get<false>(std::any_cast<std::wstring>(GetParam<true>(1))));
+						}
 					}
 				}
 				return true;
@@ -220,9 +225,9 @@ namespace karapo::event {
 			}
 
 			void Execute(const std::wstring & Var_Name) noexcept {
-				if (Var_Name[0] == L'&')
-					Program::Instance().var_manager.MakeNew(Var_Name.substr(1)) = std::ref(value);
-				else
+				if (Var_Name[0] == L'&') {
+					Program::Instance().var_manager.MakeNew(Var_Name.substr(1)) = value;
+				} else
 					Program::Instance().var_manager.MakeNew(Var_Name) = value;
 			}
 			void Execute() override {
