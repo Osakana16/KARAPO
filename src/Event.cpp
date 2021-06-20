@@ -727,7 +727,7 @@ namespace karapo::event {
 			}
 
 			DYNAMIC_COMMAND_CONSTRUCTOR(Music) {
-				music = std::make_shared<karapo::entity::Sound>(WorldVector{ 0, 0 });
+				music = std::make_shared<karapo::entity::Sound>(PlayType::Loop, WorldVector{ 0, 0 });
 			}
 
 			~Music() override {}
@@ -765,7 +765,7 @@ namespace karapo::event {
 		public:
 			Sound(const std::wstring & P, const WorldVector & WV) : Sound(std::vector<std::wstring>{}) {
 				path = P;
-				sound = std::make_shared<karapo::entity::Sound>(WV);
+				sound = std::make_shared<karapo::entity::Sound>(PlayType::Normal, WV);
 			}
 
 			DYNAMIC_COMMAND_CONSTRUCTOR(Sound) {}
@@ -801,7 +801,7 @@ namespace karapo::event {
 					else
 						y = (y_param.type() == typeid(Dec) ? std::any_cast<Dec>(y_param) : std::any_cast<int>(y_param));
 
-					sound = std::make_shared<karapo::entity::Sound>(WorldVector{ x, y });
+					sound = std::make_shared<karapo::entity::Sound>(PlayType::Normal, WorldVector{ x, y });
 				}
 				ReplaceFormat(&path);
 				sound->Load(path);

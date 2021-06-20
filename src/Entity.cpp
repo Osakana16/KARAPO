@@ -281,7 +281,7 @@ namespace karapo::entity {
 	}
 
 	int Sound::Main() {
-		Play(PlayType::Normal);
+		Play();
 		return 0;
 	}
 
@@ -293,8 +293,8 @@ namespace karapo::entity {
 		return L"効果音";
 	}
 
-	void Sound::Play(const PlayType pt) noexcept {
-		Program::Instance().engine.PlaySound(sound, pt);
+	void Sound::Play() noexcept {
+		Program::Instance().engine.PlaySound(sound, play_type);
 	}
 
 	void Sound::Load(const std::wstring& Path) {
@@ -303,7 +303,7 @@ namespace karapo::entity {
 	}
 
 	bool Sound::CanDelete() const noexcept {
-		return can_delete || Program::Instance().engine.IsPlayingSound(sound);
+		return can_delete;
 	}
 
 	void Sound::Delete() {
