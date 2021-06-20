@@ -29,7 +29,28 @@ namespace karapo {
 						auto var = vars.find(Record_Name);
 						if (var != vars.end()) {
 							const auto&& Member_Name = Var_Name.substr(Var_Name.find(L'.') + 1);
-							auto& record = std::any_cast<Record&>(var->second);
+							auto& record = (var->second.type() == typeid(Record) ? std::any_cast<Record&>(var->second) : std::any_cast<Record&>(std::any_cast<std::reference_wrapper<std::any>&>(var->second).get()));
+							auto mvar = record.members.find(Member_Name);
+							if (mvar == record.members.end()) {
+								goto no_member;
+							}
+							return mvar->second;
+						} else {
+							// 変数が見つからなかった場合、
+							// ローカル変数を探す。
+
+							auto event_name = std::any_cast<std::wstring>(Get<false>(variable::Executing_Event_Name));
+							event_name.pop_back();
+							auto pos = event_name.rfind(L'\n');
+							if (pos != std::wstring::npos)
+								event_name = event_name.substr(pos + 1);
+
+							var = vars.find(event_name + L'@' + Record_Name);
+							if (var == vars.end())
+								goto no_member;
+
+							const auto&& Member_Name = Var_Name.substr(Var_Name.find(L'.') + 1);
+							auto& record = (var->second.type() == typeid(Record) ? std::any_cast<Record&>(var->second) : std::any_cast<Record&>(std::any_cast<std::reference_wrapper<std::any>&>(var->second).get()));			
 							auto mvar = record.members.find(Member_Name);
 							if (mvar == record.members.end()) {
 								goto no_member;
