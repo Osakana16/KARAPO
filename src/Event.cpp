@@ -1404,15 +1404,22 @@ namespace karapo::event {
 						goto event_error;
 					else if (!params.empty()) {
 						for (int i = 0; i < e->param_names.size(); i++) {
-							auto value = params[i + 1];
+							auto& value = params[i + 1];
 							auto event_param_name = e->param_names[i];
-							auto& newvar = Program::Instance().var_manager.MakeNew(event_name + std::wstring(L"@") + e->param_names[i]);
-							if (value.type() == typeid(int))
-								newvar = std::any_cast<int>(value);
-							else if (value.type() == typeid(Dec))
-								newvar = std::any_cast<Dec>(value);
-							else if (value.type() == typeid(std::wstring))
-								newvar = std::any_cast<std::wstring>(value);
+							if (event_param_name[0] == L'&') {
+								auto& newvar = Program::Instance().var_manager.MakeNew(event_name + std::wstring(L"@") + event_param_name.substr(1));
+								newvar = std::ref(Program::Instance().var_manager.Get<false>(std::any_cast<std::wstring>(GetParam<true>(i))));
+							} else {
+								auto& newvar = Program::Instance().var_manager.MakeNew(event_name + std::wstring(L"@") + event_param_name);
+								if (value.type() == typeid(int))
+									newvar = std::any_cast<int>(value);
+								else if (value.type() == typeid(Dec))
+									newvar = std::any_cast<Dec>(value);
+								else if (value.type() == typeid(std::wstring))
+									newvar = std::any_cast<std::wstring>(value);
+								else if (value.type() == typeid(variable::Record))
+									newvar = std::any_cast<variable::Record>(value);
+							}
 						}
 					}
 					if (!Program::Instance().event_manager.Call(event_name)) {
@@ -1927,6 +1934,7 @@ namespace karapo::event {
 					var_name = std::any_cast<std::wstring>(GetParam<true>(0));
 					for (int i = 0; i < Length; i++) {
 						value[i] = GetParam(i + 1);
+						auto s = std::any_cast<std::wstring>(GetParam<true>(i + 1));
 						// 型チェック
 						if (value[i].type() == typeid(std::wstring)) {
 							value[i] = std::any_cast<std::wstring>(GetParam<true>(i + 1));
