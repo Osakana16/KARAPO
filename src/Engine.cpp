@@ -80,8 +80,8 @@ namespace karapo {
 		return { lx, ly };
 	}
 
-	void Program::Engine::PlaySound(const resource::Resource R, PlayType pt) {
-		DxLib::PlaySoundMem(static_cast<raw::TargetRender>(R), static_cast<raw::TargetRender>(pt));
+	void Program::Engine::PlaySound(const resource::Resource R, PlayType pt, const bool Replay) {
+		DxLib::PlaySoundMem(static_cast<raw::TargetRender>(R), static_cast<raw::TargetRender>(pt), static_cast<int>(!Replay));
 	}
 
 	void Program::Engine::StopSound(const resource::Resource R) noexcept {
@@ -90,6 +90,14 @@ namespace karapo {
 
 	bool Program::Engine::IsPlayingSound(const resource::Resource R) const noexcept {
 		return DxLib::CheckSoundMem(static_cast<raw::TargetRender>(R));
+	}
+
+	int Program::Engine::GetSoundPosition(const resource::Resource Sound_Resource) const noexcept {
+		return DxLib::GetSoundCurrentPosition(static_cast<int>(Sound_Resource));
+	}
+
+	void Program::Engine::SetSoundPosition(const int Position, const resource::Resource Sound_Resource) noexcept {
+		DxLib::SetSoundCurrentPosition(Position, static_cast<int>(Sound_Resource));
 	}
 
 	bool Program::Engine::Failed() const noexcept {

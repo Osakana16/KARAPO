@@ -160,8 +160,10 @@ namespace karapo {
 			void DrawSentence(const std::wstring&, const ScreenVector, const int, const Color = { 255, 255, 255 });
 			std::pair<int, int> GetImageLength(const resource::Image&) const noexcept;
 
-			void PlaySound(const resource::Resource, PlayType), StopSound(const resource::Resource) noexcept;
+			void PlaySound(const resource::Resource, PlayType, const bool = false), StopSound(const resource::Resource) noexcept;
 			bool IsPlayingSound(const resource::Resource) const noexcept;
+			int GetSoundPosition(const resource::Resource) const noexcept;
+			void SetSoundPosition(const int, const resource::Resource) noexcept;
 			
 			TargetRender MakeScreen();
 			void ChangeTargetScreen(TargetRender);
