@@ -2970,7 +2970,7 @@ namespace karapo::event {
 							.Result = [&]() noexcept -> CommandPtr {
 								const auto [Name, Name_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
 								const auto [X, X_Type] = Default_ProgramInterface.GetParamInfo(params[1]);
-								const auto [Y, Y_Type] = Default_ProgramInterface.GetParamInfo(params[1]);
+								const auto [Y, Y_Type] = Default_ProgramInterface.GetParamInfo(params[2]);
 								if (Default_ProgramInterface.IsStringType(Name_Type) &&
 									Default_ProgramInterface.IsNumberType(X_Type) &&
 									Default_ProgramInterface.IsNumberType(Y_Type))
