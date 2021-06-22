@@ -69,9 +69,11 @@ namespace karapo {
 		DxLib::DrawBox(p.left, p.top, p.right, p.bottom, GetColor(c.r, c.g, c.b), fill);
 	}
 
-	void Program::Engine::DrawSentence(const std::wstring& Mes, const ScreenVector O, const int Font_Size, const Color C) {
-		DxLib::SetFontSize(Font_Size);
-		DxLib::DrawString(O[0], O[1], Mes.c_str(), GetColor(C.r, C.g, C.b));
+	void Program::Engine::DrawSentence(const std::wstring& Mes, const ScreenVector O, const resource::Resource Font, const Color C) {
+		if (Font != resource::Resource::Invalid)
+			DxLib::DrawStringToHandle(O[0], O[1], Mes.c_str(), GetColor(C.r, C.g, C.b), static_cast<int>(Font));
+		else
+			DxLib::DrawString(O[0], O[1], Mes.c_str(), GetColor(C.r, C.g, C.b));
 	}
 
 	std::pair<resource::Image::Length, resource::Image::Length> Program::Engine::GetImageLength(const resource::Image& I)  const noexcept {
@@ -374,7 +376,7 @@ namespace karapo {
 		.DrawRect = [](const Rect RC, const Color C, const bool Fill) { Program::Instance().engine.DrawRect(RC, C, Fill); },
 		.DrawRectImage = [](const Rect RC, const resource::Image& Img) { Program::Instance().engine.DrawRect(RC, Img); },
 		.DrawRectScreen = [](const Rect RC, const karapo::TargetRender TR) { Program::Instance().engine.DrawRect(RC, TR); },
-		.DrawSentence = [](const std::wstring& Mes, const ScreenVector O, const int Font_Size, const Color C) { Program::Instance().engine.DrawSentence(Mes, O, Font_Size, C); },
+		.DrawSentence = [](const std::wstring& Mes, const ScreenVector O, const resource::Resource Font, const Color C) { Program::Instance().engine.DrawSentence(Mes, O, Font, C); },
 		.IsPlayingSound = [](const resource::Resource R) -> bool { return Program::Instance().engine.IsPlayingSound(R); },
 		.LoadImage = [](const std::wstring& Path) -> resource::Resource { return Program::Instance().engine.LoadImage(Path); },
 		.LoadSound = [](const std::wstring& Path) -> resource::Resource { return Program::Instance().engine.LoadSound(Path); },

@@ -164,7 +164,7 @@ namespace karapo {
 			void SetBlend(const BlendMode, const int);
 			void DrawLine(int, int, int, int, Color);
 			void DrawRect(Rect, const resource::Image&) noexcept, DrawRect(Rect, const TargetRender) noexcept, DrawRect(Rect, Color, bool fill) noexcept;
-			void DrawSentence(const std::wstring&, const ScreenVector, const int, const Color = { 255, 255, 255 });
+			void DrawSentence(const std::wstring&, const ScreenVector, const resource::Resource, const Color = { 255, 255, 255 });
 			std::pair<int, int> GetImageLength(const resource::Image&) const noexcept;
 
 			void PlaySound(const resource::Resource, PlayType, const bool = false), StopSound(const resource::Resource) noexcept;
