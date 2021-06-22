@@ -2903,8 +2903,8 @@ namespace karapo::event {
 								const auto [X, X_Type] = Default_ProgramInterface.GetParamInfo(params[1]);
 								const auto [Y, Y_Type] = Default_ProgramInterface.GetParamInfo(params[1]);
 								if (Default_ProgramInterface.IsStringType(Name_Type) &&
-									Default_ProgramInterface.IsStringType(X_Type) &&
-									Default_ProgramInterface.IsStringType(Y_Type))
+									Default_ProgramInterface.IsNumberType(X_Type) &&
+									Default_ProgramInterface.IsNumberType(Y_Type))
 								{
 									auto [xv, xp] = ToDec<Dec>(X.c_str());
 									auto [yv, yp] = ToDec<Dec>(Y.c_str());
