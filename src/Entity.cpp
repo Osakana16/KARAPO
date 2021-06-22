@@ -106,7 +106,6 @@ namespace karapo::entity {
 		return false;
 	}
 
-
 	bool Manager::Freeze(const std::wstring& Entity_Name) noexcept {
 		freezable_entity_kind.insert(Entity_Name);
 		return true;
@@ -281,7 +280,7 @@ namespace karapo::entity {
 	}
 
 	int Sound::Main() {
-		if (play_type == PlayType::Normal || (play_type == PlayType::Loop && !Program::Instance().engine.IsPlayingSound(sound)))
+		if (can_play && (play_type == PlayType::Normal || (play_type == PlayType::Loop && !Program::Instance().engine.IsPlayingSound(sound))))
 			Play();
 		return 0;
 	}
@@ -294,8 +293,17 @@ namespace karapo::entity {
 		return L"効果音";
 	}
 
-	void Sound::Play() noexcept {
-		Program::Instance().engine.PlaySound(sound, play_type);
+	void Sound::Play(const int Play_Position) noexcept {
+		can_play = true;
+		//Program::Instance().engine.SetSoundPosition(Play_Position, sound);
+		Program::Instance().engine.PlaySound(sound, play_type, (Play_Position > 0));
+	}
+
+	int Sound::Stop() noexcept {
+		can_play = false;
+		const int Play_Position = Program::Instance().engine.GetSoundPosition(sound);
+		Program::Instance().engine.StopSound(sound);
+		return Play_Position;
 	}
 
 	void Sound::Load(const std::wstring& Path) {

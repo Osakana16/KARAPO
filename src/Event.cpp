@@ -818,6 +818,202 @@ namespace karapo::event {
 			}
 		};
 
+		// 音声再生
+		DYNAMIC_COMMAND(Play final) {
+			std::wstring file_path{};
+			error::ErrorContent *entity_kind_error{};
+		public:
+			Play(const std::wstring & File_Name) noexcept : Play(std::vector<std::wstring>{}) {
+				file_path = File_Name;
+			}
+
+			DYNAMIC_COMMAND_CONSTRUCTOR(Play) {
+				if (entity_kind_error == nullptr) {
+					entity_kind_error = error::UserErrorHandler::MakeError(
+						command_error_class,
+						L"指定したEntityの種類が不適切です。",
+						MB_OK | MB_ICONERROR, 
+						1
+					);
+				}
+			}
+
+			~Play() noexcept final {}
+
+			void Execute() final {
+				if (MustSearch()) {
+					auto file_path_param = GetParam(0);
+					if (file_path_param.type() == typeid(std::nullptr_t))
+						goto lack_error;
+					else if (!IsSameType<std::wstring>(file_path_param))
+						goto type_error;
+					
+					file_path = (!IsReferenceType<std::wstring>(file_path_param) ? std::any_cast<std::wstring>(file_path_param) : GetReferencedValue<std::wstring>(file_path_param));
+				}
+				if (file_path.empty())
+					goto name_error;
+				else {
+					auto ent = Program::Instance().entity_manager.GetEntity(file_path);
+					if (ent == nullptr)
+						goto not_found_error;
+					else if (ent->KindName() != std::wstring(L"効果音"))
+						goto kind_error;
+					
+					auto& position_var = Program::Instance().var_manager.Get<false>(file_path.substr(0, file_path.find(L'.')) + L"_position");
+					const int Position = (position_var.type() == typeid(int) ? std::any_cast<int>(position_var) : 0);
+					std::static_pointer_cast<karapo::entity::Sound>(ent)->Play(Position);
+				}
+				goto end_of_function;
+			not_found_error:
+				event::Manager::Instance().error_handler.SendLocalError(entity_not_found_error, L"コマンド名: play/再生");
+				goto end_of_function;
+			kind_error:
+				event::Manager::Instance().error_handler.SendLocalError(entity_kind_error, L"コマンド名: play/再生");
+				goto end_of_function;
+			name_error:
+				event::Manager::Instance().error_handler.SendLocalError(empty_name_error, L"コマンド名: play/再生");
+				goto end_of_function;
+			lack_error:
+				event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error, L"コマンド名: play/再生");
+				goto end_of_function;
+			type_error:
+				event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error, L"コマンド名: play/再生");
+				goto end_of_function;
+			end_of_function:
+				return;
+			}
+		};
+
+		// 音声一時停止
+		DYNAMIC_COMMAND(Pause final) {
+			std::wstring file_path{};
+			error::ErrorContent *entity_kind_error{};
+		public:
+			Pause(const std::wstring & File_Name) noexcept : Pause(std::vector<std::wstring>{}) {
+				file_path = File_Name;
+			}
+
+			DYNAMIC_COMMAND_CONSTRUCTOR(Pause) {
+				if (entity_kind_error == nullptr) {
+					entity_kind_error = error::UserErrorHandler::MakeError(
+						command_error_class,
+						L"指定したEntityの種類が不適切です。",
+						MB_OK | MB_ICONERROR,
+						1
+					);
+				}
+			}
+
+			~Pause() noexcept final {}
+
+			void Execute() final {
+				if (MustSearch()) {
+					auto file_path_param = GetParam(0);
+					if (file_path_param.type() == typeid(std::nullptr_t))
+						goto lack_error;
+					else if (!IsSameType<std::wstring>(file_path_param))
+						goto type_error;
+
+					file_path = (!IsReferenceType<std::wstring>(file_path_param) ? std::any_cast<std::wstring>(file_path_param) : GetReferencedValue<std::wstring>(file_path_param));
+				}
+
+				if (file_path.empty())
+					goto name_error;
+				else {
+					auto ent = Program::Instance().entity_manager.GetEntity(file_path);
+					if (ent == nullptr)
+						goto not_found_error;
+					else if (ent->KindName() != std::wstring(L"効果音"))
+						goto kind_error;
+
+					Program::Instance().var_manager.MakeNew(file_path.substr(0, file_path.find(L'.')) + L"_position") = std::static_pointer_cast<karapo::entity::Sound>(ent)->Stop();
+				}
+				goto end_of_function;
+			not_found_error:
+				event::Manager::Instance().error_handler.SendLocalError(entity_not_found_error, L"コマンド名: pause/一時停止");
+				goto end_of_function;
+			kind_error:
+				event::Manager::Instance().error_handler.SendLocalError(entity_kind_error, L"コマンド名: pause/一時停止");
+				goto end_of_function;
+			name_error:
+				event::Manager::Instance().error_handler.SendLocalError(empty_name_error, L"コマンド名: pause/一時停止");
+				goto end_of_function;
+			lack_error:
+				event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error, L"コマンド名: pause/一時停止");
+				goto end_of_function;
+			type_error:
+				event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error, L"コマンド名: pause/一時停止");
+				goto end_of_function;
+			end_of_function:
+				return;
+			}
+		};
+
+		// 音声停止
+		DYNAMIC_COMMAND(Stop final) {
+			std::wstring file_path{};
+			error::ErrorContent *entity_kind_error{};
+		public:
+			Stop(const std::wstring & File_Name) noexcept : Stop(std::vector<std::wstring>{}) {
+				file_path = File_Name;
+			}
+
+			DYNAMIC_COMMAND_CONSTRUCTOR(Stop) {
+				if (entity_kind_error == nullptr) {
+					entity_kind_error = error::UserErrorHandler::MakeError(
+						command_error_class,
+						L"指定したEntityの種類が不適切です。",
+						MB_OK | MB_ICONERROR,
+						1
+					);
+				}
+			}
+
+			~Stop() noexcept final {}
+
+			void Execute() final {
+				if (MustSearch()) {
+					auto file_path_param = GetParam(0);
+					if (file_path_param.type() == typeid(std::nullptr_t))
+						goto lack_error;
+					else if (!IsSameType<std::wstring>(file_path_param))
+						goto type_error;
+
+					file_path = (!IsReferenceType<std::wstring>(file_path_param) ? std::any_cast<std::wstring>(file_path_param) : GetReferencedValue<std::wstring>(file_path_param));
+				}
+
+				if (file_path.empty())
+					goto name_error;
+				else {
+					auto ent = Program::Instance().entity_manager.GetEntity(file_path);
+					if (ent == nullptr)
+						goto not_found_error;
+					else if (ent->KindName() != std::wstring(L"効果音"))
+						goto kind_error;
+
+					std::static_pointer_cast<karapo::entity::Sound>(ent)->Stop();
+				}
+				goto end_of_function;
+			not_found_error:
+				event::Manager::Instance().error_handler.SendLocalError(entity_not_found_error, L"コマンド名: stop/停止");
+				goto end_of_function;
+			kind_error:
+				event::Manager::Instance().error_handler.SendLocalError(entity_kind_error, L"コマンド名: stop/停止");
+				goto end_of_function;
+			name_error:
+				event::Manager::Instance().error_handler.SendLocalError(empty_name_error, L"コマンド名: stop/停止");
+				goto end_of_function;
+			lack_error:
+				event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error, L"コマンド名: stop/停止");
+				goto end_of_function;
+			type_error:
+				event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error, L"コマンド名: stop/停止");
+				goto end_of_function;
+			end_of_function:
+				return;
+			}
+		};
+
 		// ボタン
 		DYNAMIC_COMMAND(Button final) {
 			std::shared_ptr<karapo::entity::Button> button;
@@ -891,10 +1087,10 @@ namespace karapo::event {
 					button->Load(path_string);
 				} else if (path.type() == typeid(animation::FrameRef)) {
 					button->Load(&std::any_cast<animation::FrameRef&>(
-						Program::Instance().var_manager.Get<false>(
-						std::any_cast<std::wstring>(GetParam<true>(5))
-					)
-					)
+							Program::Instance().var_manager.Get<false>(
+								std::any_cast<std::wstring>(GetParam<true>(5))
+							)
+						)
 					);
 				}
 
@@ -2871,6 +3067,87 @@ namespace karapo::event {
 									return std::make_unique<command::entity::Defrost>(Name);
 								} else {
 									return std::make_unique<command::entity::Defrost>(params);
+								}
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+										return KeywordInfo::ParamResult::Lack;
+									case 1:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"play"] =
+						words[L"再生"] = [](const std::vector<std::wstring>& params) -> KeywordInfo
+					{
+						return {
+							.Result = [&]() noexcept -> CommandPtr {
+								const auto [Path, Path_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								if (Default_ProgramInterface.IsStringType(Path_Type)) {
+									return std::make_unique<command::Play>(Path);
+								} else {
+									return std::make_unique<command::Play>(params);
+								}
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+										return KeywordInfo::ParamResult::Lack;
+									case 1:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"pause"] =
+						words[L"一時停止"] = [](const std::vector<std::wstring>& params) -> KeywordInfo
+					{
+						return {
+							.Result = [&]() noexcept -> CommandPtr {
+								const auto [Path, Path_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								if (Default_ProgramInterface.IsStringType(Path_Type)) {
+									return std::make_unique<command::Pause>(Path);
+								} else {
+									return std::make_unique<command::Pause>(params);
+								}
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+										return KeywordInfo::ParamResult::Lack;
+									case 1:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"stop"] =
+						words[L"停止"] = [](const std::vector<std::wstring>& params) -> KeywordInfo
+					{
+						return {
+							.Result = [&]() noexcept -> CommandPtr {
+								const auto [Path, Path_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								if (Default_ProgramInterface.IsStringType(Path_Type)) {
+									return std::make_unique<command::Stop>(Path);
+								} else {
+									return std::make_unique<command::Stop>(params);
 								}
 							},
 							.checkParamState = [params]() -> KeywordInfo::ParamResult {

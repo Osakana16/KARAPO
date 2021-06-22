@@ -38,10 +38,11 @@ namespace karapo::entity {
 	class Sound : public Object {
 		resource::Sound sound;
 		bool can_delete = false;
+		bool can_play = true;
 		std::wstring path{};
 		PlayType play_type{};
 	public:
-		inline Sound(PlayType pt, WorldVector WV) { 
+		inline Sound(PlayType pt, WorldVector WV) {
 			play_type = pt;
 			origin = WV;
 		}
@@ -53,7 +54,8 @@ namespace karapo::entity {
 		const wchar_t *KindName() const noexcept override;
 		bool CanDelete() const noexcept override;
 		void Delete() override;
-		void Play() noexcept;
+		void Play(const int = 0) noexcept;
+		int Stop() noexcept;
 		void Load(const std::wstring&);
 		WorldVector Length() const noexcept final { return { 0.0, 0.0 }; }
 	};
