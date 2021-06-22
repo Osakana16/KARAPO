@@ -427,8 +427,9 @@ namespace karapo::entity {
 			Clicking_Event_Name = std::wstring(Name()) + L".clicking";
 
 		auto mouse = Program::Instance().entity_manager.GetEntity(L"マウスポインタ");
-		auto dist = std::abs(mouse->Origin() - Image::Origin());
-		if (dist[0] < Length()[0] && dist[1] < Length()[1]) {
+		if (Image::Origin()[0] < mouse->Origin()[0] && Image::Origin()[1] < mouse->Origin()[1] && 
+			Image::Origin()[0] + Image::Length()[0] >= mouse->Origin()[0] && Image::Origin()[1] + Image::Length()[1] >= mouse->Origin()[1])
+		{
 			Program::Instance().event_manager.Call(Colliding_Event_Name);
 			if (!collided_enough) {
 				Program::Instance().event_manager.Call(Collided_Event_Name);
