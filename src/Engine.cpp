@@ -100,6 +100,19 @@ namespace karapo {
 		DxLib::SetSoundCurrentPosition(Position, static_cast<int>(Sound_Resource));
 	}
 
+	resource::Resource Program::Engine::MakeFont(const std::wstring& New_Font_Name, const std::wstring& Source_Font_Name, const size_t Length, const size_t Thick, const FontKind Font_Kind) noexcept {
+		const auto Font = static_cast<resource::Resource>(DxLib::CreateFontToHandle(Source_Font_Name.c_str(), Length, Thick, (Font_Kind != FontKind::Normal ? DX_FONTTYPE_ANTIALIASING : DX_FONTTYPE_NORMAL)));
+		resources[New_Font_Name] = Font;
+		return Font;
+	}
+
+	resource::Resource Program::Engine::GetFont(const std::wstring& Font_Name) noexcept {
+		if (auto r = resources.find(Font_Name); r != resources.end())
+			return r->second;
+		else
+			return resource::Resource::Invalid;
+	}
+
 	bool Program::Engine::Failed() const noexcept {
 		return !DxLib_IsInit();
 	}

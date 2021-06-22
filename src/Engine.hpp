@@ -131,6 +131,11 @@ namespace karapo {
 		Reverse
 	};
 
+	enum class FontKind {
+		Normal,
+		Anti_Aliasing
+	};
+
 	class Program final : private Singleton {
 		class Engine final : private Singleton {
 			struct FunctionalKey final {
@@ -149,7 +154,9 @@ namespace karapo {
 			void OnInit(Program*) noexcept;
 			bool Failed() const noexcept;
 
-			resource::Resource LoadImage(const std::wstring&) noexcept, LoadSound(const std::wstring&) noexcept;
+			resource::Resource LoadImage(const std::wstring&) noexcept,
+				LoadSound(const std::wstring&) noexcept;
+
 			// 指定領域を元の画像からコピーする。
 			// コピー後、コピー元を示すpathをコピー先の名前に書き換える。
 			resource::Resource CopyImage(std::wstring* path, const ScreenVector Position, const ScreenVector Length) noexcept;
@@ -164,6 +171,9 @@ namespace karapo {
 			bool IsPlayingSound(const resource::Resource) const noexcept;
 			int GetSoundPosition(const resource::Resource) const noexcept;
 			void SetSoundPosition(const int, const resource::Resource) noexcept;
+
+			resource::Resource MakeFont(const std::wstring& New_Font_Name, const std::wstring& Source_Font_Name, const size_t Length, const size_t Thick, const FontKind) noexcept;
+			resource::Resource GetFont(const std::wstring& Font_Name) noexcept;
 			
 			TargetRender MakeScreen();
 			void ChangeTargetScreen(TargetRender);
