@@ -342,7 +342,11 @@ namespace karapo::entity {
 			x = Origin()[0];
 			y = Origin()[1];
 		}
-		Program::Instance().engine.DrawSentence(text, ScreenVector{ (int)x, (int)y }, 30);
+		auto& font = Program::Instance().var_manager.Get<false>(Name() + std::wstring(L".font"));
+		if (font.type() == typeid(resource::Resource))
+			Program::Instance().engine.DrawSentence(text, ScreenVector{ (int)x, (int)y }, std::any_cast<resource::Resource&>(font));
+		else
+			Program::Instance().engine.DrawSentence(text, ScreenVector{ (int)x, (int)y }, resource::Resource::Invalid);
 	}
 
 	void Text::Print(const std::wstring& Message) {
