@@ -1172,14 +1172,14 @@ namespace karapo::event {
 
 		// ï∂éöèoóÕ
 		DYNAMIC_COMMAND(Print final) {
-			std::shared_ptr<karapo::entity::Text> text;
+			std::shared_ptr<karapo::entity::Text> text{};
+			std::wstring name{};
 		public:
 			Print(const std::wstring & Name, const WorldVector & Pos) noexcept : Print(std::vector<std::wstring>{}) {
-				auto name = Name;
+				name = Name;
 				auto pos = Pos;
 				ReplaceFormat(&name);
 				text = std::make_shared<karapo::entity::Text>(name, pos);
-				Program::Instance().var_manager.MakeNew(name + L".text") = std::wstring(L"");
 			}
 
 			DYNAMIC_COMMAND_CONSTRUCTOR(Print) {}
@@ -1203,7 +1203,7 @@ namespace karapo::event {
 						goto type_error;
 					}
 
-					auto name = (!IsReferenceType<std::wstring>(name_param) ? std::any_cast<std::wstring>(name_param) : GetReferencedValue<std::wstring>(name_param));
+					name = (!IsReferenceType<std::wstring>(name_param) ? std::any_cast<std::wstring>(name_param) : GetReferencedValue<std::wstring>(name_param));
 					Dec x{}, y{};
 					if (IsReferenceType<int>(x_param) || IsReferenceType<Dec>(x_param))
 						x = (IsReferenceType<Dec>(x_param) ? GetReferencedValue<Dec>(x_param) : GetReferencedValue<int>(x_param));
@@ -1215,9 +1215,10 @@ namespace karapo::event {
 						y = (y_param.type() == typeid(Dec) ? std::any_cast<Dec>(y_param) : std::any_cast<int>(y_param));
 
 					ReplaceFormat(&name);
-					Program::Instance().var_manager.MakeNew(name + L".text") = std::wstring(L"");
 					text = std::make_shared<karapo::entity::Text>(name, WorldVector{ x, y });
 				}
+				Program::Instance().var_manager.MakeNew(name + L".text") = std::wstring(L"");
+				Program::Instance().var_manager.MakeNew(name + L".font") = 0;
 				Program::Instance().entity_manager.Register(text);
 				return;
 			lack_error:
