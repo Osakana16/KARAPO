@@ -1218,6 +1218,7 @@ namespace karapo::event {
 					text = std::make_shared<karapo::entity::Text>(name, WorldVector{ x, y });
 				}
 				Program::Instance().var_manager.MakeNew(name + L".text") = std::wstring(L"");
+				Program::Instance().var_manager.MakeNew(name + L".rgb") = std::wstring(L"");
 				Program::Instance().var_manager.MakeNew(name + L".font") = 0;
 				Program::Instance().entity_manager.Register(text);
 				return;
