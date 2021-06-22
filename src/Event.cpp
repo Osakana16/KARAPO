@@ -818,6 +818,69 @@ namespace karapo::event {
 			}
 		};
 
+		DYNAMIC_COMMAND(Font final) {
+			std::wstring variable_name{}, source_font_name{};
+			size_t length{}, thick{};
+			FontKind font_kind{};
+		public:
+			Font(const std::wstring& Variable_Name, const std::wstring& Font_Name, const size_t Length, const size_t Thick, const int Font_Kind) : Font(std::vector<std::wstring>{}) {
+				variable_name = Variable_Name;
+				source_font_name = Font_Name;
+				length = Length;
+				thick = Thick;
+				font_kind = (Font_Kind == 1 ? FontKind::Anti_Aliasing : FontKind::Normal);
+			}
+
+			DYNAMIC_COMMAND_CONSTRUCTOR(Font) {}
+
+			void Execute() {
+				if (MustSearch()) {
+					auto variable_name_param = GetParam<true>(0),
+						source_font_name_param = GetParam(1),
+						length_param = GetParam(2),
+						thick_param = GetParam(3),
+						font_kind_param = GetParam(4);
+
+					if (variable_name_param.type() == typeid(std::nullptr_t) ||
+						source_font_name_param.type() == typeid(std::nullptr_t) ||
+						length_param.type() == typeid(std::nullptr_t) ||
+						thick_param.type() == typeid(std::nullptr_t) ||
+						font_kind_param.type() == typeid(std::nullptr_t)) [[unlikely]]
+					{
+						goto lack_error;
+					}
+					else if (!IsReferenceType<std::wstring>(variable_name_param) || !IsReferenceType<std::wstring>(source_font_name_param) ||
+						!IsReferenceType<int>(length_param) || !IsReferenceType<int>(thick_param) || !IsReferenceType<int>(font_kind_param)) [[unlikely]]
+					{
+						goto type_error;
+					}
+					variable_name = (!IsReferenceType<std::wstring>(variable_name_param) ? std::any_cast<std::wstring>(variable_name_param) : GetReferencedValue<std::wstring>(variable_name_param));
+					source_font_name = (!IsReferenceType<std::wstring>(source_font_name_param) ? std::any_cast<std::wstring>(source_font_name_param) : GetReferencedValue<std::wstring>(source_font_name_param));
+					length = (!IsReferenceType<int>(length_param) ? std::any_cast<int>(length_param) : GetReferencedValue<int>(length_param));
+					thick = (!IsReferenceType<int>(thick_param) ? std::any_cast<int>(thick_param) : GetReferencedValue<int>(thick_param));
+					font_kind = ((!IsReferenceType<int>(font_kind_param) ? std::any_cast<int>(font_kind_param) : GetReferencedValue<int>(font_kind_param)) == 1 ? FontKind::Anti_Aliasing : FontKind::Normal);
+				}
+
+				if (variable_name.empty() || source_font_name.empty()) {
+					goto name_error;
+				}
+				Program::Instance().var_manager.MakeNew(variable_name) =
+					Program::Instance().engine.MakeFont(source_font_name + L':' + std::to_wstring(length) + L':' + std::to_wstring(thick) + L':' + std::to_wstring((int)font_kind), source_font_name, length, thick, font_kind);
+				goto end_of_function;
+			name_error:
+				event::Manager::Instance().error_handler.SendLocalError(empty_name_error, L"コマンド名: font/フォント");
+				goto end_of_function;
+			lack_error:
+				event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error, L"コマンド名: font/フォント");
+				goto end_of_function;
+			type_error:
+				event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error, L"コマンド名: font/フォント");
+				goto end_of_function;
+			end_of_function:
+				return;
+			}
+		};
+
 		// 音声再生
 		DYNAMIC_COMMAND(Play final) {
 			std::wstring file_path{};
@@ -2141,7 +2204,7 @@ namespace karapo::event {
 								value[i] = iv;
 							else if (wcslen(fp) <= 0)
 								value[i] = fv;
-						} else if (value[i].type() == typeid(int) || value[i].type() == typeid(Dec)) {
+						} else if (value[i].type() == typeid(int) || value[i].type() == typeid(Dec) || value[i].type() == typeid(resource::Resource)) {
 							continue;
 						} else if (value[i].type() == typeid(animation::FrameRef)) {
 							value[i] = std::ref(
@@ -2187,6 +2250,8 @@ namespace karapo::event {
 									auto txt = (!IsReferenceType<std::wstring>(value[0]) ? std::any_cast<std::wstring>(value[0]) : GetReferencedValue<std::wstring>(value[0]));
 									ReplaceFormat(&txt);
 									ref = txt;
+								} else if (IsSameType<resource::Resource>(value[0])) {
+									ref = (!IsReferenceType<resource::Resource>(value[0]) ? std::any_cast<resource::Resource>(value[0]) : GetReferencedValue<resource::Resource>(value[0]));
 								} else if (value[0].type() == typeid(std::reference_wrapper<animation::FrameRef>)) {
 									ref = std::any_cast<std::reference_wrapper<animation::FrameRef>&>(value[0]);
 								}
@@ -2202,6 +2267,8 @@ namespace karapo::event {
 								} else if (value[0].type() == typeid(std::reference_wrapper<animation::FrameRef>)) {
 									int i = 0;
 									v = std::any_cast<std::reference_wrapper<animation::FrameRef>&>(value[0]);
+								} else if (IsSameType<resource::Resource>(value[0])) {
+									v = (!IsReferenceType<resource::Resource>(value[0]) ? std::any_cast<resource::Resource>(value[0]) : GetReferencedValue<resource::Resource>(value[0]));
 								}
 							}
 						} else {
@@ -3009,6 +3076,51 @@ namespace karapo::event {
 										WorldVector{ ToDec<Dec>(Len_X.c_str(), nullptr), ToDec<Dec>(Len_Y.c_str(), nullptr) });
 								} else {
 									return std::make_unique<command::Image>(params);
+								}
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+									case 1:
+									case 2:
+									case 3:
+									case 4:
+										return KeywordInfo::ParamResult::Lack;
+									case 5:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"font"] =
+						words[L"フォント"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() noexcept -> CommandPtr {
+								const auto [Var_Name, Var_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								const auto [Font_Name, Font_Type] = Default_ProgramInterface.GetParamInfo(params[1]);
+								const auto [Length, Length_Type] = Default_ProgramInterface.GetParamInfo(params[2]);
+								const auto [Thick, Thick_Type] = Default_ProgramInterface.GetParamInfo(params[3]);
+								const auto [Aliasing, Aliasing_Type] = Default_ProgramInterface.GetParamInfo(params[4]);
+
+								if (Default_ProgramInterface.IsNoType(Var_Type) &&
+									Default_ProgramInterface.IsStringType(Font_Type) &&
+									Default_ProgramInterface.IsNumberType(Length_Type) &&
+									Default_ProgramInterface.IsNumberType(Thick_Type) &&
+									Default_ProgramInterface.IsNumberType(Aliasing_Type))
+								{
+									return std::make_unique<command::Font>(Var_Name, 
+										Font_Name,
+										ToInt(Length.c_str(), nullptr), 
+										ToInt(Thick.c_str(), nullptr),
+										ToInt(Aliasing.c_str(), nullptr)
+									);
+								} else {
+									return std::make_unique<command::Font>(params);
 								}
 							},
 							.checkParamState = [params]() -> KeywordInfo::ParamResult {
