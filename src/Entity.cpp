@@ -343,10 +343,21 @@ namespace karapo::entity {
 			y = Origin()[1];
 		}
 		auto& font = Program::Instance().var_manager.Get<false>(Name() + std::wstring(L".font"));
+		auto& color_var = Program::Instance().var_manager.Get<false>(Name() + std::wstring(L".rgb"));
+		union { uint32_t value{}; uint8_t rgb[3]; } color_code;
+		Color color{ .r=255, .g=255, .b=255 };
+		if (color_var.type() == typeid(int)) {
+			auto s = std::any_cast<int>(color_var);
+			color_code.value = std::any_cast<int>(color_var);
+			color.r = color_code.rgb[2];
+			color.g = color_code.rgb[1];
+			color.b = color_code.rgb[0];
+		}
+
 		if (font.type() == typeid(resource::Resource))
-			Program::Instance().engine.DrawSentence(text, ScreenVector{ (int)x, (int)y }, std::any_cast<resource::Resource&>(font));
+			Program::Instance().engine.DrawSentence(text, ScreenVector{ (int)x, (int)y }, std::any_cast<resource::Resource&>(font), color);
 		else
-			Program::Instance().engine.DrawSentence(text, ScreenVector{ (int)x, (int)y }, resource::Resource::Invalid);
+			Program::Instance().engine.DrawSentence(text, ScreenVector{ (int)x, (int)y }, resource::Resource::Invalid, color);
 	}
 
 	void Text::Print(const std::wstring& Message) {
