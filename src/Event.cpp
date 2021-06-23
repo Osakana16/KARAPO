@@ -1287,229 +1287,229 @@ namespace karapo::event {
 			DYNAMIC_COMMAND(Teleport final) {
 				std::wstring entity_name;
 				WorldVector move;
-		public:
-			Teleport(const std::wstring & ename, const WorldVector & MV) noexcept : Teleport(std::vector<std::wstring>{}) {
-				entity_name = ename;
-				move = MV;
-			}
+			public:
+				Teleport(const std::wstring & ename, const WorldVector & MV) noexcept : Teleport(std::vector<std::wstring>{}) {
+					entity_name = ename;
+					move = MV;
+				}
 
-			DYNAMIC_COMMAND_CONSTRUCTOR(Teleport) {}
+				DYNAMIC_COMMAND_CONSTRUCTOR(Teleport) {}
 
-			~Teleport() override {}
+				~Teleport() override {}
 
-			void Execute() override {
-				if (MustSearch()) {
-					auto name_param = GetParam(0),
-						x_param = GetParam(1),
-						y_param = GetParam(2);
-					if (name_param.type() == typeid(std::nullptr_t) ||
-						x_param.type() == typeid(std::nullptr_t) ||
-						y_param.type() == typeid(std::nullptr_t)) [[unlikely]]
+				void Execute() override {
+					if (MustSearch()) {
+						auto name_param = GetParam(0),
+							x_param = GetParam(1),
+							y_param = GetParam(2);
+						if (name_param.type() == typeid(std::nullptr_t) ||
+							x_param.type() == typeid(std::nullptr_t) ||
+							y_param.type() == typeid(std::nullptr_t)) [[unlikely]]
+						{
+							goto lack_error;
+						} else if (!IsSameType<std::wstring>(name_param)) [[unlikely]]
+							goto type_error;
+
+						entity_name = (!IsReferenceType<std::wstring>(name_param) ? std::any_cast<std::wstring>(name_param) : GetReferencedValue<std::wstring>(name_param));
+
+						Dec x{}, y{};
+						if (IsReferenceType<Dec>(x_param) || IsReferenceType<int>(x_param))
+							x = (IsReferenceType<Dec>(x_param) ? GetReferencedValue<Dec>(x_param) : GetReferencedValue<int>(x_param));
+						else if (x_param.type() == typeid(int) || x_param.type() == typeid(Dec))
+							x = (x_param.type() == typeid(Dec) ? std::any_cast<Dec>(x_param) : std::any_cast<int>(x_param));
+						else [[unlikely]]
+							goto type_error;
+
+						if (IsReferenceType<Dec>(y_param) || IsReferenceType<int>(y_param))
+							y = (IsReferenceType<Dec>(y_param) ? GetReferencedValue<Dec>(y_param) : GetReferencedValue<int>(y_param));
+						else if (y_param.type() == typeid(int) || y_param.type() == typeid(Dec))
+							y = (y_param.type() == typeid(Dec) ? std::any_cast<Dec>(y_param) : std::any_cast<int>(y_param));
+						else [[unlikely]]
+							goto type_error;
+						move = { x, y };
+					}
+
 					{
-						goto lack_error;
-					} else if (!IsSameType<std::wstring>(name_param)) [[unlikely]]
-						goto type_error;
+						ReplaceFormat(&entity_name);
+						auto ent = Program::Instance().entity_manager.GetEntity(entity_name);
+						if (ent != nullptr)
+							ent->Teleport(move);
+						else
+							goto entity_error;
 
-					entity_name = (!IsReferenceType<std::wstring>(name_param) ? std::any_cast<std::wstring>(name_param) : GetReferencedValue<std::wstring>(name_param));
-
-					Dec x{}, y{};
-					if (IsReferenceType<Dec>(x_param) || IsReferenceType<int>(x_param))
-						x = (IsReferenceType<Dec>(x_param) ? GetReferencedValue<Dec>(x_param) : GetReferencedValue<int>(x_param));
-					else if (x_param.type() == typeid(int) || x_param.type() == typeid(Dec))
-						x = (x_param.type() == typeid(Dec) ? std::any_cast<Dec>(x_param) : std::any_cast<int>(x_param));
-					else [[unlikely]]
-						goto type_error;
-
-					if (IsReferenceType<Dec>(y_param) || IsReferenceType<int>(y_param))
-						y = (IsReferenceType<Dec>(y_param) ? GetReferencedValue<Dec>(y_param) : GetReferencedValue<int>(y_param));
-					else if (y_param.type() == typeid(int) || y_param.type() == typeid(Dec))
-						y = (y_param.type() == typeid(Dec) ? std::any_cast<Dec>(y_param) : std::any_cast<int>(y_param));
-					else [[unlikely]]
-						goto type_error;
-					move = { x, y };
+					}
+					return;
+				entity_error:
+					event::Manager::Instance().error_handler.SendLocalError(entity_not_found_error, L"コマンド名: teleport/瞬間移動");
+					goto end_of_function;
+				lack_error:
+					event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error, L"コマンド名: teleport/瞬間移動");
+					goto end_of_function;
+				type_error:
+					event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error, L"コマンド名: teleport/瞬間移動");
+					goto end_of_function;
+				end_of_function:
+					return;
 				}
-
-				{
-					ReplaceFormat(&entity_name);
-					auto ent = Program::Instance().entity_manager.GetEntity(entity_name);
-					if (ent != nullptr)
-						ent->Teleport(move);
-					else
-						goto entity_error;
-
-				}
-				return;
-			entity_error:
-				event::Manager::Instance().error_handler.SendLocalError(entity_not_found_error, L"コマンド名: teleport/瞬間移動");
-				goto end_of_function;
-			lack_error:
-				event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error, L"コマンド名: teleport/瞬間移動");
-				goto end_of_function;
-			type_error:
-				event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error, L"コマンド名: teleport/瞬間移動");
-				goto end_of_function;
-			end_of_function:
-				return;
-			}
 			};
 
 			// Entityの削除。
 			DYNAMIC_COMMAND(Kill final) {
 				std::wstring entity_name{};
-		public:
-			Kill(const std::wstring & ename) noexcept : Kill(std::vector<std::wstring>{}) {
-				entity_name = ename;
-			}
-
-			DYNAMIC_COMMAND_CONSTRUCTOR(Kill) {}
-
-			~Kill() override {}
-
-			void Execute() override {
-				if (MustSearch()) {
-					auto name_param = GetParam(0);
-					if (name_param.type() == typeid(std::nullptr_t)) [[unlikely]]
-						goto lack_error;
-					else if (!IsSameType<std::wstring>(name_param)) [[unlikely]]
-						goto type_error;
-
-					entity_name = (!IsReferenceType<std::wstring>(name_param) ? std::any_cast<std::wstring>(name_param) : GetReferencedValue<std::wstring>(name_param));
+			public:
+				Kill(const std::wstring & ename) noexcept : Kill(std::vector<std::wstring>{}) {
+					entity_name = ename;
 				}
-				if (entity_name.empty())
-					goto name_error;
 
-				ReplaceFormat(&entity_name);
-				if (entity_name == L"__all" || entity_name == L"__全員") {
-					std::vector<std::wstring> names{};
-					auto sen = std::any_cast<std::wstring>(Program::Instance().var_manager.Get<false>(variable::Managing_Entity_Name));
-					{
-						std::wstring temp{};
-						for (auto ch : sen) {
-							if (ch != L'\n') {
-								temp += ch;
-							} else {
-								names.push_back(temp);
-								temp.clear();
+				DYNAMIC_COMMAND_CONSTRUCTOR(Kill) {}
+
+				~Kill() override {}
+
+				void Execute() override {
+					if (MustSearch()) {
+						auto name_param = GetParam(0);
+						if (name_param.type() == typeid(std::nullptr_t)) [[unlikely]]
+							goto lack_error;
+						else if (!IsSameType<std::wstring>(name_param)) [[unlikely]]
+							goto type_error;
+
+						entity_name = (!IsReferenceType<std::wstring>(name_param) ? std::any_cast<std::wstring>(name_param) : GetReferencedValue<std::wstring>(name_param));
+					}
+					if (entity_name.empty())
+						goto name_error;
+
+					ReplaceFormat(&entity_name);
+					if (entity_name == L"__all" || entity_name == L"__全員") {
+						std::vector<std::wstring> names{};
+						auto sen = std::any_cast<std::wstring>(Program::Instance().var_manager.Get<false>(variable::Managing_Entity_Name));
+						{
+							std::wstring temp{};
+							for (auto ch : sen) {
+								if (ch != L'\n') {
+									temp += ch;
+								} else {
+									names.push_back(temp);
+									temp.clear();
+								}
 							}
 						}
+
+						for (const auto& name : names) {
+							Program::Instance().entity_manager.Kill(name.substr(0, name.find(L'=')));
+						}
+						Program::Instance().entity_manager.Register(std::make_shared<karapo::entity::Mouse>());
+					} else {
+						Program::Instance().entity_manager.Kill(entity_name);
 					}
 
-					for (const auto& name : names) {
-						Program::Instance().entity_manager.Kill(name.substr(0, name.find(L'=')));
-					}
-					Program::Instance().entity_manager.Register(std::make_shared<karapo::entity::Mouse>());
-				} else {
-					Program::Instance().entity_manager.Kill(entity_name);
+					return;
+				name_error:
+					event::Manager::Instance().error_handler.SendLocalError(empty_name_error, L"コマンド名: kill/殺害");
+					goto end_of_function;
+				lack_error:
+					event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error, L"コマンド名: kill/殺害");
+					goto end_of_function;
+				type_error:
+					event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error, L"コマンド名: kill/殺害");
+					goto end_of_function;
+				end_of_function:
+					return;
 				}
-
-				return;
-			name_error:
-				event::Manager::Instance().error_handler.SendLocalError(empty_name_error, L"コマンド名: kill/殺害");
-				goto end_of_function;
-			lack_error:
-				event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error, L"コマンド名: kill/殺害");
-				goto end_of_function;
-			type_error:
-				event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error, L"コマンド名: kill/殺害");
-				goto end_of_function;
-			end_of_function:
-				return;
-			}
 			};
 
 			// EntityまたはEntityの種類の更新凍結。
 			DYNAMIC_COMMAND(Freeze final) {
 				std::wstring candidate_name{};
-		public:
-			Freeze(const std::wstring & ename) noexcept : Freeze(std::vector<std::wstring>{}) {
-				candidate_name = ename;
-			}
-
-			DYNAMIC_COMMAND_CONSTRUCTOR(Freeze) {}
-
-			~Freeze() final {}
-
-			void Execute() override {
-				if (MustSearch()) {
-					auto candidate_name_param = GetParam(0);
-					if (!IsSameType<std::wstring>(candidate_name_param)) {
-						goto type_error;
-					}
-					candidate_name = (!IsReferenceType<std::wstring>(candidate_name_param) ? std::any_cast<std::wstring>(candidate_name_param) : GetReferencedValue<std::wstring>(candidate_name_param));
+			public:
+				Freeze(const std::wstring & ename) noexcept : Freeze(std::vector<std::wstring>{}) {
+					candidate_name = ename;
 				}
 
-				if (candidate_name.empty()) {
-					goto name_error;
-				} else {
-					auto ent = karapo::entity::Manager::Instance().GetEntity(candidate_name);
-					if (ent != nullptr) {
-						karapo::entity::Manager::Instance().Freeze(ent);
-					} else {
-						karapo::entity::Manager::Instance().Freeze(candidate_name);
+				DYNAMIC_COMMAND_CONSTRUCTOR(Freeze) {}
+
+				~Freeze() final {}
+
+				void Execute() override {
+					if (MustSearch()) {
+						auto candidate_name_param = GetParam(0);
+						if (!IsSameType<std::wstring>(candidate_name_param)) {
+							goto type_error;
+						}
+						candidate_name = (!IsReferenceType<std::wstring>(candidate_name_param) ? std::any_cast<std::wstring>(candidate_name_param) : GetReferencedValue<std::wstring>(candidate_name_param));
 					}
-				}
-				goto end_of_function;
-			name_error:
-				event::Manager::Instance().error_handler.SendLocalError(empty_name_error, L"コマンド名: freeze/凍結");
-				goto end_of_function;
-			lack_error:
-				event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error, L"コマンド名: freeze/凍結");
-				goto end_of_function;
-			type_error:
-				event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error, L"コマンド名: freeze/凍結");
-				goto end_of_function;
-			end_of_function:
-				return;
-			}
-			};
 
-			// EntityまたはEntityの種類の更新再開。
-			DYNAMIC_COMMAND(Defrost final) {
-				std::wstring candidate_name{};
-		public:
-			Defrost(const std::wstring & ename) noexcept : Defrost(std::vector<std::wstring>{}) {
-				candidate_name = ename;
-			}
-
-			DYNAMIC_COMMAND_CONSTRUCTOR(Defrost) {}
-
-			~Defrost() final {}
-
-			void Execute() override {
-				if (MustSearch()) {
-					auto candidate_name_param = GetParam(0);
-					if (!IsSameType<std::wstring>(candidate_name_param)) {
-						goto type_error;
-					}
-					candidate_name = (!IsReferenceType<std::wstring>(candidate_name_param) ? std::any_cast<std::wstring>(candidate_name_param) : GetReferencedValue<std::wstring>(candidate_name_param));
-				}
-				if (candidate_name.empty()) {
-					goto name_error;
-				} else {
 					if (candidate_name.empty()) {
 						goto name_error;
 					} else {
 						auto ent = karapo::entity::Manager::Instance().GetEntity(candidate_name);
 						if (ent != nullptr) {
-							karapo::entity::Manager::Instance().Defrost(ent);
+							karapo::entity::Manager::Instance().Freeze(ent);
 						} else {
-							karapo::entity::Manager::Instance().Defrost(candidate_name);
+							karapo::entity::Manager::Instance().Freeze(candidate_name);
 						}
 					}
+					goto end_of_function;
+				name_error:
+					event::Manager::Instance().error_handler.SendLocalError(empty_name_error, L"コマンド名: freeze/凍結");
+					goto end_of_function;
+				lack_error:
+					event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error, L"コマンド名: freeze/凍結");
+					goto end_of_function;
+				type_error:
+					event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error, L"コマンド名: freeze/凍結");
+					goto end_of_function;
+				end_of_function:
+					return;
 				}
-				goto end_of_function;
-			name_error:
-				event::Manager::Instance().error_handler.SendLocalError(empty_name_error, L"コマンド名: defrost/解凍");
-				goto end_of_function;
-			lack_error:
-				event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error, L"コマンド名: defrost/解凍");
-				goto end_of_function;
-			type_error:
-				event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error, L"コマンド名: defrost/解凍");
-				goto end_of_function;
-			end_of_function:
-				return;
-			}
+			};
+
+			// EntityまたはEntityの種類の更新再開。
+			DYNAMIC_COMMAND(Defrost final) {
+				std::wstring candidate_name{};
+			public:
+				Defrost(const std::wstring & ename) noexcept : Defrost(std::vector<std::wstring>{}) {
+					candidate_name = ename;
+				}
+
+				DYNAMIC_COMMAND_CONSTRUCTOR(Defrost) {}
+
+				~Defrost() final {}
+
+				void Execute() override {
+					if (MustSearch()) {
+						auto candidate_name_param = GetParam(0);
+						if (!IsSameType<std::wstring>(candidate_name_param)) {
+							goto type_error;
+						}
+						candidate_name = (!IsReferenceType<std::wstring>(candidate_name_param) ? std::any_cast<std::wstring>(candidate_name_param) : GetReferencedValue<std::wstring>(candidate_name_param));
+					}
+					if (candidate_name.empty()) {
+						goto name_error;
+					} else {
+						if (candidate_name.empty()) {
+							goto name_error;
+						} else {
+							auto ent = karapo::entity::Manager::Instance().GetEntity(candidate_name);
+							if (ent != nullptr) {
+								karapo::entity::Manager::Instance().Defrost(ent);
+							} else {
+								karapo::entity::Manager::Instance().Defrost(candidate_name);
+							}
+						}
+					}
+					goto end_of_function;
+				name_error:
+					event::Manager::Instance().error_handler.SendLocalError(empty_name_error, L"コマンド名: defrost/解凍");
+					goto end_of_function;
+				lack_error:
+					event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error, L"コマンド名: defrost/解凍");
+					goto end_of_function;
+				type_error:
+					event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error, L"コマンド名: defrost/解凍");
+					goto end_of_function;
+				end_of_function:
+					return;
+				}
 			};
 		}
 
@@ -1810,302 +1810,302 @@ namespace karapo::event {
 				};
 
 				inline static error::ErrorContent *layer_kind_not_found_error{};
-		public:
-			Make(const int Index, const std::wstring & KN, const std::wstring & LN) noexcept : Make(std::vector<std::wstring>{}) {
-				index = Index;
-				kind_name = KN;
-				layer_name = LN;
-			}
+			public:
+				Make(const int Index, const std::wstring & KN, const std::wstring & LN) noexcept : Make(std::vector<std::wstring>{}) {
+					index = Index;
+					kind_name = KN;
+					layer_name = LN;
+				}
 
-			DYNAMIC_COMMAND_CONSTRUCTOR(Make) {
-				if (layer_kind_not_found_error == nullptr) [[unlikely]]
-					layer_kind_not_found_error = error::UserErrorHandler::MakeError(command_error_class, L"レイヤーの種類が見つかりません。", MB_OK | MB_ICONERROR, 2);
-			}
+				DYNAMIC_COMMAND_CONSTRUCTOR(Make) {
+					if (layer_kind_not_found_error == nullptr) [[unlikely]]
+						layer_kind_not_found_error = error::UserErrorHandler::MakeError(command_error_class, L"レイヤーの種類が見つかりません。", MB_OK | MB_ICONERROR, 2);
+				}
 
-			~Make() final {}
+				~Make() final {}
 
-			void Execute() final {
-				if (MustSearch()) {
-					auto index_param = GetParam(0),
-						kind_param = GetParam(1),
-						layer_param = GetParam(2);
-					if (index_param.type() == typeid(std::nullptr_t) ||
-						kind_param.type() == typeid(std::nullptr_t) ||
-						layer_param.type() == typeid(std::nullptr_t)) [[unlikely]]
-					{
-						goto lack_error;
-					} else if (!IsSameType<int>(index_param) ||
-						!IsSameType<std::wstring>(kind_param) ||
-						!IsSameType<std::wstring>(layer_param)) [[unlikely]]
-					{
-						goto type_error;
+				void Execute() final {
+					if (MustSearch()) {
+						auto index_param = GetParam(0),
+							kind_param = GetParam(1),
+							layer_param = GetParam(2);
+						if (index_param.type() == typeid(std::nullptr_t) ||
+							kind_param.type() == typeid(std::nullptr_t) ||
+							layer_param.type() == typeid(std::nullptr_t)) [[unlikely]]
+						{
+							goto lack_error;
+						} else if (!IsSameType<int>(index_param) ||
+							!IsSameType<std::wstring>(kind_param) ||
+							!IsSameType<std::wstring>(layer_param)) [[unlikely]]
+						{
+							goto type_error;
+						}
+
+						index = (!IsReferenceType<int>(index_param) ? std::any_cast<int>(index_param) : GetReferencedValue<int>(index_param));
+						kind_name = (!IsReferenceType<std::wstring>(kind_param) ? std::any_cast<std::wstring>(kind_param) : GetReferencedValue<std::wstring>(kind_param));
+						layer_name = (!IsReferenceType<std::wstring>(layer_param) ? std::any_cast<std::wstring>(layer_param) : GetReferencedValue<std::wstring>(layer_param));
 					}
+					if (kind_name.empty() || layer_name.empty()) [[unlikely]]
+						goto name_error;
+					{
+						ReplaceFormat(&kind_name);
+						ReplaceFormat(&layer_name);
+						auto it = Create.find(kind_name);
+						if (it != Create.end()) [[likely]] {
+							(Program::Instance().canvas.*it->second)(layer_name, index);
+						} else
+							goto kind_not_found_error;
 
-					index = (!IsReferenceType<int>(index_param) ? std::any_cast<int>(index_param) : GetReferencedValue<int>(index_param));
-					kind_name = (!IsReferenceType<std::wstring>(kind_param) ? std::any_cast<std::wstring>(kind_param) : GetReferencedValue<std::wstring>(kind_param));
-					layer_name = (!IsReferenceType<std::wstring>(layer_param) ? std::any_cast<std::wstring>(layer_param) : GetReferencedValue<std::wstring>(layer_param));
+
+					}
+					return;
+				kind_not_found_error:
+					event::Manager::Instance().error_handler.SendLocalError(layer_kind_not_found_error, L"コマンド名: makelayer/レイヤー生成");
+					goto end_of_function;
+				name_error:
+					event::Manager::Instance().error_handler.SendLocalError(empty_name_error, L"コマンド名: makelayer/レイヤー生成");
+					goto end_of_function;
+				lack_error:
+					event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error, L"コマンド名: makelayer/レイヤー生成");
+					goto end_of_function;
+				type_error:
+					event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error, L"コマンド名: makelayer/レイヤー生成");
+					goto end_of_function;
+				end_of_function:
+					return;
 				}
-				if (kind_name.empty() || layer_name.empty()) [[unlikely]]
-					goto name_error;
-				{
-					ReplaceFormat(&kind_name);
-					ReplaceFormat(&layer_name);
-					auto it = Create.find(kind_name);
-					if (it != Create.end()) [[likely]] {
-						(Program::Instance().canvas.*it->second)(layer_name, index);
-					} else
-						goto kind_not_found_error;
-
-
-				}
-				return;
-			kind_not_found_error:
-				event::Manager::Instance().error_handler.SendLocalError(layer_kind_not_found_error, L"コマンド名: makelayer/レイヤー生成");
-				goto end_of_function;
-			name_error:
-				event::Manager::Instance().error_handler.SendLocalError(empty_name_error, L"コマンド名: makelayer/レイヤー生成");
-				goto end_of_function;
-			lack_error:
-				event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error, L"コマンド名: makelayer/レイヤー生成");
-				goto end_of_function;
-			type_error:
-				event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error, L"コマンド名: makelayer/レイヤー生成");
-				goto end_of_function;
-			end_of_function:
-				return;
-			}
 			};
 
 			// レイヤー変更
 			DYNAMIC_COMMAND(Select final) {
 				std::wstring layer_name{};
-		public:
-			Select(const std::wstring & LN) noexcept : Select(std::vector<std::wstring>{}) {
-				layer_name = LN;
-			}
-
-			DYNAMIC_COMMAND_CONSTRUCTOR(Select) {}
-
-			~Select() final {}
-
-			void Execute() final {
-				if (MustSearch()) {
-					auto layer_name_param = GetParam(0);
-					if (layer_name_param.type() == typeid(std::nullptr_t)) [[unlikely]]
-						goto lack_error;
-					else if (!IsSameType<std::wstring>(layer_name_param)) [[unlikely]]
-						goto type_error;
-
-					layer_name = (!IsReferenceType<std::wstring>(layer_name_param) ? std::any_cast<std::wstring>(layer_name_param) : GetReferencedValue<std::wstring>(layer_name_param));
+			public:
+				Select(const std::wstring & LN) noexcept : Select(std::vector<std::wstring>{}) {
+					layer_name = LN;
 				}
 
-				if (layer_name.empty()) [[unlikely]]
-					goto name_error;
+				DYNAMIC_COMMAND_CONSTRUCTOR(Select) {}
 
-				ReplaceFormat(&layer_name);
-				Program::Instance().canvas.SelectLayer(layer_name);
+				~Select() final {}
 
-				return;
-			name_error:
-				event::Manager::Instance().error_handler.SendLocalError(empty_name_error, L"コマンド名: selectlayer/レイヤー選択");
-				goto end_of_function;
-			lack_error:
-				event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error, L"コマンド名: selectlayer/レイヤー選択");
-				goto end_of_function;
-			type_error:
-				event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error, L"コマンド名: selectlayer/レイヤー選択");
-				goto end_of_function;
-			end_of_function:
-				return;
-			}
+				void Execute() final {
+					if (MustSearch()) {
+						auto layer_name_param = GetParam(0);
+						if (layer_name_param.type() == typeid(std::nullptr_t)) [[unlikely]]
+							goto lack_error;
+						else if (!IsSameType<std::wstring>(layer_name_param)) [[unlikely]]
+							goto type_error;
+
+						layer_name = (!IsReferenceType<std::wstring>(layer_name_param) ? std::any_cast<std::wstring>(layer_name_param) : GetReferencedValue<std::wstring>(layer_name_param));
+					}
+
+					if (layer_name.empty()) [[unlikely]]
+						goto name_error;
+
+					ReplaceFormat(&layer_name);
+					Program::Instance().canvas.SelectLayer(layer_name);
+
+					return;
+				name_error:
+					event::Manager::Instance().error_handler.SendLocalError(empty_name_error, L"コマンド名: selectlayer/レイヤー選択");
+					goto end_of_function;
+				lack_error:
+					event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error, L"コマンド名: selectlayer/レイヤー選択");
+					goto end_of_function;
+				type_error:
+					event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error, L"コマンド名: selectlayer/レイヤー選択");
+					goto end_of_function;
+				end_of_function:
+					return;
+				}
 			};
 
 			// 相対位置レイヤーの基準設定
 			DYNAMIC_COMMAND(SetBasis final) {
 				std::wstring entity_name{}, layer_name{};
-		public:
-			SetBasis(const std::wstring & EN, const std::wstring & LN) noexcept : SetBasis(std::vector<std::wstring>{}) {
-				entity_name = EN;
-				layer_name = LN;
-			}
-
-			DYNAMIC_COMMAND_CONSTRUCTOR(SetBasis) {}
-
-			~SetBasis() final {}
-
-			void Execute() final {
-				if (MustSearch()) {
-					auto entity_name_param = GetParam(0),
-						layer_name_param = GetParam(1);
-
-					if (entity_name_param.type() == typeid(std::nullptr_t) || layer_name_param.type() == typeid(std::nullptr_t)) [[unlikely]]
-						goto lack_error;
-					else if (!IsSameType<std::wstring>(entity_name_param) || !IsSameType<std::wstring>(layer_name_param)) [[unlikely]]
-						goto type_error;
-
-					entity_name = (!IsReferenceType<std::wstring>(entity_name_param) ? std::any_cast<std::wstring>(entity_name_param) : GetReferencedValue<std::wstring>(entity_name_param));
-					layer_name = (!IsReferenceType<std::wstring>(layer_name_param) ? std::any_cast<std::wstring>(layer_name_param) : GetReferencedValue<std::wstring>(layer_name_param));
+			public:
+				SetBasis(const std::wstring & EN, const std::wstring & LN) noexcept : SetBasis(std::vector<std::wstring>{}) {
+					entity_name = EN;
+					layer_name = LN;
 				}
 
-				if (entity_name.empty() || layer_name.empty())
-					goto name_error;
+				DYNAMIC_COMMAND_CONSTRUCTOR(SetBasis) {}
 
-				{
-					ReplaceFormat(&entity_name);
-					ReplaceFormat(&layer_name);
-					auto ent = Program::Instance().entity_manager.GetEntity(entity_name);
-					if (ent == nullptr) [[unlikely]]
-						goto entity_error;
+				~SetBasis() final {}
 
-					Program::Instance().canvas.SetBasis(ent, layer_name);
+				void Execute() final {
+					if (MustSearch()) {
+						auto entity_name_param = GetParam(0),
+							layer_name_param = GetParam(1);
+
+						if (entity_name_param.type() == typeid(std::nullptr_t) || layer_name_param.type() == typeid(std::nullptr_t)) [[unlikely]]
+							goto lack_error;
+						else if (!IsSameType<std::wstring>(entity_name_param) || !IsSameType<std::wstring>(layer_name_param)) [[unlikely]]
+							goto type_error;
+
+						entity_name = (!IsReferenceType<std::wstring>(entity_name_param) ? std::any_cast<std::wstring>(entity_name_param) : GetReferencedValue<std::wstring>(entity_name_param));
+						layer_name = (!IsReferenceType<std::wstring>(layer_name_param) ? std::any_cast<std::wstring>(layer_name_param) : GetReferencedValue<std::wstring>(layer_name_param));
+					}
+
+					if (entity_name.empty() || layer_name.empty())
+						goto name_error;
+
+					{
+						ReplaceFormat(&entity_name);
+						ReplaceFormat(&layer_name);
+						auto ent = Program::Instance().entity_manager.GetEntity(entity_name);
+						if (ent == nullptr) [[unlikely]]
+							goto entity_error;
+
+						Program::Instance().canvas.SetBasis(ent, layer_name);
+					}
+					return;
+				entity_error:
+					event::Manager::Instance().error_handler.SendLocalError(entity_not_found_error, L"コマンド名: setbasis/レイヤー基準");
+					goto end_of_function;
+				name_error:
+					event::Manager::Instance().error_handler.SendLocalError(empty_name_error, L"コマンド名: setbasis/レイヤー基準");
+					goto end_of_function;
+				lack_error:
+					event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error, L"コマンド名: setbasis/レイヤー基準");
+					goto end_of_function;
+				type_error:
+					event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error, L"コマンド名: setbasis/レイヤー基準");
+					goto end_of_function;
+				end_of_function:
+					return;
 				}
-				return;
-			entity_error:
-				event::Manager::Instance().error_handler.SendLocalError(entity_not_found_error, L"コマンド名: setbasis/レイヤー基準");
-				goto end_of_function;
-			name_error:
-				event::Manager::Instance().error_handler.SendLocalError(empty_name_error, L"コマンド名: setbasis/レイヤー基準");
-				goto end_of_function;
-			lack_error:
-				event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error, L"コマンド名: setbasis/レイヤー基準");
-				goto end_of_function;
-			type_error:
-				event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error, L"コマンド名: setbasis/レイヤー基準");
-				goto end_of_function;
-			end_of_function:
-				return;
-			}
 			};
 
 			// レイヤー削除
 			DYNAMIC_COMMAND(Delete final) {
 				std::wstring name{};
-		public:
-			Delete(const std::wstring & N) noexcept : Delete(std::vector<std::wstring>{}) {
-				name = N;
-			}
-
-			DYNAMIC_COMMAND_CONSTRUCTOR(Delete) {}
-
-			~Delete() final {}
-
-			void Execute() final {
-				if (MustSearch()) {
-					auto name_param = GetParam(0);
-					if (name_param.type() == typeid(std::nullptr_t)) [[unlikely]]
-						goto lack_error;
-					else if (!IsSameType<std::wstring>(name_param)) [[unlikely]]
-						goto type_error;
-
-					name = (!IsReferenceType<std::wstring>(name) ? std::any_cast<std::wstring>(name) : GetReferencedValue<std::wstring>(name));
-				}
-				if (name.empty()) [[unlikely]]
-					goto name_error;
-
-				ReplaceFormat(&name);
-				if (name == L"__all" || name == L"__全部") {
-					for (int i = 0; Program::Instance().canvas.DeleteLayer(i););
-					Program::Instance().canvas.CreateAbsoluteLayer(L"デフォルトレイヤー");
-					Program::Instance().canvas.SelectLayer(L"デフォルトレイヤー");
-				} else {
-					Program::Instance().canvas.DeleteLayer(name);
+			public:
+				Delete(const std::wstring & N) noexcept : Delete(std::vector<std::wstring>{}) {
+					name = N;
 				}
 
-				return;
-			name_error:
-				event::Manager::Instance().error_handler.SendLocalError(empty_name_error, L"コマンド名: deletelayer/レイヤー削除");
-				goto end_of_function;
-			lack_error:
-				event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error, L"コマンド名: deletelayer/レイヤー削除");
-				goto end_of_function;
-			type_error:
-				event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error, L"コマンド名: deletelayer/レイヤー削除");
-				goto end_of_function;
-			end_of_function:
-				return;
-			}
+				DYNAMIC_COMMAND_CONSTRUCTOR(Delete) {}
+
+				~Delete() final {}
+
+				void Execute() final {
+					if (MustSearch()) {
+						auto name_param = GetParam(0);
+						if (name_param.type() == typeid(std::nullptr_t)) [[unlikely]]
+							goto lack_error;
+						else if (!IsSameType<std::wstring>(name_param)) [[unlikely]]
+							goto type_error;
+
+						name = (!IsReferenceType<std::wstring>(name) ? std::any_cast<std::wstring>(name) : GetReferencedValue<std::wstring>(name));
+					}
+					if (name.empty()) [[unlikely]]
+						goto name_error;
+
+					ReplaceFormat(&name);
+					if (name == L"__all" || name == L"__全部") {
+						for (int i = 0; Program::Instance().canvas.DeleteLayer(i););
+						Program::Instance().canvas.CreateAbsoluteLayer(L"デフォルトレイヤー");
+						Program::Instance().canvas.SelectLayer(L"デフォルトレイヤー");
+					} else {
+						Program::Instance().canvas.DeleteLayer(name);
+					}
+
+					return;
+				name_error:
+					event::Manager::Instance().error_handler.SendLocalError(empty_name_error, L"コマンド名: deletelayer/レイヤー削除");
+					goto end_of_function;
+				lack_error:
+					event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error, L"コマンド名: deletelayer/レイヤー削除");
+					goto end_of_function;
+				type_error:
+					event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error, L"コマンド名: deletelayer/レイヤー削除");
+					goto end_of_function;
+				end_of_function:
+					return;
+				}
 			};
 
 			DYNAMIC_COMMAND(Show final) {
 				std::wstring name{};
-		public:
-			Show(const std::wstring & N) noexcept : Show(std::vector<std::wstring>{}) {
-				name = N;
-			}
-
-			DYNAMIC_COMMAND_CONSTRUCTOR(Show) {}
-
-			~Show() final {}
-
-			void Execute() final {
-				if (MustSearch()) {
-					auto name_param = GetParam(0);
-					if (name_param.type() == typeid(std::nullptr_t)) [[unlikely]]
-						goto lack_error;
-					else if (!IsSameType<std::wstring>(name_param)) [[unlikely]]
-						goto type_error;
-
-					name = (!IsReferenceType<std::wstring>(name) ? std::any_cast<std::wstring>(name) : GetReferencedValue<std::wstring>(name));
+			public:
+				Show(const std::wstring & N) noexcept : Show(std::vector<std::wstring>{}) {
+					name = N;
 				}
-				if (name.empty()) [[unlikely]]
-					goto name_error;
-				ReplaceFormat(&name);
-				Program::Instance().canvas.Show(name);
 
-				return;
-			name_error:
-				event::Manager::Instance().error_handler.SendLocalError(empty_name_error, L"コマンド名: showlayer/レイヤー表示");
-				goto end_of_function;
-			lack_error:
-				event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error, L"コマンド名: showlayer/レイヤー表示");
-				goto end_of_function;
-			type_error:
-				event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error, L"コマンド名: showlayer/レイヤー表示");
-				goto end_of_function;
-			end_of_function:
-				return;
-			}
+				DYNAMIC_COMMAND_CONSTRUCTOR(Show) {}
+
+				~Show() final {}
+
+				void Execute() final {
+					if (MustSearch()) {
+						auto name_param = GetParam(0);
+						if (name_param.type() == typeid(std::nullptr_t)) [[unlikely]]
+							goto lack_error;
+						else if (!IsSameType<std::wstring>(name_param)) [[unlikely]]
+							goto type_error;
+
+						name = (!IsReferenceType<std::wstring>(name) ? std::any_cast<std::wstring>(name) : GetReferencedValue<std::wstring>(name));
+					}
+					if (name.empty()) [[unlikely]]
+						goto name_error;
+					ReplaceFormat(&name);
+					Program::Instance().canvas.Show(name);
+
+					return;
+				name_error:
+					event::Manager::Instance().error_handler.SendLocalError(empty_name_error, L"コマンド名: showlayer/レイヤー表示");
+					goto end_of_function;
+				lack_error:
+					event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error, L"コマンド名: showlayer/レイヤー表示");
+					goto end_of_function;
+				type_error:
+					event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error, L"コマンド名: showlayer/レイヤー表示");
+					goto end_of_function;
+				end_of_function:
+					return;
+				}
 			};
 
 			DYNAMIC_COMMAND(Hide final) {
 				std::wstring name{};
-		public:
-			Hide(const std::wstring & N) noexcept : Hide(std::vector<std::wstring>{}) {
-				name = N;
-			}
-
-			DYNAMIC_COMMAND_CONSTRUCTOR(Hide) {}
-
-			~Hide() final {}
-
-			void Execute() final {
-				if (MustSearch()) {
-					auto name_param = GetParam(0);
-					if (name_param.type() == typeid(std::nullptr_t)) [[unlikely]]
-						goto lack_error;
-					else if (!IsSameType<std::wstring>(name_param)) [[unlikely]]
-						goto type_error;
-
-					name = (!IsReferenceType<std::wstring>(name) ? std::any_cast<std::wstring>(name) : GetReferencedValue<std::wstring>(name));
+			public:
+				Hide(const std::wstring & N) noexcept : Hide(std::vector<std::wstring>{}) {
+					name = N;
 				}
-				if (name.empty()) [[unlikely]]
-					goto name_error;
-				ReplaceFormat(&name);
-				Program::Instance().canvas.Hide(name);
 
-				return;
-			name_error:
-				event::Manager::Instance().error_handler.SendLocalError(empty_name_error, L"コマンド名: hidelayer/レイヤー非表示");
-				goto end_of_function;
-			lack_error:
-				event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error, L"コマンド名: hidelayer/レイヤー非表示");
-				goto end_of_function;
-			type_error:
-				event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error, L"コマンド名: hidelayer/レイヤー非表示");
-				goto end_of_function;
-			end_of_function:
-				return;
-			}
+				DYNAMIC_COMMAND_CONSTRUCTOR(Hide) {}
+
+				~Hide() final {}
+
+				void Execute() final {
+					if (MustSearch()) {
+						auto name_param = GetParam(0);
+						if (name_param.type() == typeid(std::nullptr_t)) [[unlikely]]
+							goto lack_error;
+						else if (!IsSameType<std::wstring>(name_param)) [[unlikely]]
+							goto type_error;
+
+						name = (!IsReferenceType<std::wstring>(name) ? std::any_cast<std::wstring>(name) : GetReferencedValue<std::wstring>(name));
+					}
+					if (name.empty()) [[unlikely]]
+						goto name_error;
+					ReplaceFormat(&name);
+					Program::Instance().canvas.Hide(name);
+
+					return;
+				name_error:
+					event::Manager::Instance().error_handler.SendLocalError(empty_name_error, L"コマンド名: hidelayer/レイヤー非表示");
+					goto end_of_function;
+				lack_error:
+					event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error, L"コマンド名: hidelayer/レイヤー非表示");
+					goto end_of_function;
+				type_error:
+					event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error, L"コマンド名: hidelayer/レイヤー非表示");
+					goto end_of_function;
+				end_of_function:
+					return;
+				}
 			};
 		}
 
@@ -2129,107 +2129,107 @@ namespace karapo::event {
 	}
 
 			DYNAMIC_COMMAND(MathCommand) {
-		protected:
-			inline static error::ErrorClass* operation_error_class{};
-			inline static error::ErrorContent* assign_error{};
+			protected:
+				inline static error::ErrorClass* operation_error_class{};
+				inline static error::ErrorContent* assign_error{};
 
-			static void Reassign(const int Result) {
-				switch (Result) {
-					case IDYES:
-					{
-						auto& var = Program::Instance().var_manager.Get<false>(L"__assignable");
-						auto& value = Program::Instance().var_manager.Get<false>(L"__calculated");
-						if (value.type() == typeid(Dec))
-							Program::Instance().var_manager.MakeNew(std::any_cast<std::wstring>(var)) = std::any_cast<Dec>(value);
-						else if (value.type() == typeid(int))
-							Program::Instance().var_manager.MakeNew(std::any_cast<std::wstring>(var)) = std::any_cast<int>(value);
-						else if (value.type() == typeid(std::wstring))
-							Program::Instance().var_manager.MakeNew(std::any_cast<std::wstring>(var)) = std::any_cast<std::wstring>(value);
-						break;
+				static void Reassign(const int Result) {
+					switch (Result) {
+						case IDYES:
+						{
+							auto& var = Program::Instance().var_manager.Get<false>(L"__assignable");
+							auto& value = Program::Instance().var_manager.Get<false>(L"__calculated");
+							if (value.type() == typeid(Dec))
+								Program::Instance().var_manager.MakeNew(std::any_cast<std::wstring>(var)) = std::any_cast<Dec>(value);
+							else if (value.type() == typeid(int))
+								Program::Instance().var_manager.MakeNew(std::any_cast<std::wstring>(var)) = std::any_cast<int>(value);
+							else if (value.type() == typeid(std::wstring))
+								Program::Instance().var_manager.MakeNew(std::any_cast<std::wstring>(var)) = std::any_cast<std::wstring>(value);
+							break;
+						}
+						case IDNO:
+							break;
+						default:
+							MYGAME_ASSERT(0);
 					}
-					case IDNO:
-						break;
-					default:
-						MYGAME_ASSERT(0);
+					Program::Instance().var_manager.Delete(L"__assignable");
+					Program::Instance().var_manager.Delete(L"__calculated");
 				}
-				Program::Instance().var_manager.Delete(L"__assignable");
-				Program::Instance().var_manager.Delete(L"__calculated");
-			}
 
-			union CalculateValue {
-				int i;
-				Dec d;
-			};
+				union CalculateValue {
+					int i;
+					Dec d;
+				};
 
-			void SendAssignError(const std::any & Value) {
-				event::Manager::Instance().error_handler.SendLocalError(assign_error, (L"変数: " + var_name).c_str(), &MathCommand::Reassign);
-				Program::Instance().var_manager.MakeNew(L"__assignable") = var_name;
-				if (Value.type() == typeid(int))
-					Program::Instance().var_manager.MakeNew(L"__calculated") = std::any_cast<int>(Value);
-				else if (Value.type() == typeid(Dec))
-					Program::Instance().var_manager.MakeNew(L"__calculated") = std::any_cast<Dec>(Value);
-				else if (Value.type() == typeid(std::wstring))
-					Program::Instance().var_manager.MakeNew(L"__calculated") = std::any_cast<std::wstring>(Value);
-			}
+				void SendAssignError(const std::any & Value) {
+					event::Manager::Instance().error_handler.SendLocalError(assign_error, (L"変数: " + var_name).c_str(), &MathCommand::Reassign);
+					Program::Instance().var_manager.MakeNew(L"__assignable") = var_name;
+					if (Value.type() == typeid(int))
+						Program::Instance().var_manager.MakeNew(L"__calculated") = std::any_cast<int>(Value);
+					else if (Value.type() == typeid(Dec))
+						Program::Instance().var_manager.MakeNew(L"__calculated") = std::any_cast<Dec>(Value);
+					else if (Value.type() == typeid(std::wstring))
+						Program::Instance().var_manager.MakeNew(L"__calculated") = std::any_cast<std::wstring>(Value);
+				}
 
-			void SendAssignError(const bool Is_Only_Int, const CalculateValue Cal_Value) {
-				event::Manager::Instance().error_handler.SendLocalError(assign_error, (L"変数: " + var_name).c_str(), &MathCommand::Reassign);
-				Program::Instance().var_manager.MakeNew(L"__assignable") = var_name;
-				Program::Instance().var_manager.MakeNew(L"__calculated") = (Is_Only_Int ? Cal_Value.i : Cal_Value.d);
-			}
-		public:
-			MathCommand(const std::vector<std::wstring>&Params) : DynamicCommand(Params) {
-				if (operation_error_class == nullptr) [[unlikely]]
-					operation_error_class = error::UserErrorHandler::MakeErrorClass(L"演算エラー");
-				if (assign_error == nullptr) [[unlikely]]
-					assign_error = error::UserErrorHandler::MakeError(operation_error_class, L"代入先の変数が存在しません。\n新しくこの変数を作成しますか?", MB_YESNO | MB_ICONERROR, 2);
-			}
+				void SendAssignError(const bool Is_Only_Int, const CalculateValue Cal_Value) {
+					event::Manager::Instance().error_handler.SendLocalError(assign_error, (L"変数: " + var_name).c_str(), &MathCommand::Reassign);
+					Program::Instance().var_manager.MakeNew(L"__assignable") = var_name;
+					Program::Instance().var_manager.MakeNew(L"__calculated") = (Is_Only_Int ? Cal_Value.i : Cal_Value.d);
+				}
+			public:
+				MathCommand(const std::vector<std::wstring>&Params) : DynamicCommand(Params) {
+					if (operation_error_class == nullptr) [[unlikely]]
+						operation_error_class = error::UserErrorHandler::MakeErrorClass(L"演算エラー");
+					if (assign_error == nullptr) [[unlikely]]
+						assign_error = error::UserErrorHandler::MakeError(operation_error_class, L"代入先の変数が存在しません。\n新しくこの変数を作成しますか?", MB_YESNO | MB_ICONERROR, 2);
+				}
 
-			std::wstring var_name{};
-			std::any value[2]{};
+				std::wstring var_name{};
+				std::any value[2]{};
 
-			// 計算に必要な値を展開する。
-			// 成功ならtrue、失敗ならfalseを返す。
-			[[nodiscard]] bool Extract(const int Length) noexcept {
-				if (MustSearch()) {
-					var_name = std::any_cast<std::wstring>(GetParam<true>(0));
-					for (int i = 0; i < Length; i++) {
-						value[i] = GetParam(i + 1);
-						auto s = std::any_cast<std::wstring>(GetParam<true>(i + 1));
-						// 型チェック
-						if (value[i].type() == typeid(std::wstring)) {
-							value[i] = std::any_cast<std::wstring>(GetParam<true>(i + 1));
-							auto tmp = std::any_cast<std::wstring>(value[i]);
-							auto [iv, ip] = ToInt(tmp.c_str());
-							auto [fv, fp] = ToDec<Dec>(tmp.c_str());
-							if (wcslen(ip) <= 0)
-								value[i] = iv;
-							else if (wcslen(fp) <= 0)
-								value[i] = fv;
-						} else if (value[i].type() == typeid(int) || value[i].type() == typeid(Dec) || value[i].type() == typeid(resource::Resource)) {
-							continue;
-						} else if (value[i].type() == typeid(animation::FrameRef)) {
-							value[i] = std::ref(
-								std::any_cast<animation::FrameRef&>(
-								Program::Instance().var_manager.Get<false>(std::any_cast<std::wstring>(GetParam<true>(i + 1)))
-							)
-							);
-						} else if (value[i].type() == typeid(std::nullptr_t)) [[unlikely]]
-							goto lack_error;
-						else
-							goto type_error;
+				// 計算に必要な値を展開する。
+				// 成功ならtrue、失敗ならfalseを返す。
+				[[nodiscard]] bool Extract(const int Length) noexcept {
+					if (MustSearch()) {
+						var_name = std::any_cast<std::wstring>(GetParam<true>(0));
+						for (int i = 0; i < Length; i++) {
+							value[i] = GetParam(i + 1);
+							auto s = std::any_cast<std::wstring>(GetParam<true>(i + 1));
+							// 型チェック
+							if (value[i].type() == typeid(std::wstring)) {
+								value[i] = std::any_cast<std::wstring>(GetParam<true>(i + 1));
+								auto tmp = std::any_cast<std::wstring>(value[i]);
+								auto [iv, ip] = ToInt(tmp.c_str());
+								auto [fv, fp] = ToDec<Dec>(tmp.c_str());
+								if (wcslen(ip) <= 0)
+									value[i] = iv;
+								else if (wcslen(fp) <= 0)
+									value[i] = fv;
+							} else if (value[i].type() == typeid(int) || value[i].type() == typeid(Dec) || value[i].type() == typeid(resource::Resource)) {
+								continue;
+							} else if (value[i].type() == typeid(animation::FrameRef)) {
+								value[i] = std::ref(
+									std::any_cast<animation::FrameRef&>(
+									Program::Instance().var_manager.Get<false>(std::any_cast<std::wstring>(GetParam<true>(i + 1)))
+								)
+								);
+							} else if (value[i].type() == typeid(std::nullptr_t)) [[unlikely]]
+								goto lack_error;
+							else
+								goto type_error;
+						}
 					}
+					return true;
+				lack_error:
+					event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error);
+					goto failed_exit;
+				type_error:
+					event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error);
+					goto failed_exit;
+				failed_exit:
+					return false;
 				}
-				return true;
-			lack_error:
-				event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error);
-				goto failed_exit;
-			type_error:
-				event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error);
-				goto failed_exit;
-			failed_exit:
-				return false;
-			}
 			};
 
 			class Assign final : public MathCommand {
