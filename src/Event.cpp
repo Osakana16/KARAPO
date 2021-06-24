@@ -5011,52 +5011,69 @@ namespace karapo::event {
 		target_value = tv;
 	}
 
+	namespace {
+		template<typename T>
+		bool EvaluteValues(const std::any& Left_Value, const std::any& Right_Value, bool(*cmp)(const T&, const T&)) noexcept {
+			T left = (Left_Value.type() == typeid(T) ? std::any_cast<T>(Left_Value) : std::any_cast<std::reference_wrapper<T>>(Left_Value).get());
+			T right = (Right_Value.type() == typeid(T) ? std::any_cast<T>(Right_Value) : std::any_cast<std::reference_wrapper<T>>(Right_Value).get());
+			
+			return cmp(left, right);
+		}
+
+		template<typename T>
+		bool EqualValues(const T& Left_Value, const T& Right_Value) noexcept {
+			return Left_Value == Right_Value;
+		}
+
+		template<typename T>
+		bool NotEqualValues(const T& Left_Value, const T& Right_Value) noexcept {
+			return Left_Value != Right_Value;
+		}
+
+		template<typename T>
+		bool LessEqualValues(const T& Left_Value, const T& Right_Value) noexcept {
+			return Left_Value <= Right_Value;
+		}
+
+		template<typename T>
+		bool HighEqualValues(const T& Left_Value, const T& Right_Value) noexcept {
+			return Left_Value >= Right_Value;
+		}
+
+		template<typename T>
+		bool LessValues(const T& Left_Value, const T& Right_Value) noexcept {
+			return Left_Value < Right_Value;
+		}
+
+		template<typename T>
+		bool HighValues(const T& Left_Value, const T& Right_Value) noexcept {
+			return Left_Value > Right_Value;
+		}
+
+		template<typename T>
+		std::unordered_map<std::wstring, bool(*)(const T&, const T&)> compares{
+			{ L"==", &EqualValues<T> },
+			{ L"!", &NotEqualValues<T> },
+			{ L"<", &LessValues<T> },
+			{ L">", &HighValues<T> },
+			{ L"<=", &LessEqualValues<T> },
+			{ L">=", &HighEqualValues<T> }
+		};
+	}
+
 	// èåèéÆÇï]âøÇ∑ÇÈ
 	bool Manager::ConditionManager::Evalute(const std::wstring& Mode, const std::any& Right_Value) noexcept {
 		can_execute = true;
 		auto& target_type = target_value.type();
+
 		// ìØÇ∂å^ÇÃÇ›Çî‰ärÇ∑ÇÈÅB
 		if (target_type == Right_Value.type()) {
-			if (Mode == L"==") {
-				if (target_type == typeid(int)) {
-					can_execute = (std::any_cast<int>(target_value) == std::any_cast<int>(Right_Value));
-				} else if (target_type == typeid(Dec)) {
-					can_execute = (std::any_cast<Dec>(target_value) == std::any_cast<Dec>(Right_Value));
-				} else if (target_type == typeid(std::wstring)) {
-					can_execute = (std::any_cast<std::wstring>(target_value) == std::any_cast<std::wstring>(Right_Value));
-				}
-			} else if (Mode == L"!") {
-				if (target_type == typeid(int)) {
-					can_execute = (std::any_cast<int>(target_value) != std::any_cast<int>(Right_Value));
-				} else if (target_type == typeid(Dec)) {
-					can_execute = (std::any_cast<Dec>(target_value) != std::any_cast<Dec>(Right_Value));
-				} else if (target_type == typeid(std::wstring)) {
-					can_execute = (std::any_cast<std::wstring>(target_value) != std::any_cast<std::wstring>(Right_Value));
-				}
-			} else if (Mode == L"<=") {
-				if (target_type == typeid(int)) {
-					can_execute = (std::any_cast<int>(target_value) <= std::any_cast<int>(Right_Value));
-				} else if (target_type == typeid(Dec)) {
-					can_execute = (std::any_cast<Dec>(target_value) <= std::any_cast<Dec>(Right_Value));
-				}
-			} else if (Mode == L">=") {
-				if (target_type == typeid(int)) {
-					can_execute = (std::any_cast<int>(target_value) >= std::any_cast<int>(Right_Value));
-				} else if (target_type == typeid(Dec)) {
-					can_execute = (std::any_cast<Dec>(target_value) >= std::any_cast<Dec>(Right_Value));
-				}
-			} else if (Mode == L"<") {
-				if (target_type == typeid(int)) {
-					can_execute = (std::any_cast<int>(target_value) < std::any_cast<int>(Right_Value));
-				} else if (target_type == typeid(Dec)) {
-					can_execute = (std::any_cast<Dec>(target_value) < std::any_cast<Dec>(Right_Value));
-				}
-			} else if (Mode == L">") {
-				if (target_type == typeid(int)) {
-					can_execute = (std::any_cast<int>(target_value) > std::any_cast<int>(Right_Value));
-				} else if (target_type == typeid(Dec)) {
-					can_execute = (std::any_cast<Dec>(target_value) > std::any_cast<Dec>(Right_Value));
-				}
+			if (target_type == typeid(int) || target_type == typeid(std::reference_wrapper<int>)) {
+				can_execute = EvaluteValues<int>(target_value, Right_Value, compares<int>[Mode]);
+			} else if (target_type == typeid(Dec)) {
+				can_execute = EvaluteValues<Dec>(target_value, Right_Value, compares<Dec>[Mode]);
+			} else if (target_type == typeid(std::wstring)) {
+				can_execute = EvaluteValues<std::wstring>(target_value, Right_Value, compares<std::wstring>[Mode]);
 			}
 		}
 		return can_execute;
