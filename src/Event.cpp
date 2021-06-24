@@ -2316,6 +2316,12 @@ namespace karapo::event {
 					Program::Instance().var_manager.MakeNew(L"__assignable") = var_name;
 					Program::Instance().var_manager.MakeNew(L"__calculated") = (Is_Only_Int ? Cal_Value.i : Cal_Value.d);
 				}
+
+				void SendAssignError(const std::wstring& Sentence) {
+					event::Manager::Instance().error_handler.SendLocalError(assign_error, (L"変数: " + var_name).c_str(), &MathCommand::Reassign);
+					Program::Instance().var_manager.MakeNew(L"__assignable") = var_name;
+					Program::Instance().var_manager.MakeNew(L"__calculated") = Sentence;
+				}
 			public:
 				MathCommand(const std::vector<std::wstring>&Params) : DynamicCommand(Params) {
 					if (operation_error_class == nullptr) [[unlikely]]
@@ -2337,14 +2343,7 @@ namespace karapo::event {
 							auto s = std::any_cast<std::wstring>(GetParam<true>(i + 1));
 							// 型チェック
 							if (value[i].type() == typeid(std::wstring)) {
-								value[i] = std::any_cast<std::wstring>(GetParam<true>(i + 1));
-								auto tmp = std::any_cast<std::wstring>(value[i]);
-								auto [iv, ip] = ToInt(tmp.c_str());
-								auto [fv, fp] = ToDec<Dec>(tmp.c_str());
-								if (wcslen(ip) <= 0)
-									value[i] = iv;
-								else if (wcslen(fp) <= 0)
-									value[i] = fv;
+								continue;
 							} else if (value[i].type() == typeid(int) || value[i].type() == typeid(Dec) || value[i].type() == typeid(resource::Resource)) {
 								continue;
 							} else if (value[i].type() == typeid(animation::FrameRef)) {
@@ -2429,30 +2428,51 @@ namespace karapo::event {
 
 				void Execute() final {
 					if (Extract(2)) {
-						const bool Is_Only_Int = (IsSameType<int>(value[0]) && IsSameType<int>(value[1]));
+						if (!IsSameType<std::wstring>(value[0]) && !IsSameType<std::wstring>(value[1])) {
+							const bool Is_Only_Int = (IsSameType<int>(value[0]) && IsSameType<int>(value[1]));
 
-						CalculateValue cal;
-						MATH_COMMAND_CALCULATE(+);
+							CalculateValue cal;
+							MATH_COMMAND_CALCULATE(+);
 
-						auto* v = &Program::Instance().var_manager.Get<false>(var_name);
-						if (v->type() != typeid(std::nullptr_t)) [[likely]] {
-							if (v->type() == typeid(std::reference_wrapper<std::any>)) {
-								auto& ref = std::any_cast<std::reference_wrapper<std::any>&>(*v).get();
-								if (Is_Only_Int)
-									ref = cal.i;
-								else
-									ref = cal.d;
+							auto* v = &Program::Instance().var_manager.Get<false>(var_name);
+							if (v->type() != typeid(std::nullptr_t)) [[likely]] {
+								if (v->type() == typeid(std::reference_wrapper<std::any>)) {
+									auto& ref = std::any_cast<std::reference_wrapper<std::any>&>(*v).get();
+									if (Is_Only_Int)
+										ref = cal.i;
+									else
+										ref = cal.d;
+								} else {
+									if (Is_Only_Int)
+										*v = cal.i;
+									else
+										*v = cal.d;
+								}
 							} else {
-								if (Is_Only_Int)
-									*v = cal.i;
-								else
-									*v = cal.d;
+								SendAssignError(Is_Only_Int, cal);
 							}
 						} else {
-							SendAssignError(Is_Only_Int, cal);
+							std::wstring result{};
+							for (int i = 0; i < 2; i++) {
+								if (IsSameType<std::wstring>(value[i])) {
+									result += (!IsReferenceType<std::wstring>(value[i]) ? std::any_cast<std::wstring&>(value[i]) : GetReferencedValue<std::wstring>(value[i]));
+								} else {
+									goto type_error;
+								}
+							}
+							{
+								auto* v = &Program::Instance().var_manager.Get<false>(var_name);
+								if (v->type() != typeid(std::nullptr_t)) [[likely]] {
+									*v = result;
+								} else {
+									SendAssignError(result);
+								}
+							}
+							return;
+						type_error:
+							event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error);
 						}
 					}
-
 				}
 			};
 
