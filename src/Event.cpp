@@ -7,6 +7,7 @@
 #include <queue>
 #include <chrono>
 #include <forward_list>
+#include <optional>
 
 #define DYNAMIC_COMMAND(NAME) class NAME : public DynamicCommand
 #define DYNAMIC_COMMAND_CONSTRUCTOR(NAME) NAME(const std::vector<std::wstring>& Param) : DynamicCommand(Param)
@@ -1506,6 +1507,144 @@ namespace karapo::event {
 					goto end_of_function;
 				type_error:
 					event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error, L"コマンド名: defrost/解凍");
+					goto end_of_function;
+				end_of_function:
+					return;
+				}
+			};
+		}
+
+		namespace array {
+			DYNAMIC_COMMAND(Front final) {
+				std::wstring assignable_name{}, array_name{};
+			public:
+				Front(const std::wstring & Assignable_Name, const std::wstring & Array_Name) noexcept : Front(std::vector<std::wstring>{}) {
+					assignable_name = Assignable_Name;
+					array_name = Array_Name;
+				}
+
+				~Front() final {}
+
+				DYNAMIC_COMMAND_CONSTRUCTOR(Front) {}
+
+				void Execute() final {
+					auto& assignable = Program::Instance().var_manager.MakeNew(assignable_name);
+					auto& source_array = Program::Instance().var_manager.Get<false>(array_name);
+					if (source_array.type() == typeid(std::wstring)) {
+						std::wstring result{};
+						assignable = result + (!IsReferenceType<std::wstring>(source_array) ? std::any_cast<std::wstring&>(source_array) : GetReferencedValue<std::wstring>(source_array)).front();
+					} else {
+						goto type_error;
+					}
+					goto end_of_function;
+				name_error:
+					event::Manager::Instance().error_handler.SendLocalError(empty_name_error, L"コマンド名: front");
+					goto end_of_function;
+				lack_error:
+					event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error, L"コマンド名: front");
+					goto end_of_function;
+				type_error:
+					event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error, L"コマンド名: front");
+					goto end_of_function;
+				end_of_function:
+					return;
+				}
+			};
+
+			DYNAMIC_COMMAND(Back final) {
+				std::wstring assignable_name{}, array_name{};
+			public:
+				Back(const std::wstring& Assignable_Name, const std::wstring& Array_Name) noexcept : Back(std::vector<std::wstring>{}) {
+					assignable_name = Assignable_Name;
+					array_name = Array_Name;
+				}
+
+				~Back() final {}
+
+				DYNAMIC_COMMAND_CONSTRUCTOR(Back) {}
+
+				void Execute() final {
+					auto& assignable = Program::Instance().var_manager.MakeNew(assignable_name);
+					auto& source_array = Program::Instance().var_manager.Get<false>(array_name);
+					if (source_array.type() == typeid(std::wstring)) {
+						std::wstring result{};
+						assignable = result + (!IsReferenceType<std::wstring>(source_array) ? std::any_cast<std::wstring&>(source_array) : GetReferencedValue<std::wstring>(source_array)).back();
+					} else {
+						goto type_error;
+					}
+					goto end_of_function;
+				name_error:
+					event::Manager::Instance().error_handler.SendLocalError(empty_name_error, L"コマンド名: back");
+					goto end_of_function;
+				lack_error:
+					event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error, L"コマンド名: back");
+					goto end_of_function;
+				type_error:
+					event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error, L"コマンド名: back");
+					goto end_of_function;
+				end_of_function:
+					return;
+				}
+			};
+
+			DYNAMIC_COMMAND(Pop final) {
+				std::wstring array_name{};
+				std::optional<int> index = std::nullopt;
+
+				template<typename T>
+				bool PopArray(T& source_array) noexcept {
+					if (!index.has_value())
+						source_array.pop_back();
+					else if (index.value() >= 0 && index.value() < source_array.size())
+						source_array.erase(source_array.begin() + index.value());
+					else if (index.value() < 0 && index.value() >= -source_array.size())
+						source_array.erase(source_array.end() + index.value());
+					else
+						return false;
+
+					return true;
+				}
+			public:
+				Pop(const std::wstring& Array_Name, const std::optional<int> Index) noexcept : Pop(std::vector<std::wstring>{}) {
+					array_name = Array_Name;
+					index = Index;
+				}
+
+				~Pop() final {}
+
+				DYNAMIC_COMMAND_CONSTRUCTOR(Pop) {}
+
+				void Execute() final {
+					if (MustSearch()) {
+						auto array_name_param = GetParam<true>(0),
+							index_param = GetParam(1);
+						if (array_name_param.type() == typeid(std::nullptr_t))
+							goto lack_error;
+						else if (index_param.type() == typeid(int))
+							index = std::any_cast<int>(index_param);
+
+						array_name = std::any_cast<std::wstring>(array_name_param);
+					}
+
+					if (!array_name.empty()) {
+						auto& source_array = Program::Instance().var_manager.Get<false>(array_name);
+						if (IsSameType<std::wstring>(source_array)) {
+							PopArray((!IsReferenceType<std::wstring>(source_array) ? std::any_cast<std::wstring&>(source_array) : GetReferencedValue<std::wstring>(source_array)));
+						} else {
+							goto type_error;
+						}
+					} else {
+						goto name_error;
+					}
+					goto end_of_function;
+				name_error:
+					event::Manager::Instance().error_handler.SendLocalError(empty_name_error, L"コマンド名: pop");
+					goto end_of_function;
+				lack_error:
+					event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error, L"コマンド名: pop");
+					goto end_of_function;
+				type_error:
+					event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error, L"コマンド名: pop");
 					goto end_of_function;
 				end_of_function:
 					return;
@@ -3579,6 +3718,95 @@ namespace karapo::event {
 									case 0:
 										return KeywordInfo::ParamResult::Lack;
 									case 1:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"front"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() noexcept -> CommandPtr {
+								const auto [Assignable, Assignable_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								const auto [Array, Array_Type] = Default_ProgramInterface.GetParamInfo(params[1]);
+								if (Default_ProgramInterface.IsNoType(Assignable_Type) && Default_ProgramInterface.IsNoType(Array_Type))
+									return std::make_unique<command::array::Front>(Assignable, Array);
+								else
+									return std::make_unique<command::array::Front>(params);
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+									case 1:
+										return KeywordInfo::ParamResult::Lack;
+									case 2:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"back"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() noexcept -> CommandPtr {
+								const auto [Assignable, Assignable_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								const auto [Array, Array_Type] = Default_ProgramInterface.GetParamInfo(params[1]);
+								if (Default_ProgramInterface.IsNoType(Assignable_Type) && Default_ProgramInterface.IsNoType(Array_Type))
+									return std::make_unique<command::array::Back>(Assignable, Array);
+								else
+									return std::make_unique<command::array::Back>(params);
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+									case 1:
+										return KeywordInfo::ParamResult::Lack;
+									case 2:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
+					words[L"pop"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() noexcept -> CommandPtr {
+								if (params.size() == 1) {
+									const auto [Array_Var, Array_Var_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+									if (Default_ProgramInterface.IsNoType(Array_Var_Type))
+										return std::make_unique<command::array::Pop>(Array_Var, std::nullopt);
+									else
+										return std::make_unique<command::array::Pop>(params);
+								} else if (params.size() == 2) {
+									const auto [Array_Var, Array_Var_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+									const auto [Index, Index_Type] = Default_ProgramInterface.GetParamInfo(params[1]);
+									if (Default_ProgramInterface.IsNoType(Array_Var_Type) && Default_ProgramInterface.IsNumberType(Index_Type))
+										return std::make_unique<command::array::Pop>(Array_Var, ToInt(Index.c_str(), nullptr));
+									else
+										return std::make_unique<command::array::Pop>(params);
+								} else {
+									return std::make_unique<command::array::Pop>(params);
+								}
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+										return KeywordInfo::ParamResult::Lack;
+									case 1:
+										return KeywordInfo::ParamResult::Medium;
+									case 2:
 										return KeywordInfo::ParamResult::Maximum;
 									default:
 										return KeywordInfo::ParamResult::Excess;
