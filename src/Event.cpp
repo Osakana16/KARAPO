@@ -1255,10 +1255,10 @@ namespace karapo::event {
 						len_param.type() == typeid(std::nullptr_t)) [[unlikely]]
 					{
 						goto lack_error;
-					} else if ((name_param.type() != typeid(std::wstring) && !IsReferenceType<std::wstring>(name_param)) ||
-						(name_param.type() != typeid(int) && !IsReferenceType<int>(name_param)) ||
-						(name_param.type() != typeid(int) && !IsReferenceType<int>(name_param)) ||
-						(name_param.type() != typeid(int) && !IsReferenceType<int>(name_param))) [[unlikely]]
+					} else if (!IsSameType<std::wstring>(name_param) ||
+						!IsSameType<int>(x_param) ||
+						!IsSameType<int>(y_param) ||
+						!IsSameType<int>(len_param)) [[unlikely]]
 					{
 						goto type_error;
 					}
