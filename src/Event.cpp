@@ -180,14 +180,19 @@ namespace karapo::event {
 		public:
 			Variable(const std::wstring & VName, const std::wstring & Any_Value) noexcept : Variable(std::vector<std::wstring>{}) {
 				varname = VName;
-				auto [iv, ir] = ToInt<int>(Any_Value.c_str());
-				auto [fv, fr] = ToDec<Dec>(Any_Value.c_str());
+				if (!Any_Value.empty()) {
+					auto [iv, ir] = ToInt<int>(Any_Value.c_str());
+					auto [fv, fr] = ToDec<Dec>(Any_Value.c_str());
 
-				if (wcslen(ir) <= 0) {
-					value = iv;
-				} else if (wcslen(fr) <= 0) {
-					value = fv;
+					if (wcslen(ir) <= 0) {
+						value = iv;
+					} else if (wcslen(fr) <= 0) {
+						value = fv;
+					} else {
+						goto string_value;
+					}
 				} else {
+				string_value:
 					try {
 						value = Program::Instance().var_manager.Get<true>(VName);
 					} catch (std::out_of_range&) {
