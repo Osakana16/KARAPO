@@ -4209,7 +4209,7 @@ namespace karapo::event {
 							.Result = [&]() -> CommandPtr {
 								const auto [Var, Var_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
 								const auto [Value, Value_Type] = Default_ProgramInterface.GetParamInfo(params[1]);
-								if (Var_Type == L"")
+								if (Value_Type != L"")
 									return std::make_unique<command::Global>(Var, Value);
 								else
 									return std::make_unique<command::Global>(params);
