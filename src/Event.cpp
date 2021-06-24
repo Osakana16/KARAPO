@@ -1531,8 +1531,10 @@ namespace karapo::event {
 					auto& assignable = Program::Instance().var_manager.MakeNew(assignable_name);
 					auto& source_array = Program::Instance().var_manager.Get<false>(array_name);
 					if (source_array.type() == typeid(std::wstring)) {
-						std::wstring result{};
-						assignable = result + (!IsReferenceType<std::wstring>(source_array) ? std::any_cast<std::wstring&>(source_array) : GetReferencedValue<std::wstring>(source_array)).front();
+						std::wstring result = (!IsReferenceType<std::wstring>(source_array) ? std::any_cast<std::wstring&>(source_array) : GetReferencedValue<std::wstring>(source_array));
+
+						if (!result.empty())
+							assignable = result.front() + std::wstring();
 					} else {
 						goto type_error;
 					}
@@ -1567,8 +1569,10 @@ namespace karapo::event {
 					auto& assignable = Program::Instance().var_manager.MakeNew(assignable_name);
 					auto& source_array = Program::Instance().var_manager.Get<false>(array_name);
 					if (source_array.type() == typeid(std::wstring)) {
-						std::wstring result{};
-						assignable = result + (!IsReferenceType<std::wstring>(source_array) ? std::any_cast<std::wstring&>(source_array) : GetReferencedValue<std::wstring>(source_array)).back();
+						std::wstring result = (!IsReferenceType<std::wstring>(source_array) ? std::any_cast<std::wstring&>(source_array) : GetReferencedValue<std::wstring>(source_array));
+
+						if (!result.empty())
+							assignable = result.back() + std::wstring();
 					} else {
 						goto type_error;
 					}
