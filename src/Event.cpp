@@ -1817,7 +1817,9 @@ namespace karapo::event {
 							auto event_param_name = e->param_names[i];
 							if (event_param_name[0] == L'&') {
 								auto& newvar = Program::Instance().var_manager.MakeNew(event_name + std::wstring(L"@") + event_param_name.substr(1));
-								newvar = std::ref(Program::Instance().var_manager.Get<false>(std::any_cast<std::wstring>(GetParam<true>(i))));
+								auto&& referrencable_name = std::any_cast<std::wstring>(GetParam<true>(i + 1));
+								auto& referrencable = Program::Instance().var_manager.Get<false>(referrencable_name);
+								newvar = std::ref(referrencable);
 							} else {
 								auto& newvar = Program::Instance().var_manager.MakeNew(event_name + std::wstring(L"@") + event_param_name);
 								if (value.type() == typeid(int))
@@ -2351,9 +2353,9 @@ namespace karapo::event {
 							value[i] = GetParam(i + 1);
 							auto s = std::any_cast<std::wstring>(GetParam<true>(i + 1));
 							// 型チェック
-							if (value[i].type() == typeid(std::wstring)) {
+							if (value[i].type() == typeid(std::wstring) || value[i].type() == typeid(int) || value[i].type() == typeid(Dec) || value[i].type() == typeid(resource::Resource)) {
 								continue;
-							} else if (value[i].type() == typeid(int) || value[i].type() == typeid(Dec) || value[i].type() == typeid(resource::Resource)) {
+							} else if (value[i].type() == typeid(std::reference_wrapper<std::any>)) {
 								continue;
 							} else if (value[i].type() == typeid(animation::FrameRef)) {
 								value[i] = std::ref(
@@ -2386,10 +2388,10 @@ namespace karapo::event {
 
 				void Execute() final {
 					if (Extract(1)) {
-						auto var_name = std::any_cast<std::wstring>(GetParam<true>(0));
 						auto& v = Program::Instance().var_manager.Get<false>(var_name);
 						if (v.type() != typeid(std::nullptr_t)) [[likely]] {
 							if (v.type() == typeid(std::reference_wrapper<std::any>)) {
+								auto& r = std::any_cast<std::reference_wrapper<std::any>&>(v);
 								auto& ref = std::any_cast<std::reference_wrapper<std::any>&>(v).get();
 								if (IsSameType<int>(value[0]))
 									ref = (!IsReferenceType<int>(value[0]) ? std::any_cast<int>(value[0]) : GetReferencedValue<int>(value[0]));
