@@ -2824,22 +2824,22 @@ namespace karapo::event {
 	// イベントのコマンド実行クラス
 	class Manager::CommandExecuter final {
 	public:
-		CommandExecuter(const std::list<CommandTree>* commands) {
+		CommandExecuter(const std::list<CommandGraph>* commands) {
 			if (commands->empty())
 				return;
 
 			Program::Instance().var_manager.MakeNew(L"of_state") = 1;
 			// ここから、コマンド実行。
 			{
-				const CommandTree *executing = &commands->front();
-				const CommandTree *goal = &commands->back();
+				const CommandGraph *executing = &commands->front();
+				const CommandGraph *goal = &commands->back();
 				while (executing != nullptr) {
 					executing->command->Execute();
 
 					// 親が存在せず、自身がゴールでない場合:
 					// 自身がcaseコマンドなので、他のofコマンド候補を探す。
 					if (executing->parent == nullptr && executing != goal) {
-						auto command_iterator = std::find_if(commands->begin(), commands->end(), [executing](const CommandTree& tree) {
+						auto command_iterator = std::find_if(commands->begin(), commands->end(), [executing](const CommandGraph& tree) {
 							return executing == &tree;
 							});
 
@@ -3096,12 +3096,12 @@ namespace karapo::event {
 
 				std::unordered_map<std::wstring, Event> parsing_events{};
 
-				CommandTree* parent = nullptr;
+				CommandGraph* parent = nullptr;
 				WorldVector origin[2]{ { -1, -1 }, { -1, -1 } };
 				TriggerType trigger_type = TriggerType::Invalid;
 				std::wstring event_name;
 				std::vector<std::wstring> params{};
-				std::list<CommandTree> commands{};
+				std::list<CommandGraph> commands{};
 				std::vector<std::wstring> command_parameters{};
 				std::unordered_map<std::wstring, GenerateFunc> words{};
 
@@ -4780,7 +4780,7 @@ namespace karapo::event {
 											if (command_name == L"case") {
 												if (!case_stack.front().second) {
 													// elseが無い為、暗黙的に空のelseを挿入。
-													commands.push_front(CommandTree{
+													commands.push_front(CommandGraph{
 														.command = words[L"else"]({}).Result(),
 														.word = L"else",
 														.parent = parent
@@ -4796,7 +4796,7 @@ namespace karapo::event {
 												case_stack.front().second = true;
 											}
 
-											commands.push_front(CommandTree{
+											commands.push_front(CommandGraph{
 												.command = generator.Result(),
 												.word = command_name,
 												.parent = parent
@@ -4856,13 +4856,13 @@ namespace karapo::event {
 				Optimizer() = default;
 
 				// 出来る限りの最適化。
-				Optimizer(std::list<CommandTree> *commands) noexcept {
+				Optimizer(std::list<CommandGraph> *commands) noexcept {
 					// 適切な道の形成
 					SortOfElse(commands);
 				}
 
 				// of/elseコマンドをstd::list内のcaseの直後に並べ直す。
-				void SortOfElse(std::list<CommandTree> *commands) noexcept {
+				void SortOfElse(std::list<CommandGraph> *commands) noexcept {
 					auto it = commands->begin();
 					std::list<decltype(it)> case_pos{};
 					// 各caseに対して、ofコマンドを挿入しなおした回数を保存するリスト。
@@ -4876,8 +4876,8 @@ namespace karapo::event {
 							// 親の修正
 							{
 								// 多重分岐避け
-								std::list<CommandTree*> ignore_case{};
-								CommandTree *of_parent{};
+								std::list<CommandGraph*> ignore_case{};
+								CommandGraph *of_parent{};
 								auto parent = &(*it);
 								while (parent->parent != nullptr) {
 									if (parent->parent->word == L"case") {

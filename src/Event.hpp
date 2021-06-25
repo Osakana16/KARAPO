@@ -21,15 +21,15 @@ namespace karapo::event {
 		Button					// 決定キー
 	};
 
-	struct CommandTree final {
+	struct CommandGraph final {
 		std::unique_ptr<Command> command{};
 		std::wstring word{};	// コマンド名
-		CommandTree* parent{};
+		CommandGraph* parent{};
 	};
 
 	// イベント
 	struct Event {
-		using Commands = std::list<CommandTree>;
+		using Commands = std::list<CommandGraph>;
 		
 		Commands commands;						// コマンド
 		TriggerType trigger_type;				// イベント発生タイプ
