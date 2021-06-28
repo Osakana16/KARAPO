@@ -2859,31 +2859,31 @@ namespace karapo::event {
 			class LexicalParser final {
 				Context context;
 
-				static auto MakeStringContext(Context *context, std::wstring::const_iterator current_char, std::wstring::const_iterator end) noexcept {
+				auto MakeStringContext(std::wstring::const_iterator current_char, std::wstring::const_iterator end) noexcept {
 					if (current_char == end) {
 						return current_char;
 					} else if (*current_char == L'\'') {
-						context->back() += *current_char;
+						context.back() += *current_char;
 						return current_char;
 					}
-					context->back() += *current_char;
-					return MakeStringContext(context, current_char + 1, end);
+					context.back() += *current_char;
+					return MakeStringContext(current_char + 1, end);
 				}
 
-				static auto MakeContext(Context *context, std::wstring::const_iterator current_char, std::wstring::const_iterator end) noexcept {
+				auto MakeContext(std::wstring::const_iterator current_char, std::wstring::const_iterator end) noexcept {
 					if (current_char == end) {
 						return current_char;
 					} else if (*current_char == L'\n') {
-						context->push_back({});
-						context->back() += *current_char;
+						context.push_back({});
+						context.back() += *current_char;
 						current_char++;
 						return current_char;
 					}
 
 					switch (*current_char) {
 						case L'\'':
-							context->back() += *current_char;
-							current_char = MakeStringContext(context, current_char + 1, end);
+							context.back() += *current_char;
+							current_char = MakeStringContext(current_char + 1, end);
 							break;
 						case L'/':
 						case L'~':
@@ -2896,21 +2896,40 @@ namespace karapo::event {
 						case L',':
 						case L'{':
 						case L'}':
-							context->push_back({});
-							context->back() += *current_char;
-							context->push_back({});
+							context.push_back({});
+							context.back() += *current_char;
+							context.push_back({});
 							break;
 						case L'\r':
 							break;
 						case L' ':
 						case L'\t':
-							context->push_back({});
+							context.push_back({});
 							break;
 						default:
-							context->back() += *current_char;
+							context.back() += *current_char;
 							break;
 					}
-					return MakeContext(context, current_char + 1, end);
+					return MakeContext(current_char + 1, end);
+				}
+
+				auto JoinContext(Context::iterator current_context, const std::wstring& Pattern) noexcept {
+					if (current_context == context.end()) {
+						return;
+					}
+					if (Pattern.find(*current_context) != std::wstring::npos) {
+						auto next = std::next(current_context, 1);
+						auto op = (*current_context + *next);
+						if (Pattern == op) {
+							current_context = context.erase(current_context);
+							*current_context = op;
+							JoinContext(std::find_if(std::next(current_context, 1), context.end(), [](const std::wstring& Word) { return Word == L"\n"; }), Pattern);
+						} else
+							goto next_char;
+					} else {
+					next_char:
+						JoinContext(std::next(current_context, 1), Pattern);
+					}
 				}
 			public:
 				LexicalParser(const std::wstring Sentence) noexcept {
@@ -2918,9 +2937,10 @@ namespace karapo::event {
 						auto sentence_iterator = Sentence.begin();
 						context.push_back({});
 						while (sentence_iterator != Sentence.end()) {
-							sentence_iterator = MakeContext(&context, sentence_iterator, Sentence.end());
+							sentence_iterator = MakeContext(sentence_iterator, Sentence.end());
 						}
 					}
+					// 空文字の削除。
 					{
 						auto context_iterator = context.begin();
 						while (context_iterator != context.end()) {
@@ -2932,37 +2952,11 @@ namespace karapo::event {
 					}
 
 					{
-						// 文字の結合部
-						// >、=、<、/をそれぞれ結合する。
-
+						std::list<std::wstring> operators{ L"//", L"==", L"<=", L">=" };
 						std::wstring tmp{};
-						Context::iterator it = context.begin();
-						while (it != context.end()) {
-							it = std::find_if(it, context.end(), [](std::wstring text) {
-								return text == L"<" || text == L"=" || text == L">" || text == L"/" || text == L"\n";
-								});
-
-							if (it != context.end()) {
-								if (*it == L"\n") {
-									tmp.clear();
-									it++;
-									continue;
-								}
-								tmp += *it;
-								if (tmp.size() == 2) {
-									if (tmp == L"<=" || tmp == L"==" || tmp == L">=" || tmp == L"//") {
-										// 結合
-										context.erase(it--);
-										context.insert(it, tmp);
-										context.erase(it++);
-										tmp.clear();
-									} else if (tmp == L"<>" || tmp == L"=>" || tmp == L"=<") {
-										// 扱う演算子ではないので一時保存用を末梢。
-										tmp.clear();
-									}
-								}
-								it++;
-							}
+						while (!operators.empty()) {
+							JoinContext(context.begin(), operators.front());
+							operators.pop_front();
 						}
 					}
 				}
