@@ -344,3 +344,4 @@ lib/
 /DLL
 Data/
 kaction.ini
+*.dat
