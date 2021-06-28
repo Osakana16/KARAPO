@@ -2857,81 +2857,76 @@ namespace karapo::event {
 			// 空白を基準とする単語単位の解析結果をcontextとして排出。
 			class LexicalParser final {
 				Context context;
+
+				static auto MakeStringContext(Context *context, std::wstring::const_iterator current_char, std::wstring::const_iterator end) noexcept {
+					if (current_char == end) {
+						return current_char;
+					} else if (*current_char == L'\'') {
+						context->back() += *current_char;
+						return current_char;
+					}
+					context->back() += *current_char;
+					return MakeStringContext(context, current_char + 1, end);
+				}
+
+				static auto MakeContext(Context *context, std::wstring::const_iterator current_char, std::wstring::const_iterator end) noexcept {
+					if (current_char == end) {
+						return current_char;
+					} else if (*current_char == L'\n') {
+						context->push_back({});
+						context->back() += *current_char;
+						current_char++;
+						return current_char;
+					}
+
+					switch (*current_char) {
+						case L'\'':
+							context->back() += *current_char;
+							current_char = MakeStringContext(context, current_char + 1, end);
+							break;
+						case L'/':
+						case L'~':
+						case L']':
+						case L'[':
+						case L'>':
+						case L'<':
+						case L'(':
+						case L')':
+						case L',':
+						case L'{':
+						case L'}':
+							context->push_back({});
+							context->back() += *current_char;
+							context->push_back({});
+							break;
+						case L'\r':
+							break;
+						case L' ':
+						case L'\t':
+							context->push_back({});
+							break;
+						default:
+							context->back() += *current_char;
+							break;
+					}
+					return MakeContext(context, current_char + 1, end);
+				}
 			public:
 				LexicalParser(const std::wstring Sentence) noexcept {
-					auto PushWord = [](Context  *const context, std::wstring *const text) noexcept {
-						wprintf_s(L"Pushed:%s\n", text->c_str());
-						context->push_back(*text);
-						text->clear();
-					};
-
 					{
-						// 読み込もうとした単語が、文字列として書かれているかを判定する為の変数
-						// 値がtrueの間、解析器はスペースを区切り文字として認識しなくなる。
-						bool is_string = false;
-						auto text = std::wstring(L"");
-
-						for (auto c : Sentence) {
-							if (!is_string) {
-
-
-								// スペース判定
-								if (IsSpace(c) || c == L'\0' || c == L'\n') {
-									// 貯めこんだ文字を単語として格納
-									if (!text.empty()) {
-										PushWord(&context, &text);
-									}
-
-									if (c == L'\n' && context.back() != L"\n") {
-										text = L'\n';
-										PushWord(&context, &text);
-									}
-									continue;
-								} else if (c == L'\r') {
-									// 復帰コードは無視。
-									continue;
-								}
-
-								// 演算子判定
-								switch (c) {
-									case L'\'':
-										is_string = true;
-										break;
-									case L'/':
-									case L'~':
-									case L']':
-									case L'[':
-									case L'>':
-									case L'<':
-									case L'(':
-									case L')':
-									case L',':
-									case L'{':
-									case L'}':
-									{
-										// 貯めこんだ文字を単語として格納
-										if (!text.empty()) {
-											PushWord(&context, &text);
-										}
-										// 記号を代入
-										text = c;
-										PushWord(&context, &text);
-										continue;
-									}
-									break;
-								}
-							} else {
-								// 演算子判定
-								switch (c) {
-									case L'\'':
-										is_string = false;
-										text += c;
-										PushWord(&context, &text);
-										continue;
-								}
-							}
-							// 読み込んだ文字を付け加える
-							text += c;
+						auto sentence_iterator = Sentence.begin();
+						context.push_back({});
+						while (sentence_iterator != Sentence.end()) {
+							sentence_iterator = MakeContext(&context, sentence_iterator, Sentence.end());
+						}
+					}
+					{
+						auto context_iterator = context.begin();
+						while (context_iterator != context.end()) {
+							if (context_iterator->empty())
+								context_iterator = context.erase(context_iterator);
+							else
+								context_iterator++;
 						}
 					}
 
