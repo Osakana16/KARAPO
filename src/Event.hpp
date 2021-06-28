@@ -22,9 +22,10 @@ namespace karapo::event {
 	};
 
 	struct CommandGraph final {
-		std::unique_ptr<Command> command{};
-		std::wstring word{};	// コマンド名
-		CommandGraph* parent{};
+		std::unique_ptr<Command> command{};	// コマンド本体。
+		std::wstring word{};											// コマンド名。
+		CommandGraph* parent{};							// 次に実行するコマンド。
+		CommandGraph* neighbor{};						// 条件分岐でfalseになった場合に実行するコマンド。
 	};
 
 	// イベント

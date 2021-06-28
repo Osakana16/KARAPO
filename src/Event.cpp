@@ -2835,29 +2835,7 @@ namespace karapo::event {
 				const CommandGraph *goal = &commands->back();
 				while (executing != nullptr) {
 					executing->command->Execute();
-
-					// 親が存在せず、自身がゴールでない場合:
-					// 自身がcaseコマンドなので、他のofコマンド候補を探す。
-					if (executing->parent == nullptr && executing != goal) {
-						auto command_iterator = std::find_if(commands->begin(), commands->end(), [executing](const CommandGraph& tree) {
-							return executing == &tree;
-							});
-
-						command_iterator++;
-						while (command_iterator != commands->end()) {
-							if (command_iterator->word == L"of" || command_iterator->word == L"else") {
-								command_iterator->command->Execute();
-								auto can_execute = std::any_cast<int>(Program::Instance().var_manager.Get<false>(L"of_state"));
-								if (can_execute) {
-									// 実行可能なコマンドなので、ここからコマンド実行。
-									executing = command_iterator->parent;
-									break;
-								}
-							}
-							command_iterator++;
-						}
-					} else
-						executing = executing->parent;
+					executing = (std::any_cast<int>(Program::Instance().var_manager.Get<false>(L"of_state")) == 1 ? executing->parent : executing->neighbor);
 				}
 			}
 		}
@@ -3092,11 +3070,8 @@ namespace karapo::event {
 			// 意味解析
 			class SemanticParser final {
 				std::list<Syntax*> visited{}, queue{};
-				std::list<std::wstring> stack{};
-
 				std::unordered_map<std::wstring, Event> parsing_events{};
 
-				CommandGraph* parent = nullptr;
 				WorldVector origin[2]{ { -1, -1 }, { -1, -1 } };
 				TriggerType trigger_type = TriggerType::Invalid;
 				std::wstring event_name;
@@ -3104,6 +3079,9 @@ namespace karapo::event {
 				std::list<CommandGraph> commands{};
 				std::vector<std::wstring> command_parameters{};
 				std::unordered_map<std::wstring, GenerateFunc> words{};
+
+				// コマンド文を発見したか否か。
+				bool found_command_sentence = false;
 
 				error::ErrorContent *error_occurred{};
 				inline static error::ErrorContent
@@ -4657,43 +4635,30 @@ namespace karapo::event {
 				}
 
 				SemanticParser(std::list<Syntax> *syntax) noexcept : SemanticParser() {
+					Context stack{};
 					// 左: 現在のcaseのイテレータ
-					// 右: elseが存在するか否か。
+				// 右: elseが存在するか否か。
 					std::list<std::pair<decltype(commands)::iterator, bool>> case_stack{};
-					// コマンド文を発見したか否か。
-					bool found_command_sentence = false;
 
-					for (auto it = syntax->begin(); it != syntax->end(); it++) {
-						if (std::find(visited.begin(), visited.end(), &(*it)) != visited.end()) {
-							continue;
-						}
-						auto route = &(*it);
-						while (route != nullptr) {
-							visited.push_back(route);
-							queue.push_back(route);
-							route = route->parent;
-						}
-
-						while (!queue.empty() && error_occurred == nullptr) {
-							stack.push_front(queue.front()->text);
-							auto& op = stack.front();
-							if (op == L"[]") {
-								stack.pop_front();
+					std::unordered_map<std::wstring, std::function<void(Context* stack)>> operator_funcs{
+						{ 
+							L"[]", [this](Context* stack) {
+								stack->pop_front();
 								if (event_name.empty()) {
-									switch (stack.size()) {
+									switch (stack->size()) {
 										case 0:
 											error_occurred = empty_name_error;
 											event::Manager::Instance().error_handler.SendLocalError(error_occurred);
 											break;
 										case 1:
-											event_name = stack.front();
-											stack.pop_front();
+											event_name = stack->front();
+											stack->pop_front();
 											break;
 										default:
 											std::wstring candidate_name{};
-											while (!stack.empty()) {
-												candidate_name += stack.front() + L' ';
-												stack.pop_front();
+											while (!stack->empty()) {
+												candidate_name += stack->front() + L' ';
+												stack->pop_front();
 											}
 											candidate_name.pop_back();
 											event_name = candidate_name;
@@ -4701,12 +4666,15 @@ namespace karapo::event {
 									}
 								} else {
 									error_occurred = already_new_event_name_defined_error;
-									event::Manager::Instance().error_handler.SendLocalError(error_occurred, (L"多重定義として判定されたイベント名: " + stack.front()));
+									event::Manager::Instance().error_handler.SendLocalError(error_occurred, (L"多重定義として判定されたイベント名: " + stack->front()));
 								}
-							} else if (op == L"<>") {
-								stack.pop_front();
+							} 
+						},
+						{
+							L"<>", [this](Context* stack) {
+								stack->pop_front();
 								if (trigger_type == TriggerType::Invalid) {
-									auto word = stack.front();
+									auto word = stack->front();
 									if (word == L"a") {
 										trigger_type = TriggerType::Auto;
 									} else if (word == L"t") {
@@ -4719,39 +4687,46 @@ namespace karapo::event {
 										trigger_type = TriggerType::None;
 										event::Manager::Instance().error_handler.SendLocalError(invalid_trigger_type_warning);
 									}
-									stack.pop_front();
+									stack->pop_front();
 
-									for (int i = 0; !stack.empty(); ) {
-										if (stack.front() == L"~")
+									for (int i = 0; !stack->empty(); ) {
+										if (stack->front() == L"~")
 											i = 1;
 										else {
-											origin[(origin[0][1] > -1)][i] = ToDec<Dec>(stack.front().c_str(), nullptr);
+											origin[(origin[0][1] > -1)][i] = ToDec<Dec>(stack->front().c_str(), nullptr);
 											i = 0;
 										}
-										stack.pop_front();
+										stack->pop_front();
 									}
 								} else {
 									error_occurred = already_new_trigger_type_defined_error;
-									event::Manager::Instance().error_handler.SendLocalError(error_occurred, (L"多重定義として判定された発生タイプ名: " + stack.front()));
+									event::Manager::Instance().error_handler.SendLocalError(error_occurred, (L"多重定義として判定された発生タイプ名: " + stack->front()));
 								}
-							} else if (op == L"()") {
-								stack.pop_front();
-								while (!stack.empty()) {
-									params.push_back(stack.front());
-									stack.pop_front();
+							}
+						},
+						{
+							L"()", [this](Context* stack) {
+								stack->pop_front();
+								while (!stack->empty()) {
+									params.push_back(stack->front());
+									stack->pop_front();
 								}
-							} else if (op == L"{}") {
+							}
+						},
+						{
+							L"{}", [this,&case_stack](Context* stack) {
+								stack->pop_front();
 								found_command_sentence = true;
-								stack.pop_front();
+
 								std::wstring command_name{};
 								GenerateFunc generator_candidate{};
-								while (!stack.empty()) {
-									auto it = words.find(stack.front());
+								while (!stack->empty()) {
+									auto it = words.find(stack->front());
 									if (it != words.end()) {
-										command_name = stack.front();
+										command_name = std::move(stack->front());
 										generator_candidate = it->second;
 									} else {
-										auto&& param = stack.front();
+										auto param = std::move(stack->front());
 										if (iswdigit(param[0]) || param[0] == L'-') {
 											param += std::wstring(L":") + innertype::Number;
 										} else if (param[0] == L'\'') {
@@ -4762,7 +4737,7 @@ namespace karapo::event {
 										}
 										command_parameters.push_back(param);
 									}
-									stack.pop_front();
+									stack->pop_front();
 								}
 
 								if (generator_candidate != nullptr) {
@@ -4780,12 +4755,13 @@ namespace karapo::event {
 											if (command_name == L"case") {
 												if (!case_stack.front().second) {
 													// elseが無い為、暗黙的に空のelseを挿入。
-													commands.push_front(CommandGraph{
-														.command = words[L"else"]({}).Result(),
-														.word = L"else",
-														.parent = parent
-														});
-													parent = &commands.front();
+													commands.insert(
+														std::prev(case_stack.front().first, 1),
+														CommandGraph{
+															.command = words[L"else"]({}).Result(),
+															.word = L"else"
+														}
+													);
 												}
 												case_stack.pop_front();
 											} else if (command_name == L"endcase") {
@@ -4799,9 +4775,7 @@ namespace karapo::event {
 											commands.push_front(CommandGraph{
 												.command = generator.Result(),
 												.word = command_name,
-												.parent = parent
-												});
-											parent = &commands.front();
+											});
 											break;
 										case KeywordInfo::ParamResult::Excess:
 											event::Manager::Instance().error_handler.SendLocalError(
@@ -4818,31 +4792,51 @@ namespace karapo::event {
 								}
 								command_parameters.clear();
 							}
-							queue.pop_front();
 						}
-						stack.clear();
+					};
+
+					const auto Command_Sentence_Iterator = operator_funcs.find(L"{}");
+					for (auto it = syntax->begin(); it != syntax->end(); it++) {
+						Syntax *syntax_content = &(*it);
+						while (syntax_content != nullptr) {
+							stack.push_front(syntax_content->text);
+							if (auto operator_iterator = operator_funcs.find(stack.front()); operator_iterator != operator_funcs.end()) {
+								if (operator_iterator == Command_Sentence_Iterator) found_command_sentence = true;
+								if (stack.size() > 1) {
+									it--;
+									operator_funcs[std::move(stack.front())](&stack);
+								}
+								stack.clear();
+							} else {
+								it++;
+							}
+							syntax_content = syntax_content->parent;
+						}
 
 						if (event::Manager::Instance().error_handler.ShowLocalError(4)) {
 							break;
 						}
 
 						if (!event_name.empty() && found_command_sentence) {
-							parsing_events[event_name].trigger_type = trigger_type;
-							parsing_events[event_name].param_names = std::move(params);
-							for (int i = 0; i < 2; i++)
-								parsing_events[event_name].origin[i] = origin[i];
+							// コマンドの親を設定。
+							for (auto command = commands.begin(); command != commands.end(); command++) {
+								auto next = std::next(command, 1);
+								if (next != commands.end()) {
+									command->parent = &(*next);
+								}
+							}
 
-							parsing_events[event_name].commands = std::move(commands);
+							auto& target_event = parsing_events[std::move(event_name)];
+							target_event.trigger_type = trigger_type;
+							target_event.param_names = std::move(params);
+							for (int i = 0; i < 2; i++)
+								target_event.origin[i] = origin[i];
+
+							target_event.commands = std::move(commands);
 							trigger_type = TriggerType::Invalid;
-							commands.clear();
-							params.clear();
-							event_name.clear();
-							parent = nullptr;
 							found_command_sentence = false;
 						}
 					}
-
-
 				}
 
 				auto& Result() {
@@ -4863,52 +4857,91 @@ namespace karapo::event {
 
 				// of/elseコマンドをstd::list内のcaseの直後に並べ直す。
 				void SortOfElse(std::list<CommandGraph> *commands) noexcept {
-					auto it = commands->begin();
-					std::list<decltype(it)> case_pos{};
-					// 各caseに対して、ofコマンドを挿入しなおした回数を保存するリスト。
-					std::list<int> inserted_counts{};
-					while (it != commands->end()) {
-						if (it->word == L"case") {
-							case_pos.push_front(it);
-							case_pos.front()->parent = nullptr;
-							inserted_counts.push_front(0);
-						} else if (it->word == L"of" || it->word == L"else") {
-							// 親の修正
-							{
-								// 多重分岐避け
-								std::list<CommandGraph*> ignore_case{};
-								CommandGraph *of_parent{};
-								auto parent = &(*it);
-								while (parent->parent != nullptr) {
-									if (parent->parent->word == L"case") {
-										ignore_case.push_back(parent->parent);
-									} else if ((parent->parent->word == L"of" || parent->parent->word == L"else") && of_parent == nullptr && ignore_case.empty()) {
-										// 次のコマンドがofコマンドまたはelseコマンド:
-										// 分岐終了なので変更対象に設定。
-										of_parent = parent;
-									} else if (parent->parent->word == L"endcase" && of_parent != nullptr) {
-										if (ignore_case.empty()) {
-											// 変更対象をendcaseコマンドに繋げる。
-											of_parent->parent = parent->parent;
-											break;
-										} else {
-											ignore_case.pop_back();
-										}
+					std::list<std::list<CommandGraph>::iterator> case_iterators{}, endcase_iterators{}, neighbor_caididate_iterators{};
+					{						
+						// 最初に、全てのcaseとencaseを探す。
+						for (auto it = commands->begin(); it != commands->end(); it++) {
+							if (it->word == L"case") {
+								case_iterators.push_front(it);
+							} else if (it->word == L"endcase") {
+								endcase_iterators.push_front(it);
+							}
+						}
+
+						// caseとendcase数が一致しない場合、構文的におかしいので終了。
+						if (case_iterators.size() != endcase_iterators.size())
+							return;
+						else if (case_iterators.empty() || endcase_iterators.empty())
+							return;
+
+						decltype(neighbor_caididate_iterators) candidate_iterators{};
+						int lock_count = 0;
+						int iterator_count = 0;
+						// 
+						for (auto it = case_iterators.front(); it != commands->end(); it++) {
+							if (it->word == L"case" && it != *std::next(case_iterators.begin(), iterator_count)) {
+								lock_count++;
+							} else if (lock_count <= 0 && (it->word == L"of" || it->word == L"else")) {
+								candidate_iterators.push_back(it);
+							} else if (it->word == L"endcase") {
+								if (lock_count > 0) {
+									lock_count--;
+								} else {
+									candidate_iterators.pop_front();
+									while (!candidate_iterators.empty()) {
+										neighbor_caididate_iterators.push_back(candidate_iterators.front());
+										candidate_iterators.pop_front();
 									}
-									parent = parent->parent;
+									if (++iterator_count < case_iterators.size()) {
+										it = *std::next(case_iterators.begin(), iterator_count);
+									}
 								}
 							}
-							inserted_counts.front()++;
-							// ofコマンドの位置をcaseの直後に設定。
-							commands->insert(std::next(case_pos.front(), inserted_counts.front()), std::move(*it));
-							it = commands->erase(it);
-							continue;
-						} else if (it->word == L"endcase") {
-							case_pos.pop_front();
-							inserted_counts.pop_front();
+						}
+					}
+					
+ 					std::list<std::list<CommandGraph>::iterator> fixed_iterators{};
+					auto it = case_iterators.front();
+					auto reversed_endcase_iterators = endcase_iterators;
+					std::reverse(reversed_endcase_iterators.begin(), reversed_endcase_iterators.end());
+					decltype(it) last_endcase_iterator{};
+
+					// 
+					while (it != commands->end()) {
+						if (std::find(fixed_iterators.begin(), fixed_iterators.end(), it) == fixed_iterators.end()) {
+							if (it->word == L"of" || it->word == L"else") {
+								fixed_iterators.push_back(it);
+								if (!neighbor_caididate_iterators.empty() && std::distance(commands->begin(), it) < std::distance(commands->begin(), neighbor_caididate_iterators.front())) {
+									if (it->word != L"else") {
+										it->neighbor = &(*neighbor_caididate_iterators.front());
+										neighbor_caididate_iterators.pop_front();
+									}
+								}
+
+								it--;
+								if (it->word != L"case" && it->word != L"of" && it->word != L"else") {
+									if (!endcase_iterators.empty())
+										it->parent = &(*reversed_endcase_iterators.front());
+									else
+										it->parent = &(*last_endcase_iterator);
+								}
+								it++;
+							} else if (it->word == L"endcase") {
+								fixed_iterators.push_back(case_iterators.front());
+								fixed_iterators.push_back(endcase_iterators.front());
+
+								it = case_iterators.back();
+								last_endcase_iterator = reversed_endcase_iterators.front();
+
+								case_iterators.pop_front();
+								endcase_iterators.pop_front();
+								reversed_endcase_iterators.pop_front();
+								continue;
+							}
 						}
 						it++;
 					}
+					it = it;
 				}
 			};
 
