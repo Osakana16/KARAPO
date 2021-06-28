@@ -2824,18 +2824,19 @@ namespace karapo::event {
 	// イベントのコマンド実行クラス
 	class Manager::CommandExecuter final {
 	public:
-		CommandExecuter(const std::list<CommandGraph>* commands) {
-			if (commands->empty())
+		CommandExecuter(const std::list<CommandGraph>& Commands) noexcept {
+			if (Commands.empty())
 				return;
 
 			Program::Instance().var_manager.MakeNew(L"of_state") = 1;
+			const int& Go_Parent = std::any_cast<int&>(Program::Instance().var_manager.Get<false>(L"of_state"));
+
 			// ここから、コマンド実行。
 			{
-				const CommandGraph *executing = &commands->front();
-				const CommandGraph *goal = &commands->back();
-				while (executing != nullptr) {
-					executing->command->Execute();
-					executing = (std::any_cast<int>(Program::Instance().var_manager.Get<false>(L"of_state")) == 1 ? executing->parent : executing->neighbor);
+				const CommandGraph *Executing = &Commands.front();
+				while (Executing != nullptr) {
+					Executing->command->Execute();
+					Executing = (Go_Parent ? Executing->parent : Executing->neighbor);
 				}
 			}
 		}
@@ -5200,7 +5201,7 @@ namespace karapo::event {
 		if (candidate != events.end()) {
 			auto event_name = std::any_cast<std::wstring>(Program::Instance().var_manager.Get<false>(variable::Executing_Event_Name));
 			Program::Instance().var_manager.Get<false>(variable::Executing_Event_Name) = (event_name += std::wstring(EName) + L"\n");
-			CommandExecuter cmd_executer(&candidate->second.commands);
+			CommandExecuter cmd_executer(candidate->second.commands);
 			event_name.erase(event_name.find(EName + L"\n"));
 			Program::Instance().var_manager.Get<false>(variable::Executing_Event_Name) = event_name;
 			return true;
