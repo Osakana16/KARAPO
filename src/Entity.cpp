@@ -439,7 +439,8 @@ namespace karapo::entity {
 	void Button::Collide() noexcept {
 		const auto Colliding_Event_Name = std::wstring(Name()) + L".colliding",
 			Collided_Event_Name = std::wstring(Name()) + L".collided",
-			Clicking_Event_Name = std::wstring(Name()) + L".clicking";
+			Clicking_Event_Name = std::wstring(Name()) + L".clicking",
+			Released_Event_Name = std::wstring(Name()) + L".released";
 
 		auto mouse = Program::Instance().entity_manager.GetEntity(L"マウスポインタ");
 		if (Image::Origin()[0] < mouse->Origin()[0] && Image::Origin()[1] < mouse->Origin()[1] && 
@@ -456,7 +457,10 @@ namespace karapo::entity {
 				Program::Instance().event_manager.Call(Clicking_Event_Name);
 			}
 		} else {
-			collided_enough = false;
+			if (collided_enough) {
+				Program::Instance().event_manager.Call(Released_Event_Name);
+				collided_enough = false;
+			}
 		}
 	}
 
