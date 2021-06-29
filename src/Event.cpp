@@ -282,6 +282,48 @@ namespace karapo::event {
 			}
 		};
 
+		// 文字列の内容から変数を取得。
+		DYNAMIC_COMMAND(AsVar final) {
+			std::wstring variable_name{}, string_content{};
+		public:
+			AsVar(const std::wstring & Variable_Name, const std::wstring & String_Content) noexcept : AsVar({}) {
+				variable_name = Variable_Name;
+				string_content = String_Content;
+			}
+
+			DYNAMIC_COMMAND_CONSTRUCTOR(AsVar) {}
+
+			void Execute() final {
+				if (MustSearch()) {
+					auto variable_name_param = GetParam<true>(0),
+						string_content_param = GetParam(1);
+
+					if (variable_name_param.type() == typeid(std::nullptr_t) || string_content_param.type() == typeid(std::nullptr_t)) {
+						goto lack_error;
+					} else if (!IsSameType<std::wstring>(variable_name_param) || !IsSameType<std::wstring>(string_content_param)) {
+						goto type_error;
+					}
+					variable_name = (!IsReferenceType<std::wstring>(variable_name_param) ? std::any_cast<std::wstring&>(variable_name_param) : GetReferencedValue<std::wstring>(variable_name_param));
+					string_content = (!IsReferenceType<std::wstring>(string_content_param) ? std::any_cast<std::wstring&>(string_content_param) : GetReferencedValue<std::wstring>(string_content_param));
+				}
+				
+				if (variable_name.front() == L'&') {
+					Program::Instance().var_manager.MakeNew(variable_name.substr(1)) = std::ref(Program::Instance().var_manager.Get<false>(string_content));
+				} else {
+					Program::Instance().var_manager.MakeNew(variable_name) = Program::Instance().var_manager.Get<false>(string_content);
+				}
+				goto end_of_function;
+			lack_error:
+				event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error, L"コマンド名: asvar/変数取得");
+				goto end_of_function;
+			type_error:
+				event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error, L"コマンド名: asvar/変数取得");
+				goto end_of_function;
+			end_of_function:
+				return;
+			}
+		};
+
 		// 変数/関数/Entityの存在確認
 		DYNAMIC_COMMAND(Exist final) {
 			inline static error::ErrorContent *assign_error{};
@@ -4209,6 +4251,33 @@ namespace karapo::event {
 						};
 					};
 
+					words[L"asvar"] =
+						words[L"変数取得"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() -> CommandPtr {
+								const auto [Var, Var_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								const auto [Value, Value_Type] = Default_ProgramInterface.GetParamInfo(params[1]);
+								if (Default_ProgramInterface.IsStringType(Value_Type))
+									return std::make_unique<command::AsVar>(Var, Value);
+								else
+									return std::make_unique<command::AsVar>(params);
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+									case 1:
+										return KeywordInfo::ParamResult::Lack;
+									case 2:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = true,
+							.is_dynamic = false
+						};
+					};
+
 					words[L"exist"] =
 						words[L"存在確認"] = [](const std::vector<std::wstring>& params)->KeywordInfo {
 						return {
@@ -5303,7 +5372,6 @@ namespace karapo::event {
 
 		Program::Instance().engine.BindKey(key_name, [Event_Name]() {
 			Program::Instance().event_manager.Call(Event_Name);
-			});
-
+		});
 	}
 }
