@@ -829,9 +829,9 @@ namespace karapo::event {
 						y_param.type() == typeid(std::nullptr_t)) [[unlikely]]
 					{
 						goto lack_error;
-					} else if (!IsReferenceType<std::wstring>(path_param) ||
-						(!IsReferenceType<Dec>(x_param) && !IsReferenceType<int>(x_param)) ||
-						(!IsReferenceType<Dec>(y_param) && !IsReferenceType<int>(y_param))) [[unlikely]]
+					} else if (!IsSameType<std::wstring>(path_param) ||
+						(!IsSameType<Dec>(x_param) && !IsSameType<int>(x_param)) ||
+						(!IsSameType<Dec>(y_param) && !IsSameType<int>(y_param))) [[unlikely]]
 					{
 						goto type_error;
 					}
@@ -896,8 +896,8 @@ namespace karapo::event {
 					{
 						goto lack_error;
 					}
-					else if (!IsReferenceType<std::wstring>(variable_name_param) || !IsReferenceType<std::wstring>(source_font_name_param) ||
-						!IsReferenceType<int>(length_param) || !IsReferenceType<int>(thick_param) || !IsReferenceType<int>(font_kind_param)) [[unlikely]]
+					else if (!IsSameType<std::wstring>(variable_name_param) || !IsSameType<std::wstring>(source_font_name_param) ||
+						!IsSameType<int>(length_param) || !IsSameType<int>(thick_param) || !IsSameType<int>(font_kind_param)) [[unlikely]]
 					{
 						goto type_error;
 					}
@@ -1154,9 +1154,9 @@ namespace karapo::event {
 						y_param.type() == typeid(std::nullptr_t)) [[unlikely]]
 					{
 						goto lack_error;
-					} else if (!IsReferenceType<std::wstring>(name_param) ||
-						(!IsReferenceType<Dec>(x_param) && !IsReferenceType<int>(x_param)) ||
-						(!IsReferenceType<Dec>(y_param) && !IsReferenceType<int>(y_param))) [[unlikely]]
+					} else if (!IsSameType<std::wstring>(name_param) ||
+						(!IsSameType<Dec>(x_param) && !IsSameType<int>(x_param)) ||
+						(!IsSameType<Dec>(y_param) && !IsSameType<int>(y_param))) [[unlikely]]
 					{
 						goto type_error;
 					}
@@ -1243,9 +1243,9 @@ namespace karapo::event {
 						y_param.type() == typeid(std::nullptr_t)) [[unlikely]]
 					{
 						goto lack_error;
-					} else if (!IsReferenceType<std::wstring>(name_param) ||
-						(!IsReferenceType<Dec>(x_param) && !IsReferenceType<int>(x_param)) ||
-						(!IsReferenceType<Dec>(y_param) && !IsReferenceType<int>(y_param))) [[unlikely]]
+					} else if (!IsSameType<std::wstring>(name_param) ||
+						(!IsSameType<Dec>(x_param) && !IsSameType<int>(x_param)) ||
+						(!IsSameType<Dec>(y_param) && !IsSameType<int>(y_param))) [[unlikely]]
 					{
 						goto type_error;
 					}
