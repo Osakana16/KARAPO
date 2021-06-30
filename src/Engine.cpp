@@ -403,7 +403,7 @@ namespace karapo {
 		.ExecuteEventByName = [](const std::wstring& Name) { Program::Instance().event_manager.Call(Name); },
 		.ExecuteEventByOrigin = [](const WorldVector& Origin) { Program::Instance().event_manager.ExecuteEvent(Origin); },
 		.MakeVar = [](const std::wstring& Var_Name) -> std::any& { return Program::Instance().var_manager.MakeNew(Var_Name); },
-		.GetVar = [](const std::wstring& Var_Name) -> std::any& { return Program::Instance().var_manager.Get<false>(Var_Name); },
+		.GetVar = [](const std::wstring& Var_Name) -> std::any& { return Program::Instance().var_manager.Get(Var_Name); },
 		.GetEventEditor = []() { return Program::Instance().MakeEventEditor(); },
 		.MakeNewEvent = [](event::EventEditor* editor, const std::wstring& Event_Name) { editor->MakeNewEvent(Event_Name); },
 		.SetTargetEvent = [](event::EventEditor* editor, const std::wstring& Event_Name) { editor->SetTarget(Event_Name); },

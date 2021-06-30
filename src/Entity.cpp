@@ -73,9 +73,9 @@ namespace karapo::entity {
 				candidate = &chunks.front();
 			}
 			candidate->Register(entity);
-			auto var = std::any_cast<std::wstring>(Program::Instance().var_manager.Get<false>(variable::Managing_Entity_Name));
+			auto var = std::any_cast<std::wstring>(Program::Instance().var_manager.Get(variable::Managing_Entity_Name));
 			var += std::wstring(entity->Name()) + L"=" + std::wstring(entity->KindName()) + L"\n";
-			Program::Instance().var_manager.Get<false>(variable::Managing_Entity_Name) = var;
+			Program::Instance().var_manager.Get(variable::Managing_Entity_Name) = var;
 			if (!Layer_Name.empty())
 				Program::Instance().canvas.Register(entity, Layer_Name);
 			else
@@ -161,7 +161,7 @@ namespace karapo::entity {
 	void Chunk::Kill(const std::wstring& Name) noexcept {
 		auto ent = entities.find(Name);
 		if (ent != entities.end()) {
-			auto& var = Program::Instance().var_manager.Get<false>(variable::Managing_Entity_Name);
+			auto& var = Program::Instance().var_manager.Get(variable::Managing_Entity_Name);
 			auto& str = std::any_cast<std::wstring&>(var);
 			auto pos = str.find(Name);
 			if (pos != str.npos) {
@@ -196,7 +196,7 @@ namespace karapo::entity {
 	void Image::Load(const std::wstring& Path) {
 		path = Path;
 
-		auto& var = Program::Instance().var_manager.Get<false>(std::wstring(Name()) + L".path");
+		auto& var = Program::Instance().var_manager.Get(std::wstring(Name()) + L".path");
 		if (var.type() != typeid(std::nullptr_t)) {
 			var = path;
 		} else {
@@ -327,7 +327,7 @@ namespace karapo::entity {
 	Text::~Text() noexcept {}
 
 	int Text::Main() {
-		text = std::any_cast<std::wstring>(Program::Instance().var_manager.Get<false>(name + L".text"));
+		text = std::any_cast<std::wstring>(Program::Instance().var_manager.Get(name + L".text"));
 		return 0;
 	}
 
@@ -342,8 +342,8 @@ namespace karapo::entity {
 			x = Origin()[0];
 			y = Origin()[1];
 		}
-		auto& font = Program::Instance().var_manager.Get<false>(Name() + std::wstring(L".font"));
-		auto& color_var = Program::Instance().var_manager.Get<false>(Name() + std::wstring(L".rgb"));
+		auto& font = Program::Instance().var_manager.Get(Name() + std::wstring(L".font"));
+		auto& color_var = Program::Instance().var_manager.Get(Name() + std::wstring(L".rgb"));
 		union { uint32_t value{}; uint8_t rgb[3]; } color_code;
 		Color color{ .r=255, .g=255, .b=255 };
 		if (color_var.type() == typeid(int)) {
@@ -361,7 +361,7 @@ namespace karapo::entity {
 	}
 
 	void Text::Print(const std::wstring& Message) {
-		Program::Instance().var_manager.Get<false>(name + L".text") = Message;
+		Program::Instance().var_manager.Get(name + L".text") = Message;
 	}
 
 	const wchar_t *Text::Name() const noexcept {
@@ -388,11 +388,11 @@ namespace karapo::entity {
 	}
 
 	int Mouse::Main() {
-		Program::Instance().var_manager.Get<false>(L"マウスポインタ.左クリック") = 
+		Program::Instance().var_manager.Get(L"マウスポインタ.左クリック") = 
 			(int)Program::Instance().engine.IsPressingMouse(Default_ProgramInterface.keys.Left_Click);		
-		Program::Instance().var_manager.Get<false>(L"マウスポインタ.右クリック") = 
+		Program::Instance().var_manager.Get(L"マウスポインタ.右クリック") = 
 			(int)Program::Instance().engine.IsPressingMouse(Default_ProgramInterface.keys.Right_Click);
-		Program::Instance().var_manager.Get<false>(L"マウスポインタ.中央クリック") = 
+		Program::Instance().var_manager.Get(L"マウスポインタ.中央クリック") = 
 			(int)Program::Instance().engine.IsPressingMouse(Default_ProgramInterface.keys.Wheel_Click);
 		
 		auto [x, y] = Default_ProgramInterface.GetMousePos();
@@ -423,7 +423,7 @@ namespace karapo::entity {
 
 	void Button::Update() {
 		{
-			auto& path_var = Program::Instance().var_manager.Get<false>(std::wstring(name) + L".path");
+			auto& path_var = Program::Instance().var_manager.Get(std::wstring(name) + L".path");
 			
 			if (path_var.type() == typeid(std::wstring) && std::any_cast<std::wstring&>(path_var) != Path()) {
 				Load(std::any_cast<std::wstring&>(path_var));
@@ -432,8 +432,8 @@ namespace karapo::entity {
 			}
 		}
 
-		length[0] = std::any_cast<int>(Program::Instance().var_manager.Get<false>(std::wstring(name) + L".w"));
-		length[1] = std::any_cast<int>(Program::Instance().var_manager.Get<false>(std::wstring(name) + L".h"));
+		length[0] = std::any_cast<int>(Program::Instance().var_manager.Get(std::wstring(name) + L".w"));
+		length[1] = std::any_cast<int>(Program::Instance().var_manager.Get(std::wstring(name) + L".h"));
 	}
 
 	void Button::Collide() noexcept {
@@ -452,7 +452,7 @@ namespace karapo::entity {
 				collided_enough = true;
 			}
 
-			const bool Is_Clicking = std::any_cast<int>(Program::Instance().var_manager.Get<false>(L"マウスポインタ.左クリック"));
+			const bool Is_Clicking = std::any_cast<int>(Program::Instance().var_manager.Get(L"マウスポインタ.左クリック"));
 			if (Is_Clicking) {
 				Program::Instance().event_manager.Call(Clicking_Event_Name);
 			}

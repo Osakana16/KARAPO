@@ -32,14 +32,14 @@ namespace karapo::event {
 					end.clear();
 
 				auto executing_name = std::any_cast<std::wstring>(
-					Program::Instance().var_manager.Get<false>(variable::Executing_Event_Name)
+					Program::Instance().var_manager.Get(variable::Executing_Event_Name)
 					);
 				executing_name.pop_back();
 				if (auto pos = executing_name.rfind(L'\n'); pos != executing_name.npos)
 					executing_name = executing_name.substr(pos);
 				if (auto pos = executing_name.find(L'\n'); pos != executing_name.npos)
 					executing_name.erase(executing_name.begin());
-				auto var = Program::Instance().var_manager.Get<false>(executing_name + L'.' + str);
+				auto var = Program::Instance().var_manager.Get(executing_name + L'.' + str);
 				if (var.type() == typeid(std::wstring)) {
 					*sentence = begin + std::any_cast<std::wstring>(var) + end;
 				} else if (var.type() == typeid(int)) {
@@ -118,14 +118,14 @@ namespace karapo::event {
 					} else if (Default_ProgramInterface.IsStringType(type)) {
 						return var;
 					} else {
-						auto event_name = std::any_cast<std::wstring>(Program::Instance().var_manager.Get<false>(variable::Executing_Event_Name));
+						auto event_name = std::any_cast<std::wstring>(Program::Instance().var_manager.Get(variable::Executing_Event_Name));
 						event_name = event_name.substr(0, event_name.size() - 1);
 						if (auto pos = event_name.rfind(L'\n'); pos != std::wstring::npos)
 							event_name = event_name.substr(pos);
 						if (auto pos = event_name.find(L'\n'); pos != std::wstring::npos)
 							event_name.erase(event_name.begin());
 
-						return Program::Instance().var_manager.Get<false>(param_names[Index]);
+						return Program::Instance().var_manager.Get(param_names[Index]);
 					}
 				} else {
 					if (Default_ProgramInterface.IsStringType(type) || Default_ProgramInterface.IsNumberType(type))
@@ -193,9 +193,8 @@ namespace karapo::event {
 					}
 				} else {
 				string_value:
-					try {
-						value = Program::Instance().var_manager.Get<true>(VName);
-					} catch (std::out_of_range&) {
+					value = Program::Instance().var_manager.Get(VName);
+					if (value.type() == typeid(std::nullptr_t)) {
 						auto str = Any_Value;
 						ReplaceFormat(&str);
 						value = str;
@@ -232,7 +231,7 @@ namespace karapo::event {
 						}
 					} else {
 						if (varname[0] == L'&') {
-							value = std::ref(Program::Instance().var_manager.Get<false>(std::any_cast<std::wstring>(GetParam<true>(1))));
+							value = std::ref(Program::Instance().var_manager.Get(std::any_cast<std::wstring>(GetParam<true>(1))));
 						}
 					}
 				}
@@ -256,7 +255,7 @@ namespace karapo::event {
 			}
 			void Execute() override {
 				if (CheckParams()) {
-					auto event_name = std::any_cast<std::wstring>(Program::Instance().var_manager.Get<false>(variable::Executing_Event_Name));
+					auto event_name = std::any_cast<std::wstring>(Program::Instance().var_manager.Get(variable::Executing_Event_Name));
 					event_name.pop_back();
 					auto pos = event_name.rfind(L'\n');
 					if (pos != std::wstring::npos)
@@ -308,9 +307,9 @@ namespace karapo::event {
 				}
 				
 				if (variable_name.front() == L'&') {
-					Program::Instance().var_manager.MakeNew(variable_name.substr(1)) = std::ref(Program::Instance().var_manager.Get<false>(string_content));
+					Program::Instance().var_manager.MakeNew(variable_name.substr(1)) = std::ref(Program::Instance().var_manager.Get(string_content));
 				} else {
-					Program::Instance().var_manager.MakeNew(variable_name) = Program::Instance().var_manager.Get<false>(string_content);
+					Program::Instance().var_manager.MakeNew(variable_name) = Program::Instance().var_manager.Get(string_content);
 				}
 				goto end_of_function;
 			lack_error:
@@ -341,17 +340,17 @@ namespace karapo::event {
 					name[i] = std::any_cast<std::wstring>(GetParam<true>(i));
 
 				int result = 0;
-				if (Program::Instance().var_manager.Get<false>(name[0]).type() != typeid(std::nullptr_t)) {
-					result |= std::any_cast<int>(Program::Instance().var_manager.Get<false>(L"__変数存在"));
+				if (Program::Instance().var_manager.Get(name[0]).type() != typeid(std::nullptr_t)) {
+					result |= std::any_cast<int>(Program::Instance().var_manager.Get(L"__変数存在"));
 				}
 				if (Program::Instance().event_manager.GetEvent(name[0]) != nullptr) {
-					result |= std::any_cast<int>(Program::Instance().var_manager.Get<false>(L"__イベント存在"));
+					result |= std::any_cast<int>(Program::Instance().var_manager.Get(L"__イベント存在"));
 				}
 				if (Program::Instance().entity_manager.GetEntity(name[0]) != nullptr) {
-					result |= std::any_cast<int>(Program::Instance().var_manager.Get<false>(L"__キャラ存在"));
+					result |= std::any_cast<int>(Program::Instance().var_manager.Get(L"__キャラ存在"));
 				}
 
-				auto *v = &Program::Instance().var_manager.Get<false>(name[1]);
+				auto *v = &Program::Instance().var_manager.Get(name[1]);
 				if (v->type() != typeid(std::nullptr_t)) {
 					*v = static_cast<int>(result);
 				} else {
@@ -359,8 +358,8 @@ namespace karapo::event {
 						switch (Result) {
 							case IDYES:
 							{
-								auto& var = Program::Instance().var_manager.Get<false>(L"__assignable");
-								auto& value = Program::Instance().var_manager.Get<false>(L"__calculated");
+								auto& var = Program::Instance().var_manager.Get(L"__assignable");
+								auto& value = Program::Instance().var_manager.Get(L"__calculated");
 								Program::Instance().var_manager.MakeNew(std::any_cast<std::wstring>(var)) = std::any_cast<int>(value);
 								break;
 							}
@@ -421,7 +420,7 @@ namespace karapo::event {
 				if (MustSearch()) {
 					mode = std::any_cast<std::wstring>(GetParam<true>(0));
 					auto vname = std::any_cast<std::wstring>(GetParam<true>(1));
-					value = Program::Instance().var_manager.Get<false>(vname);
+					value = Program::Instance().var_manager.Get(vname);
 					if (value.type() == typeid(std::nullptr_t)) {
 						auto [iv, ip] = ToInt(vname.c_str());
 						auto [fv, fp] = ToDec<Dec>(vname.c_str());
@@ -441,7 +440,7 @@ namespace karapo::event {
 						value = GetReferencedValue<std::wstring>(value);
 					}
 				}
-				Program::Instance().var_manager.Get<false>(L"of_state") = (int)Program::Instance().event_manager.Evalute(mode, value);
+				Program::Instance().var_manager.Get(L"of_state") = (int)Program::Instance().event_manager.Evalute(mode, value);
 			}
 		};
 
@@ -455,7 +454,7 @@ namespace karapo::event {
 			~Else() noexcept final {}
 
 			void Execute() override {
-				Program::Instance().var_manager.Get<false>(L"of_state") = (int)!std::any_cast<int>(Program::Instance().var_manager.Get<false>(L"of_state"));
+				Program::Instance().var_manager.Get(L"of_state") = (int)!std::any_cast<int>(Program::Instance().var_manager.Get(L"of_state"));
 			}
 		};
 
@@ -611,12 +610,12 @@ namespace karapo::event {
 				if (var_name.empty() || image_path.empty())
 					goto name_error;
 				else {
-					auto& anime_var = Program::Instance().var_manager.Get<false>(var_name + L".animation");
+					auto& anime_var = Program::Instance().var_manager.Get(var_name + L".animation");
 					if (anime_var.type() != typeid(animation::Animation))
 						goto type_error;
 					else {
 						auto& anime = std::any_cast<animation::Animation&>(anime_var);
-						auto& frame_var = Program::Instance().var_manager.Get<false>(var_name + L".frame");
+						auto& frame_var = Program::Instance().var_manager.Get(var_name + L".frame");
 						auto& frame = std::any_cast<animation::FrameRef&>(frame_var);
 
 						resource::Image image;
@@ -654,7 +653,7 @@ namespace karapo::event {
 				if (var_name.empty())
 					goto name_error;
 				else {
-					auto& frame_var = Program::Instance().var_manager.Get<false>(var_name + L".frame");
+					auto& frame_var = Program::Instance().var_manager.Get(var_name + L".frame");
 					if (frame_var.type() != typeid(animation::FrameRef))
 						goto type_error;
 					else {
@@ -686,7 +685,7 @@ namespace karapo::event {
 				if (var_name.empty())
 					goto name_error;
 				else {
-					auto& frame_var = Program::Instance().var_manager.Get<false>(var_name + L".frame");
+					auto& frame_var = Program::Instance().var_manager.Get(var_name + L".frame");
 					if (frame_var.type() != typeid(animation::FrameRef))
 						goto type_error;
 					else {
@@ -751,7 +750,7 @@ namespace karapo::event {
 					length[1] = (!IsReferenceType<int>(h_param) ? std::any_cast<int>(h_param) : GetReferencedValue<int>(h_param));
 				}
 				Program::Instance().engine.CopyImage(&path, position, length);
-				Program::Instance().var_manager.Get<false>(variable_name) = path;
+				Program::Instance().var_manager.Get(variable_name) = path;
 				return;
 
 			lack_error:
@@ -970,7 +969,7 @@ namespace karapo::event {
 					else if (ent->KindName() != std::wstring(L"効果音"))
 						goto kind_error;
 					
-					auto& position_var = Program::Instance().var_manager.Get<false>(file_path.substr(0, file_path.find(L'.')) + L"_position");
+					auto& position_var = Program::Instance().var_manager.Get(file_path.substr(0, file_path.find(L'.')) + L"_position");
 					const int Position = (position_var.type() == typeid(int) ? std::any_cast<int>(position_var) : 0);
 					std::static_pointer_cast<karapo::entity::Sound>(ent)->Play(Position);
 				}
@@ -1198,7 +1197,7 @@ namespace karapo::event {
 					button->Load(path_string);
 				} else if (path.type() == typeid(animation::FrameRef)) {
 					button->Load(&std::any_cast<animation::FrameRef&>(
-							Program::Instance().var_manager.Get<false>(
+							Program::Instance().var_manager.Get(
 								std::any_cast<std::wstring>(GetParam<true>(5))
 							)
 						)
@@ -1310,7 +1309,7 @@ namespace karapo::event {
 					{
 						goto type_error;
 					}
-					var = &Program::Instance().var_manager.Get<false>(std::any_cast<std::wstring>(name_param));
+					var = &Program::Instance().var_manager.Get(std::any_cast<std::wstring>(name_param));
 					pos[0] = (!IsReferenceType<int>(x_param) ? std::any_cast<int>(x_param) : GetReferencedValue<int>(x_param));
 					pos[1] = (!IsReferenceType<int>(y_param) ? std::any_cast<int>(y_param) : GetReferencedValue<int>(y_param));
 					length = (!IsReferenceType<int>(len_param) ? std::any_cast<int>(len_param) : GetReferencedValue<int>(len_param));
@@ -1429,7 +1428,7 @@ namespace karapo::event {
 					ReplaceFormat(&entity_name);
 					if (entity_name == L"__all" || entity_name == L"__全員") {
 						std::vector<std::wstring> names{};
-						auto sen = std::any_cast<std::wstring>(Program::Instance().var_manager.Get<false>(variable::Managing_Entity_Name));
+						auto sen = std::any_cast<std::wstring>(Program::Instance().var_manager.Get(variable::Managing_Entity_Name));
 						{
 							std::wstring temp{};
 							for (auto ch : sen) {
@@ -1576,7 +1575,7 @@ namespace karapo::event {
 
 				void Execute() final {
 					auto& assignable = Program::Instance().var_manager.MakeNew(assignable_name);
-					auto& source_array = Program::Instance().var_manager.Get<false>(array_name);
+					auto& source_array = Program::Instance().var_manager.Get(array_name);
 					if (source_array.type() == typeid(std::wstring)) {
 						std::wstring result = (!IsReferenceType<std::wstring>(source_array) ? std::any_cast<std::wstring&>(source_array) : GetReferencedValue<std::wstring>(source_array));
 
@@ -1614,7 +1613,7 @@ namespace karapo::event {
 
 				void Execute() final {
 					auto& assignable = Program::Instance().var_manager.MakeNew(assignable_name);
-					auto& source_array = Program::Instance().var_manager.Get<false>(array_name);
+					auto& source_array = Program::Instance().var_manager.Get(array_name);
 					if (source_array.type() == typeid(std::wstring)) {
 						std::wstring result = (!IsReferenceType<std::wstring>(source_array) ? std::any_cast<std::wstring&>(source_array) : GetReferencedValue<std::wstring>(source_array));
 
@@ -1678,7 +1677,7 @@ namespace karapo::event {
 					}
 
 					if (!array_name.empty()) {
-						auto& source_array = Program::Instance().var_manager.Get<false>(array_name);
+						auto& source_array = Program::Instance().var_manager.Get(array_name);
 						if (IsSameType<std::wstring>(source_array)) {
 							PopArray((!IsReferenceType<std::wstring>(source_array) ? std::any_cast<std::wstring&>(source_array) : GetReferencedValue<std::wstring>(source_array)));
 						} else {
@@ -1860,7 +1859,7 @@ namespace karapo::event {
 							if (event_param_name[0] == L'&') {
 								auto& newvar = Program::Instance().var_manager.MakeNew(event_name + std::wstring(L"@") + event_param_name.substr(1));
 								auto&& referrencable_name = std::any_cast<std::wstring>(GetParam<true>(i + 1));
-								auto& referrencable = Program::Instance().var_manager.Get<false>(referrencable_name);
+								auto& referrencable = Program::Instance().var_manager.Get(referrencable_name);
 								newvar = std::ref(referrencable);
 							} else {
 								auto& newvar = Program::Instance().var_manager.MakeNew(event_name + std::wstring(L"@") + event_param_name);
@@ -2329,8 +2328,8 @@ namespace karapo::event {
 					switch (Result) {
 						case IDYES:
 						{
-							auto& var = Program::Instance().var_manager.Get<false>(L"__assignable");
-							auto& value = Program::Instance().var_manager.Get<false>(L"__calculated");
+							auto& var = Program::Instance().var_manager.Get(L"__assignable");
+							auto& value = Program::Instance().var_manager.Get(L"__calculated");
 							if (value.type() == typeid(Dec))
 								Program::Instance().var_manager.MakeNew(std::any_cast<std::wstring>(var)) = std::any_cast<Dec>(value);
 							else if (value.type() == typeid(int))
@@ -2402,7 +2401,7 @@ namespace karapo::event {
 							} else if (value[i].type() == typeid(animation::FrameRef)) {
 								value[i] = std::ref(
 									std::any_cast<animation::FrameRef&>(
-									Program::Instance().var_manager.Get<false>(std::any_cast<std::wstring>(GetParam<true>(i + 1)))
+									Program::Instance().var_manager.Get(std::any_cast<std::wstring>(GetParam<true>(i + 1)))
 								)
 								);
 							} else if (value[i].type() == typeid(std::nullptr_t)) [[unlikely]]
@@ -2430,7 +2429,7 @@ namespace karapo::event {
 
 				void Execute() final {
 					if (Extract(1)) {
-						auto& v = Program::Instance().var_manager.Get<false>(var_name);
+						auto& v = Program::Instance().var_manager.Get(var_name);
 						if (v.type() != typeid(std::nullptr_t)) [[likely]] {
 							if (v.type() == typeid(std::reference_wrapper<std::any>)) {
 								auto& r = std::any_cast<std::reference_wrapper<std::any>&>(v);
@@ -2487,7 +2486,7 @@ namespace karapo::event {
 							CalculateValue cal;
 							MATH_COMMAND_CALCULATE(+);
 
-							auto* v = &Program::Instance().var_manager.Get<false>(var_name);
+							auto* v = &Program::Instance().var_manager.Get(var_name);
 							if (v->type() != typeid(std::nullptr_t)) [[likely]] {
 								if (v->type() == typeid(std::reference_wrapper<std::any>)) {
 									auto& ref = std::any_cast<std::reference_wrapper<std::any>&>(*v).get();
@@ -2514,7 +2513,7 @@ namespace karapo::event {
 								}
 							}
 							{
-								auto* v = &Program::Instance().var_manager.Get<false>(var_name);
+								auto* v = &Program::Instance().var_manager.Get(var_name);
 								if (v->type() != typeid(std::nullptr_t)) [[likely]] {
 									*v = result;
 								} else {
@@ -2542,7 +2541,7 @@ namespace karapo::event {
 						CalculateValue cal;
 						MATH_COMMAND_CALCULATE(-);
 
-						auto* v = &Program::Instance().var_manager.Get<false>(var_name);
+						auto* v = &Program::Instance().var_manager.Get(var_name);
 						if (v->type() != typeid(std::nullptr_t)) [[likely]] {
 							if (v->type() == typeid(std::reference_wrapper<std::any>)) {
 								auto& ref = std::any_cast<std::reference_wrapper<std::any>&>(*v).get();
@@ -2577,7 +2576,7 @@ namespace karapo::event {
 						CalculateValue cal;
 						MATH_COMMAND_CALCULATE(*);
 
-						auto *v = &Program::Instance().var_manager.Get<false>(var_name);
+						auto *v = &Program::Instance().var_manager.Get(var_name);
 						if (v->type() != typeid(std::nullptr_t)) [[likely]] {
 							if (v->type() == typeid(std::reference_wrapper<std::any>)) {
 								auto& ref = std::any_cast<std::reference_wrapper<std::any>&>(*v).get();
@@ -2612,7 +2611,7 @@ namespace karapo::event {
 						CalculateValue cal;
 						MATH_COMMAND_CALCULATE(/ );
 
-						auto* v = &Program::Instance().var_manager.Get<false>(var_name);
+						auto* v = &Program::Instance().var_manager.Get(var_name);
 						if (v->type() != typeid(std::nullptr_t)) [[likely]] {
 							if (v->type() == typeid(std::reference_wrapper<std::any>)) {
 								auto& ref = std::any_cast<std::reference_wrapper<std::any>&>(*v).get();
@@ -2661,7 +2660,7 @@ namespace karapo::event {
 							}
 						}
 
-						auto* v = &Program::Instance().var_manager.Get<false>(var_name);
+						auto* v = &Program::Instance().var_manager.Get(var_name);
 						if (v->type() != typeid(std::nullptr_t)) [[likely]] {
 							if (v->type() == typeid(std::reference_wrapper<std::any>)) {
 								auto& ref = std::any_cast<std::reference_wrapper<std::any>&>(*v).get();
@@ -2734,7 +2733,7 @@ namespace karapo::event {
 						if (Is_Int.first && Is_Int.second) [[likely]] {
 							CalculateValue cal;
 							cal.i = ((!IsReferenceType<int>(value[0]) ? std::any_cast<int>(value[0]) : GetReferencedValue<int>(value[0])) | (!IsReferenceType<int>(value[1]) ? std::any_cast<int>(value[1]) : GetReferencedValue<int>(value[1])));
-							auto* v = &Program::Instance().var_manager.Get<false>(var_name);
+							auto* v = &Program::Instance().var_manager.Get(var_name);
 							if (v->type() != typeid(std::nullptr_t)) {
 								if (v->type() == typeid(std::reference_wrapper<std::any>)) {
 									std::any_cast<std::reference_wrapper<std::any>&>(*v).get() = cal.i;
@@ -2764,7 +2763,7 @@ namespace karapo::event {
 						if (Is_Int.first && Is_Int.second) [[likely]] {
 							CalculateValue cal;
 							cal.i = ((!IsReferenceType<int>(value[0]) ? std::any_cast<int>(value[0]) : GetReferencedValue<int>(value[0])) & (!IsReferenceType<int>(value[1]) ? std::any_cast<int>(value[1]) : GetReferencedValue<int>(value[1])));
-							auto* v = &Program::Instance().var_manager.Get<false>(var_name);
+							auto* v = &Program::Instance().var_manager.Get(var_name);
 							if (v->type() != typeid(std::nullptr_t)) {
 								if (v->type() == typeid(std::reference_wrapper<std::any>)) {
 									std::any_cast<std::reference_wrapper<std::any>&>(*v).get() = cal.i;
@@ -2795,7 +2794,7 @@ namespace karapo::event {
 						if (Is_Int.first && Is_Int.second) [[likely]] {
 							CalculateValue cal;
 							cal.i = ((!IsReferenceType<int>(value[0]) ? std::any_cast<int>(value[0]) : GetReferencedValue<int>(value[0])) ^ (!IsReferenceType<int>(value[1]) ? std::any_cast<int>(value[1]) : GetReferencedValue<int>(value[1])));
-							auto* v = &Program::Instance().var_manager.Get<false>(var_name);
+							auto* v = &Program::Instance().var_manager.Get(var_name);
 							if (v->type() != typeid(std::nullptr_t)) {
 								if (v->type() == typeid(std::reference_wrapper<std::any>)) {
 									std::any_cast<std::reference_wrapper<std::any>&>(*v).get() = cal.i;
@@ -2825,7 +2824,7 @@ namespace karapo::event {
 						var_name = std::any_cast<std::wstring>(GetParam<true>(0));
 
 						if (value[0].type() == typeid(int)) [[likely]] {
-							auto * v = &Program::Instance().var_manager.Get<false>(var_name);
+							auto * v = &Program::Instance().var_manager.Get(var_name);
 							CalculateValue cal;
 							cal.i = ~(!IsReferenceType<int>(value[0]) ? std::any_cast<int>(value[0]) : GetReferencedValue<int>(value[0]));
 							if (v->type() != typeid(std::nullptr_t)) {
@@ -2871,7 +2870,7 @@ namespace karapo::event {
 				return;
 
 			Program::Instance().var_manager.MakeNew(L"of_state") = 1;
-			const int& Go_Parent = std::any_cast<int&>(Program::Instance().var_manager.Get<false>(L"of_state"));
+			const int& Go_Parent = std::any_cast<int&>(Program::Instance().var_manager.Get(L"of_state"));
 
 			// ここから、コマンド実行。
 			{
@@ -5265,11 +5264,11 @@ namespace karapo::event {
 	bool Manager::Call(const std::wstring& EName) noexcept {
 		auto candidate = events.find(EName);
 		if (candidate != events.end()) {
-			auto event_name = std::any_cast<std::wstring>(Program::Instance().var_manager.Get<false>(variable::Executing_Event_Name));
-			Program::Instance().var_manager.Get<false>(variable::Executing_Event_Name) = (event_name += std::wstring(EName) + L"\n");
+			auto event_name = std::any_cast<std::wstring>(Program::Instance().var_manager.Get(variable::Executing_Event_Name));
+			Program::Instance().var_manager.Get(variable::Executing_Event_Name) = (event_name += std::wstring(EName) + L"\n");
 			CommandExecuter cmd_executer(candidate->second.commands);
 			event_name.erase(event_name.find(EName + L"\n"));
-			Program::Instance().var_manager.Get<false>(variable::Executing_Event_Name) = event_name;
+			Program::Instance().var_manager.Get(variable::Executing_Event_Name) = event_name;
 			return true;
 		}
 		return false;

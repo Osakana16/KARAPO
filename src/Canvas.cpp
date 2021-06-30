@@ -103,7 +103,7 @@ namespace karapo {
 		if (IsRegistered(drawable_entity))
 			return;
 
-		auto& var = Program::Instance().var_manager.Get<false>(Name() + L".__管理中");
+		auto& var = Program::Instance().var_manager.Get(Name() + L".__管理中");
 		std::any_cast<std::wstring&>(var) += std::wstring(drawable_entity->Name()) + L'\\';
 		drawing.push_back(drawable_entity);
 	}
@@ -116,7 +116,7 @@ namespace karapo {
 		auto iterator = std::find(drawing.begin(), drawing.end(), Target_Entity);
 		if (iterator != drawing.end()) {
 			drawing.erase(iterator);
-			auto& var = Program::Instance().var_manager.Get<false>(Name() + L".__管理中");
+			auto& var = Program::Instance().var_manager.Get(Name() + L".__管理中");
 			auto& str = std::any_cast<std::wstring&>(var);
 			const auto Position = str.find(Target_Entity->Name());
 			str.erase(Position, Position + wcslen(Target_Entity->Name()) + 1);
@@ -142,7 +142,7 @@ namespace karapo {
 		void Execute() noexcept override {
 			Layer::Execute();
 			if (base != nullptr && base->CanDelete()) {
-				Program::Instance().var_manager.Get<false>(Name() + L".ベース") = std::wstring(L"");
+				Program::Instance().var_manager.Get(Name() + L".ベース") = std::wstring(L"");
 				base = nullptr;
 			}
 		}
@@ -150,7 +150,7 @@ namespace karapo {
 		// 中心となるEntityを設定する。
 		void SetBase(std::shared_ptr<Entity>& ent) noexcept {
 			base = ent;
-			Program::Instance().var_manager.Get<false>(Name() + L".ベース") = std::wstring(base->Name());
+			Program::Instance().var_manager.Get(Name() + L".ベース") = std::wstring(base->Name());
 		}
 
 		/**
