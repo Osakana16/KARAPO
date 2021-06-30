@@ -111,39 +111,8 @@ namespace karapo {
 		}
 
 		std::any& Manager::Get(const std::wstring& Name) noexcept {
-			if (IsRecord(Name)) {
-				const auto&& Record_Name = Name.substr(0, Name.find(L'.'));
-				auto var = vars.find(Record_Name);
-				if (var != vars.end()) {
-					const auto&& Member_Name = Name.substr(Name.find(L'.') + 1);
-					auto& record = (var->second.type() == typeid(Record) ? std::any_cast<Record&>(var->second) : std::any_cast<Record&>(std::any_cast<std::reference_wrapper<std::any>&>(var->second).get()));
-					auto mvar = record.members.find(Member_Name);
-					if (mvar == record.members.end()) {
-						goto no_member;
-					}
-					return mvar->second;
-				} else {
-					// 変数が見つからなかった場合、
-					// ローカル変数を探す。
-
-					auto event_name = std::any_cast<std::wstring>(Get(variable::Executing_Event_Name));
-					event_name.pop_back();
-					auto pos = event_name.rfind(L'\n');
-					if (pos != std::wstring::npos)
-						event_name = event_name.substr(pos + 1);
-
-					var = vars.find(event_name + L'@' + Record_Name);
-					if (var == vars.end())
-						goto no_member;
-
-					const auto&& Member_Name = Name.substr(Name.find(L'.') + 1);
-					auto& record = (var->second.type() == typeid(Record) ? std::any_cast<Record&>(var->second) : std::any_cast<Record&>(std::any_cast<std::reference_wrapper<std::any>&>(var->second).get()));
-					auto mvar = record.members.find(Member_Name);
-					if (mvar == record.members.end()) {
-						goto no_member;
-					}
-					return mvar->second;
-				}
+			if (IsRecordName(Name)) {
+				return GetStruct(Name.substr(0, Name.find(L'.')), Name.substr(Name.find(L'.') + 1));
 			} else {
 				auto var = vars.find(Name);
 				if (var == vars.end()) {
@@ -168,6 +137,31 @@ namespace karapo {
 			return vars[L"null"];
 		}
 
+		std::any& Manager::GetStruct(const std::wstring& Struct_Name, const std::wstring& Member_Name) noexcept {
+			auto record_candidate = vars.find(Struct_Name);
+			if (record_candidate != vars.end() && IsRecord(record_candidate->second)) {
+				Record *record{};
+				if (!IsReference(record_candidate->second))
+					record = &std::any_cast<Record&>(record_candidate->second);
+				else
+					record = &std::any_cast<Record&>(std::any_cast<std::reference_wrapper<std::any>&>(record_candidate->second).get());
+
+				auto member = record->members.find(Member_Name);
+				if (member != record->members.end()) {
+					return member->second;
+				}
+			}
+			return vars.at(L"null");
+		}
+
+		bool Manager::IsRecord(const std::any& Var) const noexcept {
+			return (Var.type() == typeid(Record) || (IsReference(Var) && std::any_cast<std::reference_wrapper<std::any>>(Var).get().type() == typeid(Record)));
+		}
+
+		bool Manager::IsReference(const std::any& Var) const noexcept {
+			return Var.type() == typeid(std::reference_wrapper<std::any>);
+		}
+
 		void Manager::Delete(const std::wstring& Name) noexcept {
 			const auto Pos = std::any_cast<std::wstring>(vars[Managing_Var_Name]).find(Name);
 			if (Pos != std::wstring::npos) {
@@ -178,7 +172,7 @@ namespace karapo {
 			}
 		}
 
-		bool Manager::IsRecord(const std::wstring& Var_Name) const noexcept {
+		bool Manager::IsRecordName(const std::wstring& Var_Name) const noexcept {
 			return (Var_Name.find(L'.') != Var_Name.npos);
 		}
 	}

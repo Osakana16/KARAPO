@@ -14,11 +14,13 @@ namespace karapo {
 			Manager();
 			~Manager() = default;
 
-			bool IsRecord(const std::wstring&) const noexcept;
+			bool IsRecord(const std::any&) const noexcept, 
+				IsRecordName(const std::wstring&) const noexcept,
+				IsReference(const std::any&) const noexcept;
 		public:
 			// •Ï”‚ğì¬‚·‚éŠÖ”ŒQB
 			std::any& MakeNew(const std::wstring&) noexcept, &MakeStruct(const std::wstring& Struct_Name, const std::wstring& Member_Name) noexcept;
-			std::any& Get(const std::wstring&) noexcept;
+			std::any& Get(const std::wstring&) noexcept, &GetStruct(const std::wstring& Struct_Name, const std::wstring& Member_Name) noexcept;
 
 
 			void Delete(const std::wstring&) noexcept;
