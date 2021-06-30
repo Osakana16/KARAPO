@@ -2892,6 +2892,7 @@ namespace karapo::event {
 		class Parser final {
 			// 構文木
 			struct Syntax final {
+				size_t line{};
 				std::wstring text{};
 				Syntax* parent{};
 			};
@@ -3019,6 +3020,7 @@ namespace karapo::event {
 
 					error::ErrorContent *error_occurred{};
 
+					decltype(Syntax::line) line = 1;
 					tree.push_front({});
 					tree.push_front(Syntax{ .parent = &tree.front() });
 					auto operator_iterator = tree.end();
@@ -3056,11 +3058,12 @@ namespace karapo::event {
 							}
 							case L'\n':
 							{
+								line++;
 								if (operator_iterator != tree.end()) {
 									if (operator_iterator->text != L"{") {
 										operator_iterator = tree.end();
 										tree_iterator->parent = nullptr;
-										tree.push_front(Syntax{ .parent = &(*tree_iterator) });
+										tree.push_front(Syntax{ .line = line, .parent = &(*tree_iterator) });
 									} else {
 										// コマンド文は複数行の文で構成される。
 										// ({}を親とする構文木が複数存在する。)
@@ -3079,7 +3082,7 @@ namespace karapo::event {
 							not_operator:
 								if (str != L"//") {
 									tree_iterator->text = str;
-									tree.push_front(Syntax{ .parent = &(*tree_iterator) });
+									tree.push_front(Syntax{ .line = line, .parent = &(*tree_iterator) });
 									tree_iterator = tree.begin();
 									break;
 								} else {
@@ -4694,14 +4697,14 @@ namespace karapo::event {
 				}
 
 				SemanticParser(std::list<Syntax> *syntax) noexcept : SemanticParser() {
-					Context stack{};
+					std::list<Syntax*> stack{};
 					// 左: 現在のcaseのイテレータ
 				// 右: elseが存在するか否か。
 					std::list<std::pair<decltype(commands)::iterator, bool>> case_stack{};
 
-					std::unordered_map<std::wstring, std::function<void(Context* stack)>> operator_funcs{
+					std::unordered_map<std::wstring, std::function<void(std::list<Syntax*>* stack)>> operator_funcs{
 						{ 
-							L"[]", [this](Context* stack) {
+							L"[]", [this](std::list<Syntax*>* stack) {
 								stack->pop_front();
 								if (event_name.empty()) {
 									switch (stack->size()) {
@@ -4710,13 +4713,13 @@ namespace karapo::event {
 											event::Manager::Instance().error_handler.SendLocalError(error_occurred);
 											break;
 										case 1:
-											event_name = stack->front();
+											event_name = stack->front()->text;
 											stack->pop_front();
 											break;
 										default:
 											std::wstring candidate_name{};
 											while (!stack->empty()) {
-												candidate_name += stack->front() + L' ';
+												candidate_name += stack->front()->text + L' ';
 												stack->pop_front();
 											}
 											candidate_name.pop_back();
@@ -4725,15 +4728,15 @@ namespace karapo::event {
 									}
 								} else {
 									error_occurred = already_new_event_name_defined_error;
-									event::Manager::Instance().error_handler.SendLocalError(error_occurred, (L"多重定義として判定されたイベント名: " + stack->front()));
+									event::Manager::Instance().error_handler.SendLocalError(error_occurred, (L"多重定義として判定されたイベント名: " + stack->front()->text));
 								}
 							} 
 						},
 						{
-							L"<>", [this](Context* stack) {
+							L"<>", [this](std::list<Syntax*>* stack) {
 								stack->pop_front();
 								if (trigger_type == TriggerType::Invalid) {
-									auto word = stack->front();
+									auto word = stack->front()->text;
 									if (word == L"a") {
 										trigger_type = TriggerType::Auto;
 									} else if (word == L"t") {
@@ -4749,43 +4752,43 @@ namespace karapo::event {
 									stack->pop_front();
 
 									for (int i = 0; !stack->empty(); ) {
-										if (stack->front() == L"~")
+										if (stack->front()->text == L"~")
 											i = 1;
 										else {
-											origin[(origin[0][1] > -1)][i] = ToDec<Dec>(stack->front().c_str(), nullptr);
+											origin[(origin[0][1] > -1)][i] = ToDec<Dec>(stack->front()->text.c_str(), nullptr);
 											i = 0;
 										}
 										stack->pop_front();
 									}
 								} else {
 									error_occurred = already_new_trigger_type_defined_error;
-									event::Manager::Instance().error_handler.SendLocalError(error_occurred, (L"多重定義として判定された発生タイプ名: " + stack->front()));
+									event::Manager::Instance().error_handler.SendLocalError(error_occurred, (L"多重定義として判定された発生タイプ名: " + stack->front()->text));
 								}
 							}
 						},
 						{
-							L"()", [this](Context* stack) {
+							L"()", [this](std::list<Syntax*>* stack) {
 								stack->pop_front();
 								while (!stack->empty()) {
-									params.push_back(stack->front());
+									params.push_back(stack->front()->text);
 									stack->pop_front();
 								}
 							}
 						},
 						{
-							L"{}", [this,&case_stack](Context* stack) {
+							L"{}", [this,&case_stack](std::list<Syntax*>* stack) {
 								stack->pop_front();
 								found_command_sentence = true;
 
 								std::wstring command_name{};
 								GenerateFunc generator_candidate{};
 								while (!stack->empty()) {
-									auto it = words.find(stack->front());
+									auto it = words.find(stack->front()->text);
 									if (it != words.end()) {
-										command_name = std::move(stack->front());
+										command_name = std::move(stack->front()->text);
 										generator_candidate = it->second;
 									} else {
-										auto param = std::move(stack->front());
+										auto param = std::move(stack->front()->text);
 										if (iswdigit(param[0]) || param[0] == L'-') {
 											param += std::wstring(L":") + innertype::Number;
 										} else if (param[0] == L'\'') {
@@ -4858,12 +4861,12 @@ namespace karapo::event {
 					for (auto it = syntax->begin(); it != syntax->end(); it++) {
 						Syntax *syntax_content = &(*it);
 						while (syntax_content != nullptr) {
-							stack.push_front(syntax_content->text);
-							if (auto operator_iterator = operator_funcs.find(stack.front()); operator_iterator != operator_funcs.end()) {
+							stack.push_front(syntax_content);
+							if (auto operator_iterator = operator_funcs.find(stack.front()->text); operator_iterator != operator_funcs.end()) {
 								if (operator_iterator == Command_Sentence_Iterator) found_command_sentence = true;
 								if (stack.size() > 1) {
 									it--;
-									operator_funcs[std::move(stack.front())](&stack);
+									operator_funcs[std::move(stack.front()->text)](&stack);
 								}
 								stack.clear();
 							} else {
