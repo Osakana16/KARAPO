@@ -16,8 +16,10 @@ namespace karapo {
 
 			bool IsRecord(const std::wstring&) const noexcept;
 		public:
-			std::any& MakeNew(std::wstring);
+			std::any& MakeNew(const std::wstring&) noexcept;
 			std::any& Get(const std::wstring&) noexcept;
+
+
 			void Delete(const std::wstring&) noexcept;
 			
 			static Manager& Instance() noexcept {

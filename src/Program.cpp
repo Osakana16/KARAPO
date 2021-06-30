@@ -80,19 +80,27 @@ namespace karapo {
 			vars[L"__キャラ存在"] = 1 << 2;					// 
 		}
 
-		std::any& Manager::MakeNew(std::wstring name) {
-			std::any_cast<std::wstring&>(vars[Managing_Var_Name]) += name + L"\n";
-			std::any *candidate = &vars[name];
+		std::any& Manager::MakeNew(const std::wstring& Name) noexcept {
+			std::any_cast<std::wstring&>(vars[Managing_Var_Name]) += Name + L"\n";
+			// 作成された変数を返す為の変数。
+			std::any *returnable_candidate{};
 
-			size_t pos = name.find(L'.');
-			if (pos != std::wstring::npos) {
-				const auto&& Record_Name = name.substr(0, pos);
+			// Record型かそれ以外の場合の処理。
+			if (const size_t Pos = Name.find(L'.'); Pos != std::wstring::npos) {
+				// 変数名に「.」が含まれていたら、Record型として認識する。
+
+				// Recordの変数名を探す。
+				const auto&& Record_Name = Name.substr(0, Pos);
+				// 既存の変数を探す。
 				if (vars.find(Record_Name) == vars.end())
-					vars[Record_Name] = Record();
-				name = name.substr(pos + 1);
-				candidate = &std::any_cast<Record&>(vars[Record_Name]).members[name];
-			}
-			return *candidate;
+					vars[Record_Name] = Record();	// 存在しない場合、新しく構造体変数を作成。
+
+				// 構造体変数に対して、メンバ変数を作成。
+				returnable_candidate = &std::any_cast<Record&>(vars[Record_Name]).members[Name.substr(Pos + 1)];
+			} else
+				returnable_candidate = &vars[Name];	// メンバを持たない、単体の変数を作成する。
+
+			return *returnable_candidate;
 		}
 
 		std::any& Manager::Get(const std::wstring& Name) noexcept {
@@ -133,14 +141,17 @@ namespace karapo {
 				auto var = vars.find(Name);
 				if (var == vars.end()) {
 					auto event_name = std::any_cast<std::wstring>(Get(variable::Executing_Event_Name));
-					event_name.pop_back();
-					auto pos = event_name.rfind(L'\n');
-					if (pos != std::wstring::npos)
-						event_name = event_name.substr(pos + 1);
+					if (!event_name.empty()) {
+						event_name.pop_back();
+						auto pos = event_name.rfind(L'\n');
+						if (pos != std::wstring::npos)
+							event_name = event_name.substr(pos + 1);
 
-					// 変数が見つからなかった場合、
-					// ローカル変数を探す。
-					var = vars.find(event_name + L'@' + Name);
+						// 変数が見つからなかった場合、
+						// ローカル変数を探す。
+						var = vars.find(event_name + L'@' + Name);
+					}
+
 					if (var == vars.end())
 						goto no_member;
 				}
