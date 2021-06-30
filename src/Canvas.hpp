@@ -39,8 +39,8 @@ namespace karapo {
 
 
 		inline auto Name() const noexcept { return name; }
-		void Show() noexcept { hide = true; }
-		void Hide() noexcept { hide = false; }
+		void Show() noexcept { hide = false; }
+		void Hide() noexcept { hide = true; }
 
 		virtual void Draw() noexcept = 0;
 		virtual const wchar_t* KindName() const noexcept = 0;
