@@ -16,7 +16,8 @@ namespace karapo {
 
 			bool IsRecord(const std::wstring&) const noexcept;
 		public:
-			std::any& MakeNew(const std::wstring&) noexcept;
+			// •Ï”‚ğì¬‚·‚éŠÖ”ŒQB
+			std::any& MakeNew(const std::wstring&) noexcept, &MakeStruct(const std::wstring& Struct_Name, const std::wstring& Member_Name) noexcept;
 			std::any& Get(const std::wstring&) noexcept;
 
 

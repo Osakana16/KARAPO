@@ -80,6 +80,7 @@ namespace karapo {
 			vars[L"__キャラ存在"] = 1 << 2;					// 
 		}
 
+		// Nameから判別して適切な型の変数を作成する。
 		std::any& Manager::MakeNew(const std::wstring& Name) noexcept {
 			std::any_cast<std::wstring&>(vars[Managing_Var_Name]) += Name + L"\n";
 			// 作成された変数を返す為の変数。
@@ -88,19 +89,25 @@ namespace karapo {
 			// Record型かそれ以外の場合の処理。
 			if (const size_t Pos = Name.find(L'.'); Pos != std::wstring::npos) {
 				// 変数名に「.」が含まれていたら、Record型として認識する。
-
-				// Recordの変数名を探す。
-				const auto&& Record_Name = Name.substr(0, Pos);
-				// 既存の変数を探す。
-				if (vars.find(Record_Name) == vars.end())
-					vars[Record_Name] = Record();	// 存在しない場合、新しく構造体変数を作成。
-
-				// 構造体変数に対して、メンバ変数を作成。
-				returnable_candidate = &std::any_cast<Record&>(vars[Record_Name]).members[Name.substr(Pos + 1)];
+				returnable_candidate = &MakeStruct(Name.substr(0, Pos), Name.substr(Pos + 1));
 			} else
 				returnable_candidate = &vars[Name];	// メンバを持たない、単体の変数を作成する。
 
 			return *returnable_candidate;
+		}
+
+		// Record型変数のメンバ変数を作成する。
+		std::any& Manager::MakeStruct(const std::wstring& Struct_Name, const std::wstring& Member_Name) noexcept {
+			// Recordの変数名を探す。
+			auto record = vars.find(Struct_Name);
+			if (record == vars.end()) {
+				vars[Struct_Name] = Record();	// 存在しない場合、新しく構造体変数を作成。
+				record = vars.find(Struct_Name);
+			} else if (record->second.type() != typeid(Record)) {
+				record->second = Record();		// 型が違う場合、値を上書き。
+			}
+			// 構造体変数に対して、メンバ変数を作成して返す。
+			return std::any_cast<Record&>(record->second).members[Member_Name];
 		}
 
 		std::any& Manager::Get(const std::wstring& Name) noexcept {
