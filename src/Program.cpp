@@ -70,7 +70,6 @@ namespace karapo {
 		Manager::Manager() {
 			vars[L"null"] = nullptr;
 			vars[Managing_Var_Name] = std::wstring(L"");		// 管理中の変数の名前
-			vars[Managing_Entity_Name] = std::wstring(L"");		// 管理中のEntityの名前
 			vars[Executing_Event_Name] = std::wstring(L"");
 
 			vars[L"__生成中イベント"] = std::wstring(L"");

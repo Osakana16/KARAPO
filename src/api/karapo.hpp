@@ -133,7 +133,6 @@ namespace karapo {
 
 	namespace variable {
 		static constexpr const wchar_t* const Managing_Var_Name = L"__管理中変数";
-		static constexpr const wchar_t* const Managing_Entity_Name = L"__管理中キャラ";
 		static constexpr const wchar_t* const Executing_Event_Name = L"__実行中イベント";
 	}
 

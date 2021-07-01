@@ -14,7 +14,7 @@ namespace karapo {
 			Manager();
 			~Manager() = default;
 
-			bool IsRecord(const std::any&) const noexcept, 
+			bool IsRecord(const std::any&) const noexcept,
 				IsRecordName(const std::wstring&) const noexcept,
 				IsReference(const std::any&) const noexcept;
 		public:
@@ -24,7 +24,7 @@ namespace karapo {
 
 
 			void Delete(const std::wstring&) noexcept;
-			
+
 			static Manager& Instance() noexcept {
 				static Manager manager;
 				return manager;

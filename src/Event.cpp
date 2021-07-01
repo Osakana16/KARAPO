@@ -1428,11 +1428,11 @@ namespace karapo::event {
 					ReplaceFormat(&entity_name);
 					if (entity_name == L"__all" || entity_name == L"__‘Sˆõ") {
 						std::vector<std::wstring> names{};
-						auto sen = std::any_cast<std::wstring>(Program::Instance().var_manager.Get(variable::Managing_Entity_Name));
+						auto sen = std::any_cast<std::wstring>(Program::Instance().var_manager.Get(L"entity::Manager.__ŠÇ—’†"));
 						{
 							std::wstring temp{};
 							for (auto ch : sen) {
-								if (ch != L'\n') {
+								if (ch != L'\\') {
 									temp += ch;
 								} else {
 									names.push_back(temp);

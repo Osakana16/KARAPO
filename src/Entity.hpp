@@ -113,6 +113,15 @@ namespace karapo::entity {
 		void Draw(WorldVector) override;
 	};
 
+	class StringNameManager final {
+		const std::wstring Manager_Name{};
+		std::wstring *managing_variable{};
+	public:
+		StringNameManager(const std::wstring&) noexcept;
+		void Add(const std::shared_ptr<Entity>&), Remove(const std::shared_ptr<Entity>&);
+		bool IsRegistered(const std::shared_ptr<Entity>&) const noexcept;
+	};
+
 	// Entityを一つの塊(配列)で管理するクラス
 	class Chunk {
 		std::unordered_map<std::wstring, std::shared_ptr<Entity>> entities{};
@@ -147,6 +156,8 @@ namespace karapo::entity {
 		Manager();
 		~Manager() = default;
 	public:
+		StringNameManager name_manager;
+
 		// Entityを更新する。
 		void Update() noexcept;
 		// 該当する名前のEntityを入手する。

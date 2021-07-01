@@ -9,7 +9,7 @@
 #include <forward_list>
 
 namespace karapo::entity {
-	Manager::Manager() {
+	Manager::Manager() : name_manager(L"entity::Manager") {
 		entity_error_class = error::UserErrorHandler::MakeErrorClass(L"entityエラー");
 		entity_already_registered_warning = error::UserErrorHandler::MakeError(entity_error_class, L"既に同じ名前のEntityが存在する為、新しく登録できません。", MB_OK | MB_ICONWARNING, 1);
 	}
@@ -73,9 +73,7 @@ namespace karapo::entity {
 				candidate = &chunks.front();
 			}
 			candidate->Register(entity);
-			auto var = std::any_cast<std::wstring>(Program::Instance().var_manager.Get(variable::Managing_Entity_Name));
-			var += std::wstring(entity->Name()) + L"=" + std::wstring(entity->KindName()) + L"\n";
-			Program::Instance().var_manager.Get(variable::Managing_Entity_Name) = var;
+			name_manager.Add(entity);
 			if (!Layer_Name.empty())
 				Program::Instance().canvas.Register(entity, Layer_Name);
 			else
@@ -149,6 +147,26 @@ namespace karapo::entity {
 		return true;
 	}
 
+	StringNameManager::StringNameManager(const std::wstring& Name) noexcept : Manager_Name(Name) {
+		variable::Manager::Instance().MakeNew(Manager_Name + L".__管理中") = std::wstring();
+		managing_variable = &std::any_cast<std::wstring&>(variable::Manager::Instance().MakeNew(Manager_Name + L".__管理中"));
+	}
+
+	void StringNameManager::Add(const std::shared_ptr<Entity>& Ent) {
+		*managing_variable += std::wstring(Ent->Name()) + L'=' + std::wstring(Ent->KindName()) + L'\\';
+	}
+
+	void StringNameManager::Remove(const std::shared_ptr<Entity>& Ent) {
+		if (IsRegistered(Ent)) {
+			const auto Position = managing_variable->find(Ent->Name());
+			managing_variable->erase(Position, managing_variable->find(L'\\', Position) + 1);
+		}
+	}
+
+	bool StringNameManager::IsRegistered(const std::shared_ptr<Entity>& Ent) const noexcept {
+		return (managing_variable->find(Ent->Name()) != std::wstring::npos);
+	}
+
 	void Chunk::Update() noexcept {
 		for (auto& ent : entities) {
 			ent.second->Main();
@@ -183,14 +201,7 @@ namespace karapo::entity {
 	void Chunk::Kill(const std::wstring& Name) noexcept {
 		auto ent = entities.find(Name);
 		if (ent != entities.end()) {
-			auto& var = Program::Instance().var_manager.Get(variable::Managing_Entity_Name);
-			auto& str = std::any_cast<std::wstring&>(var);
-			auto pos = str.find(Name);
-			if (pos != str.npos) {
-				auto name_begin = str.substr(0, pos - 1);
-				auto name_end = str.substr(pos + Name.size());
-				str = name_begin + name_end;
-			}
+			Manager::Instance().name_manager.Remove(ent->second);
 			Program::Instance().canvas.Remove(ent->second);
 			entities.erase(ent);
 		}

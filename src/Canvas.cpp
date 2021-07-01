@@ -84,10 +84,9 @@ namespace karapo {
 		return filters.at(Filter_Name)();
 	}
 
-	Layer::Layer(const std::wstring& Layer_Name) noexcept {
+	Layer::Layer(const std::wstring& Layer_Name) noexcept : name_manager(Layer_Name) {
 		screen = Program::Instance().engine.MakeScreen();
 		name = Layer_Name;
-		Program::Instance().var_manager.MakeNew(Name() + L".__ŠÇ—’†") = std::wstring(L"");
 	}
 
 	void Layer::SetFilter(std::unique_ptr<Filter> new_filter) noexcept {
@@ -103,8 +102,7 @@ namespace karapo {
 		if (IsRegistered(drawable_entity))
 			return;
 
-		auto& var = Program::Instance().var_manager.Get(Name() + L".__ŠÇ—’†");
-		std::any_cast<std::wstring&>(var) += std::wstring(drawable_entity->Name()) + L'\\';
+		name_manager.Add(drawable_entity);
 		drawing.push_back(drawable_entity);
 	}
 
@@ -116,10 +114,7 @@ namespace karapo {
 		auto iterator = std::find(drawing.begin(), drawing.end(), Target_Entity);
 		if (iterator != drawing.end()) {
 			drawing.erase(iterator);
-			auto& var = Program::Instance().var_manager.Get(Name() + L".__ŠÇ—’†");
-			auto& str = std::any_cast<std::wstring&>(var);
-			const auto Position = str.find(Target_Entity->Name());
-			str.erase(Position, Position + wcslen(Target_Entity->Name()) + 1);
+			name_manager.Remove(Target_Entity);
 		}
 	}
 

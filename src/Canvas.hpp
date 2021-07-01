@@ -23,6 +23,7 @@ namespace karapo {
 		std::wstring name{};	// ÉåÉCÉÑÅ[ñº
 		bool hide = false;
 		bool IsShowing() const noexcept { return !hide; }
+		entity::StringNameManager name_manager;
 	protected:
 		std::vector<std::shared_ptr<Entity>> drawing{};
 		Layer(const std::wstring& Layer_Name) noexcept;
@@ -36,7 +37,6 @@ namespace karapo {
 		virtual void Register(std::shared_ptr<Entity>&) noexcept;
 		bool IsRegistered(const std::shared_ptr<Entity>&) const noexcept;
 		void Remove(const std::shared_ptr<Entity>&) noexcept;
-
 
 		inline auto Name() const noexcept { return name; }
 		void Show() noexcept { hide = false; }
