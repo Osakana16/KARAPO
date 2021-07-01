@@ -106,8 +106,30 @@ namespace karapo::entity {
 		return false;
 	}
 
-	bool Manager::Freeze(const std::wstring& Entity_Name) noexcept {
-		freezable_entity_kind.insert(Entity_Name);
+	bool Manager::Freeze(const std::wstring& Name) noexcept {
+		auto ent = GetEntity(Name);
+		if (ent == nullptr) {
+			const auto& Kind_Name = Name;
+			freezable_entity_kind.insert(Kind_Name);
+			bool found_chunk{};
+			for (auto&& chunk : chunks) {
+				ent = chunk.Get([&Kind_Name](std::shared_ptr<Entity> ent) {
+						return ent->KindName() == Kind_Name;
+					}
+				);
+
+				if (ent != nullptr) {
+					found_chunk = true;
+					Freeze(ent);
+				}
+			} 
+			if (found_chunk) {
+				goto end_of_function;
+			}
+		} else {
+			Freeze(ent);
+		}
+	end_of_function:
 		return true;
 	}
 
