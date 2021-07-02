@@ -115,20 +115,7 @@ namespace karapo {
 			} else {
 				auto var = vars.find(Name);
 				if (var == vars.end()) {
-					auto event_name = std::any_cast<std::wstring>(Get(variable::Executing_Event_Name));
-					if (!event_name.empty()) {
-						event_name.pop_back();
-						auto pos = event_name.rfind(L'\n');
-						if (pos != std::wstring::npos)
-							event_name = event_name.substr(pos + 1);
-
-						// 変数が見つからなかった場合、
-						// ローカル変数を探す。
-						var = vars.find(event_name + L'@' + Name);
-					}
-
-					if (var == vars.end())
-						goto no_member;
+					return GetLocal(Name);
 				}
 				return var->second;
 			}
@@ -136,14 +123,34 @@ namespace karapo {
 			return vars[L"null"];
 		}
 
+		std::any& Manager::GetLocal(const std::wstring& Name) noexcept {
+			auto event_name = std::any_cast<std::wstring>(Get(variable::Executing_Event_Name));
+			if (!event_name.empty()) {
+				event_name.pop_back();
+				auto pos = event_name.rfind(L'\n');
+				if (pos != std::wstring::npos)
+					event_name = event_name.substr(pos + 1);
+
+				// 変数が見つからなかった場合、
+				// ローカル変数を探す。
+				auto var = vars.find(event_name + L'@' + Name);
+				if (var != vars.end())
+					return var->second;
+			}
+			return vars[L"null"];
+		}
+
 		std::any& Manager::GetStruct(const std::wstring& Struct_Name, const std::wstring& Member_Name) noexcept {
-			auto record_candidate = vars.find(Struct_Name);
-			if (record_candidate != vars.end() && IsRecord(record_candidate->second)) {
+			auto *record_candidate = &Get(Struct_Name);
+			if (!IsRecord(*record_candidate)) {
+				record_candidate = &GetLocal(Struct_Name);
+			}
+			if (IsRecord(*record_candidate)) {
 				Record *record{};
-				if (!IsReference(record_candidate->second))
-					record = &std::any_cast<Record&>(record_candidate->second);
+				if (!IsReference(*record_candidate))
+					record = &std::any_cast<Record&>(*record_candidate);
 				else
-					record = &std::any_cast<Record&>(std::any_cast<std::reference_wrapper<std::any>&>(record_candidate->second).get());
+					record = &std::any_cast<Record&>(std::any_cast<std::reference_wrapper<std::any>&>(*record_candidate).get());
 
 				auto member = record->members.find(Member_Name);
 				if (member != record->members.end()) {
