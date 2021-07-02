@@ -3108,7 +3108,7 @@ namespace karapo::event {
 				WorldVector origin[2]{ { -1, -1 }, { -1, -1 } };
 				TriggerType trigger_type = TriggerType::Invalid;
 				std::wstring event_name{};
-				std::vector<std::wstring> params{}, command_parameters{};
+				std::vector<std::wstring> event_params{}, command_parameters{};
 				std::list<CommandGraph> commands{};
 				std::unordered_map<std::wstring, GenerateFunc> words{};
 
@@ -4767,7 +4767,7 @@ namespace karapo::event {
 							L"()", [this](std::list<Syntax*>* stack) {
 								stack->pop_front();
 								while (!stack->empty()) {
-									params.push_back(stack->front()->text);
+									event_params.push_back(stack->front()->text);
 									stack->pop_front();
 								}
 							}
@@ -4887,7 +4887,7 @@ namespace karapo::event {
 
 							auto& target_event = parsing_events[std::move(event_name)];
 							target_event.trigger_type = trigger_type;
-							target_event.param_names = std::move(params);
+							target_event.param_names = std::move(event_params);
 							for (int i = 0; i < 2; i++)
 								target_event.origin[i] = origin[i];
 
