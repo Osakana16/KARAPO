@@ -2918,6 +2918,7 @@ namespace karapo::event {
 					} else if (*current_char == L'\n') {
 						context.push_back({});
 						context.back() += *current_char;
+						context.push_back({});
 						current_char++;
 						return current_char;
 					}
