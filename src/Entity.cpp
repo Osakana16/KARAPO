@@ -20,6 +20,7 @@ namespace karapo::entity {
 				for (auto& group : chunks) {
 					group.Kill(Name);
 				}
+				idle_chunk.Kill(Name);
 				glacial_chunk.Kill(Name);
 			}
 			killable_entities.clear();
@@ -38,7 +39,7 @@ namespace karapo::entity {
 			if (result != nullptr)
 				return result;
 		}
-		return glacial_chunk.Get(Name);
+		return idle_chunk.Get(Name);
 	}
 
 	std::shared_ptr<Entity> Manager::GetEntity(std::function<bool(std::shared_ptr<Entity>)> Condition) const noexcept {
@@ -48,7 +49,7 @@ namespace karapo::entity {
 			results.push_back(async.get());
 		}
 		auto it = std::find_if(results.begin(), results.end(), [](std::shared_ptr<Entity> se) { return se != nullptr; });
-		return (it != results.end() ? *it : glacial_chunk.Get(Condition));
+		return (it != results.end() ? *it : idle_chunk.Get(Condition));
 	}
 
 	void Manager::Kill(const std::wstring& Name) noexcept {
@@ -68,7 +69,7 @@ namespace karapo::entity {
 		if (GetEntity(entity->Name()) == nullptr) {
 			Chunk *candidate{};
 			if (freezable_entity_kind.find(entity->KindName()) != freezable_entity_kind.end()) {
-				candidate = &glacial_chunk;
+				candidate = &idle_chunk;
 			} else {
 				candidate = &chunks.front();
 			}
@@ -92,10 +93,10 @@ namespace karapo::entity {
 		return amount;
 	}
 
-	// 該当する名前のEntityをchunksから除外し、glacial_chunkに移動する。
+	// 該当する名前のEntityをchunksから除外し、idle_chunkに移動する。
 	bool Manager::Freeze(std::shared_ptr<Entity>& target) noexcept {
 		if (target != nullptr) {
-			glacial_chunk.Register(target);
+			idle_chunk.Register(target);
 			for (auto& chunk : chunks) {
 				chunk.Remove(target);
 			}
@@ -131,17 +132,17 @@ namespace karapo::entity {
 		return true;
 	}
 
-	// 該当する名前のEntityをglacial_chunkから外し、chunksに移動する。
+	// 該当する名前のEntityをidle_chunkから外し、chunksに移動する。
 	bool Manager::Defrost(std::shared_ptr<Entity>& target) noexcept {
 		if (target != nullptr) {
-			glacial_chunk.Remove(target);
+			idle_chunk.Remove(target);
 			chunks.begin()->Register(target);
 			return true;
 		}
 		return false;
 	}
 
-	// 該当する名前のEntityをglacial_chunkから外し、chunksに移動する。
+	// 該当する名前のEntityをidle_chunkから外し、chunksに移動する。
 	bool Manager::Defrost(const std::wstring& Entity_Name) noexcept {
 		freezable_entity_kind.erase(Entity_Name);
 		return true;

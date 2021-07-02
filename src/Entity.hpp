@@ -147,7 +147,8 @@ namespace karapo::entity {
 		std::unordered_set<std::wstring> freezable_entity_kind{},
 			killable_entities{};
 		std::vector<Chunk> chunks{};	// Entityを更新するチャンク。
-		Chunk glacial_chunk{};			// Entityを更新しないチャンク。
+		Chunk idle_chunk{};				// Entityを更新しないチャンク。
+		Chunk glacial_chunk{};			// Entityを更新せず、いかなる操作の対象にもしないチャンク。
 
 		error::UserErrorHandler error_handler{};
 		error::ErrorClass *entity_error_class{};
