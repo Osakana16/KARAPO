@@ -6,7 +6,6 @@
 
 #include <thread>
 #include <future>
-#include <forward_list>
 
 namespace karapo::entity {
 	Manager::Manager() : name_manager(L"entity::Manager") {
@@ -91,6 +90,42 @@ namespace karapo::entity {
 			amount += group.Size();
 		}
 		return amount;
+	}
+
+	bool Manager::Freeze(std::shared_ptr<Entity>& target) noexcept {
+		if (target != nullptr) {
+			glacial_chunk.Register(target);
+			idle_chunk.Remove(target);
+			return true;
+		}
+		return false;
+	}
+
+	bool Manager::Freeze(const std::wstring& Name) noexcept {
+		auto ent = idle_chunk.Get(Name);
+		if (ent != nullptr) {
+			Freeze(ent);
+			return true;
+		}
+		return false;
+	}
+
+	bool Manager::Defrost(std::shared_ptr<Entity>& target) noexcept {
+		if (target != nullptr) {
+			glacial_chunk.Remove(target);
+			idle_chunk.Register(target);
+			return true;
+		}
+		return false;
+	}
+
+	bool Manager::Defrost(const std::wstring& Entity_Name) noexcept {
+		auto ent = glacial_chunk.Get(Entity_Name);
+		if (ent != nullptr) {
+			Defrost(ent);
+			return true;
+		}
+		return false;
 	}
 
 	// 該当する名前のEntityをchunksから除外し、idle_chunkに移動する。
