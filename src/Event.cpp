@@ -1490,9 +1490,9 @@ namespace karapo::event {
 					} else {
 						auto ent = karapo::entity::Manager::Instance().GetEntity(candidate_name);
 						if (ent != nullptr) {
-							karapo::entity::Manager::Instance().Freeze(ent);
+							karapo::entity::Manager::Instance().Deactivate(ent);
 						} else {
-							karapo::entity::Manager::Instance().Freeze(candidate_name);
+							karapo::entity::Manager::Instance().Deactivate(candidate_name);
 						}
 					}
 					goto end_of_function;
@@ -1538,9 +1538,9 @@ namespace karapo::event {
 						} else {
 							auto ent = karapo::entity::Manager::Instance().GetEntity(candidate_name);
 							if (ent != nullptr) {
-								karapo::entity::Manager::Instance().Defrost(ent);
+								karapo::entity::Manager::Instance().Activate(ent);
 							} else {
-								karapo::entity::Manager::Instance().Defrost(candidate_name);
+								karapo::entity::Manager::Instance().Activate(candidate_name);
 							}
 						}
 					}

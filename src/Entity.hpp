@@ -176,13 +176,13 @@ namespace karapo::entity {
 		void Register(std::shared_ptr<Entity>) noexcept, Register(std::shared_ptr<Entity>, const std::wstring&) noexcept;
 
 		// 該当する名前のEntityを更新対象から外す。
-		bool Freeze(std::shared_ptr<Entity>& target) noexcept;
+		bool Deactivate(std::shared_ptr<Entity>& target) noexcept;
 		// 該当するEntityの種類を更新対象から外す。
-		bool Freeze(const std::wstring& Entity_Name) noexcept;
+		bool Deactivate(const std::wstring& Entity_Name) noexcept;
 		// 該当する名前のEntityを更新対象にする。
-		bool Defrost(std::shared_ptr<Entity>& target) noexcept;
+		bool Activate(std::shared_ptr<Entity>& target) noexcept;
 		// 該当するEntityの種類を更新対象にする。
-		bool Defrost(const std::wstring& Entity_Name) noexcept;
+		bool Activate(const std::wstring& Entity_Name) noexcept;
 
 		static Manager& Instance() noexcept {
 			static Manager manager;

@@ -94,7 +94,7 @@ namespace karapo::entity {
 	}
 
 	// 該当する名前のEntityをchunksから除外し、idle_chunkに移動する。
-	bool Manager::Freeze(std::shared_ptr<Entity>& target) noexcept {
+	bool Manager::Deactivate(std::shared_ptr<Entity>& target) noexcept {
 		if (target != nullptr) {
 			idle_chunk.Register(target);
 			for (auto& chunk : chunks) {
@@ -105,7 +105,7 @@ namespace karapo::entity {
 		return false;
 	}
 
-	bool Manager::Freeze(const std::wstring& Name) noexcept {
+	bool Manager::Deactivate(const std::wstring& Name) noexcept {
 		auto ent = GetEntity(Name);
 		if (ent == nullptr) {
 			const auto& Kind_Name = Name;
@@ -119,21 +119,21 @@ namespace karapo::entity {
 
 				if (ent != nullptr) {
 					found_chunk = true;
-					Freeze(ent);
+					Deactivate(ent);
 				}
 			} 
 			if (found_chunk) {
 				goto end_of_function;
 			}
 		} else {
-			Freeze(ent);
+			Deactivate(ent);
 		}
 	end_of_function:
 		return true;
 	}
 
 	// 該当する名前のEntityをidle_chunkから外し、chunksに移動する。
-	bool Manager::Defrost(std::shared_ptr<Entity>& target) noexcept {
+	bool Manager::Activate(std::shared_ptr<Entity>& target) noexcept {
 		if (target != nullptr) {
 			idle_chunk.Remove(target);
 			chunks.begin()->Register(target);
@@ -143,7 +143,7 @@ namespace karapo::entity {
 	}
 
 	// 該当する名前のEntityをidle_chunkから外し、chunksに移動する。
-	bool Manager::Defrost(const std::wstring& Entity_Name) noexcept {
+	bool Manager::Activate(const std::wstring& Entity_Name) noexcept {
 		freezable_entity_kind.erase(Entity_Name);
 		return true;
 	}
