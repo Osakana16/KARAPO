@@ -3103,15 +3103,13 @@ namespace karapo::event {
 
 			// 意味解析
 			class SemanticParser final {
-				std::list<Syntax*> visited{}, queue{};
 				std::unordered_map<std::wstring, Event> parsing_events{};
 
 				WorldVector origin[2]{ { -1, -1 }, { -1, -1 } };
 				TriggerType trigger_type = TriggerType::Invalid;
-				std::wstring event_name;
-				std::vector<std::wstring> params{};
+				std::wstring event_name{};
+				std::vector<std::wstring> params{}, command_parameters{};
 				std::list<CommandGraph> commands{};
-				std::vector<std::wstring> command_parameters{};
 				std::unordered_map<std::wstring, GenerateFunc> words{};
 
 				// コマンド文を発見したか否か。
