@@ -51,6 +51,16 @@ namespace karapo::entity {
 		return (it != results.end() ? *it : idle_chunk.Get(Condition));
 	}
 
+	std::shared_ptr<Entity> Manager::GetEntity(std::function<bool(std::shared_ptr<Entity>)> Condition, const std::shared_ptr<Entity>& Base) const noexcept {
+		std::vector<std::shared_ptr<Entity>> results{};
+		for (auto& group : chunks) {
+			auto async = std::async(std::launch::async, [&group, Condition, Base] { return group.Get(Condition, Base); });
+			results.push_back(async.get());
+		}
+		auto it = std::find_if(results.begin(), results.end(), [](std::shared_ptr<Entity> se) { return se != nullptr; });
+		return (it != results.end() ? *it : idle_chunk.Get(Condition, Base));
+	}
+
 	void Manager::Kill(const std::wstring& Name) noexcept {
 		killable_entities.insert(Name);
 	}
@@ -223,6 +233,26 @@ namespace karapo::entity {
 		for (auto& ent : entities) {
 			if (Condition(ent.second)) {
 				return ent.second;
+			}
+		}
+		return nullptr;
+	}
+
+	std::shared_ptr<Entity> Chunk::Get(std::function<bool(std::shared_ptr<Entity>)> Condition, const std::shared_ptr<Entity>& Base) const noexcept {
+		std::unordered_multimap<int, std::shared_ptr<Entity>> entity_interval{};
+		for (auto& ent : entities) {
+			int i = static_cast<int>(std::sqrt(std::pow(ent.second->Origin()[0], 2) + std::pow(ent.second->Origin()[1], 2)));
+			entity_interval.insert({ i / 1000, ent.second });
+		}
+
+		const int Index = static_cast<int>(std::sqrt(std::pow(Base->Origin()[0], 2) + std::pow(Base->Origin()[1], 2))) / 1000;
+		auto interval = entity_interval.find(Index);
+		if (interval != entity_interval.end()) {
+			auto range = entity_interval.equal_range(Index);
+			for (auto ent = range.first; ent != range.second; ent++) {
+				if (Condition(ent->second)) {
+					return ent->second;
+				}
 			}
 		}
 		return nullptr;

@@ -133,7 +133,7 @@ namespace karapo::entity {
 		// 該当する名前のEntityを取得する。
 		std::shared_ptr<Entity> Get(const std::wstring& Name) const noexcept;
 		// 該当する条件のEntityを取得する。
-		std::shared_ptr<Entity> Get(std::function<bool(std::shared_ptr<Entity>)> Condition) const noexcept;
+		std::shared_ptr<Entity> Get(std::function<bool(std::shared_ptr<Entity>)> Condition) const noexcept, Get(std::function<bool(std::shared_ptr<Entity>)> Condition, const std::shared_ptr<Entity>& Base) const noexcept;
 		// 管理中の数を返す。
 		size_t Size() const noexcept;
 		// Entityを殺す。
@@ -164,7 +164,8 @@ namespace karapo::entity {
 		// 該当する名前のEntityを入手する。
 		std::shared_ptr<Entity> GetEntity(const std::wstring& Name) const noexcept;
 		// 関数内の条件に当てはまるEntityを入手する。
-		std::shared_ptr<Entity> GetEntity(std::function<bool(std::shared_ptr<Entity>)> Condition) const noexcept;
+		std::shared_ptr<Entity> GetEntity(std::function<bool(std::shared_ptr<Entity>)> Condition) const noexcept,
+			GetEntity(std::function<bool(std::shared_ptr<Entity>)> Condition, const std::shared_ptr<Entity>&) const noexcept;
 
 		// 該当する名前のEntityを殺す。
 		void Kill(const std::wstring&) noexcept;
