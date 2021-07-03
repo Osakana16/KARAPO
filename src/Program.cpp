@@ -24,6 +24,8 @@ namespace karapo {
 		}
 
 		dll_manager.LoadedInit();
+		var_manager.MakeNew(L"window_width") = WindowSize().first;
+		var_manager.MakeNew(L"window_height") = WindowSize().second;
 
 		while (UpdateMessage() == 0) {
 			engine.UpdateKeys();
