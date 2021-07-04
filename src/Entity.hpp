@@ -144,8 +144,7 @@ namespace karapo::entity {
 
 	// Entityを管理するクラス。
 	class Manager final : private Singleton {
-		std::unordered_set<std::wstring> freezable_entity_kind{},
-			killable_entities{};
+		std::unordered_set<std::wstring> freezable_entity_kind{};
 		std::vector<Chunk> chunks{};	// Entityを更新するチャンク。
 		Chunk idle_chunk{};				// Entityを更新しないチャンク。
 		Chunk glacial_chunk{};			// Entityを更新せず、いかなる操作の対象にもしないチャンク。

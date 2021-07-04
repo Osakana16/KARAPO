@@ -14,17 +14,6 @@ namespace karapo::entity {
 	}
 
 	void Manager::Update() noexcept {
-		if (!killable_entities.empty()) {
-			for (const auto& Name : killable_entities) {
-				for (auto& group : chunks) {
-					group.Kill(Name);
-				}
-				idle_chunk.Kill(Name);
-				glacial_chunk.Kill(Name);
-			}
-			killable_entities.clear();
-		}
-
 		for (auto& group : chunks) {
 			std::thread th(&Chunk::Update, &group);
 			th.join();
@@ -62,7 +51,11 @@ namespace karapo::entity {
 	}
 
 	void Manager::Kill(const std::wstring& Name) noexcept {
-		killable_entities.insert(Name);
+		for (auto& group : chunks) {
+			group.Kill(Name);
+		}
+		idle_chunk.Kill(Name);
+		glacial_chunk.Kill(Name);
 	}
 
 	// Entityの登録
