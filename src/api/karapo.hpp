@@ -220,6 +220,8 @@ namespace karapo {
 		std::function<void(const std::wstring&)> KillEntity;
 		std::function<std::shared_ptr<Entity>(const std::wstring&)> GetEntityByName;
 		std::function<std::shared_ptr<Entity>(std::function<bool(std::shared_ptr<Entity>)>)> GetEntityByFunc;
+		std::function<std::shared_ptr<Entity>(std::function<bool(std::shared_ptr<Entity>)>, const std::shared_ptr<Entity>&)> GetEntityByFuncWithBase;
+		std::function<void(const std::wstring&)> ActivateEntity, DeactivateEntity, FreezeEntity, DefrostEntity;
 
 		// - Eventån -
 
