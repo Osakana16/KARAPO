@@ -38,8 +38,14 @@ namespace karapo {
 			entity_manager.Update();
 			engine.FlipScreen();
 			error::UserErrorHandler::ShowGlobalError(4);
+			EventExecuterInstance().Update();
 		}
 		return 0;
+	}
+
+	event::EventExecuter& Program::EventExecuterInstance() {
+		static event::EventExecuter event_executer {};
+		return event_executer;
 	}
 
 	HWND Program::MainHandler() const noexcept {

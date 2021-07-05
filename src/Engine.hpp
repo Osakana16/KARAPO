@@ -3,6 +3,10 @@
 #include <chrono>
 
 namespace karapo {
+	namespace event {
+		class EventExecuter;
+	}
+
 	namespace variable {
 		// ç\ë¢ëÃå^
 		struct Record final {
@@ -155,6 +159,7 @@ namespace karapo {
 			return instance;
 		}
 
+		event::EventExecuter& EventExecuterInstance();
 		event::EventEditor* MakeEventEditor();
 		void FreeEventEditor(event::EventEditor*);
 

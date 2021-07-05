@@ -78,6 +78,8 @@ namespace karapo::event {
 		void ImportEvent(const std::wstring&) noexcept;
 		// 座標からイベントを実行する。
 		void ExecuteEvent(const WorldVector) noexcept;
+		//
+		bool Push(const std::wstring&) noexcept;
 		// イベント名からイベントを実行する。
 		bool Call(const std::wstring&) noexcept;
 		//
@@ -99,6 +101,14 @@ namespace karapo::event {
 
 		error::UserErrorHandler error_handler{};
 		error::ErrorClass *error_class{};
+	};
+
+	class EventExecuter final {
+		std::list<std::wstring> event_queue{};
+	public:
+		void PushEvent(const std::wstring&) noexcept;
+		void Update();
+		void Execute(const std::list<CommandGraph>&);
 	};
 
 	// イベント編集クラス

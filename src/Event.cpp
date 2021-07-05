@@ -2862,26 +2862,33 @@ namespace karapo::event {
 		}
 	}
 
-	// イベントのコマンド実行クラス
-	class Manager::CommandExecuter final {
-	public:
-		CommandExecuter(const std::list<CommandGraph>& Commands) noexcept {
-			if (Commands.empty())
-				return;
+	void EventExecuter::PushEvent(const std::wstring& Event_Name) noexcept {
+		event_queue.push_back(Event_Name);
+	}
 
-			Program::Instance().var_manager.MakeNew(L"of_state") = 1;
-			const int& Go_Parent = std::any_cast<int&>(Program::Instance().var_manager.Get(L"of_state"));
+	void EventExecuter::Update() {
+		while (!event_queue.empty()) {
+			Manager::Instance().Call(event_queue.front());
+			event_queue.pop_front();
+		}
+	}
 
-			// ここから、コマンド実行。
-			{
-				const CommandGraph *Executing = &Commands.front();
-				while (Executing != nullptr) {
-					Executing->command->Execute();
-					Executing = (Go_Parent ? Executing->parent : Executing->neighbor);
-				}
+	void EventExecuter::Execute(const std::list<CommandGraph>& Commands) {
+		if (Commands.empty())
+			return;
+
+		Program::Instance().var_manager.MakeNew(L"of_state") = 1;
+		const int& Go_Parent = std::any_cast<int&>(Program::Instance().var_manager.Get(L"of_state"));
+
+		// ここから、コマンド実行。
+		{
+			const CommandGraph *Executing = &Commands.front();
+			while (Executing != nullptr) {
+				Executing->command->Execute();
+				Executing = (Go_Parent ? Executing->parent : Executing->neighbor);
 			}
 		}
-	};
+	}
 
 	// イベント生成クラス
 	// イベントファイルの解析、コマンドの生成、イベントの設定・生成を行う。
@@ -5260,14 +5267,22 @@ namespace karapo::event {
 		}
 	}
 
+	bool Manager::Push(const std::wstring& EName) noexcept {
+		auto candidate = events.find(EName);
+		if (candidate != events.end()) {
+			Program::Instance().EventExecuterInstance().PushEvent(candidate->first);
+			return true;
+		}
+		return false;
+	}
+
 	bool Manager::Call(const std::wstring& EName) noexcept {
 		auto candidate = events.find(EName);
 		if (candidate != events.end()) {
-			auto event_name = std::any_cast<std::wstring>(Program::Instance().var_manager.Get(variable::Executing_Event_Name));
+			auto& event_name = std::any_cast<std::wstring&>(Program::Instance().var_manager.Get(variable::Executing_Event_Name));
 			Program::Instance().var_manager.Get(variable::Executing_Event_Name) = (event_name += std::wstring(EName) + L"\n");
-			CommandExecuter cmd_executer(candidate->second.commands);
+			Program::Instance().EventExecuterInstance().Execute(candidate->second.commands);
 			event_name.erase(event_name.find(EName + L"\n"));
-			Program::Instance().var_manager.Get(variable::Executing_Event_Name) = event_name;
 			return true;
 		}
 		return false;
