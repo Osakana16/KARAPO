@@ -2320,6 +2320,7 @@ namespace karapo::event {
 	}
 
 			DYNAMIC_COMMAND(MathCommand) {
+				std::wstring self_class_name{};
 			protected:
 				inline static error::ErrorClass* operation_error_class{};
 				inline static error::ErrorContent* assign_error{};
@@ -2353,7 +2354,7 @@ namespace karapo::event {
 				};
 
 				void SendAssignError(const std::any & Value) {
-					event::Manager::Instance().error_handler.SendLocalError(assign_error, (L"変数: " + var_name).c_str(), &MathCommand::Reassign);
+					event::Manager::Instance().error_handler.SendLocalError(assign_error, L"コマンド名: " + GetOperatorName() + L'\n' + (L"変数: " + var_name), &MathCommand::Reassign);
 					Program::Instance().var_manager.MakeNew(L"__assignable") = var_name;
 					if (Value.type() == typeid(int))
 						Program::Instance().var_manager.MakeNew(L"__calculated") = std::any_cast<int>(Value);
@@ -2364,22 +2365,27 @@ namespace karapo::event {
 				}
 
 				void SendAssignError(const bool Is_Only_Int, const CalculateValue Cal_Value) {
-					event::Manager::Instance().error_handler.SendLocalError(assign_error, (L"変数: " + var_name).c_str(), &MathCommand::Reassign);
+					event::Manager::Instance().error_handler.SendLocalError(assign_error, L"コマンド名: " + GetOperatorName() + L'\n' + (L"変数: " + var_name).c_str(), &MathCommand::Reassign);
 					Program::Instance().var_manager.MakeNew(L"__assignable") = var_name;
 					Program::Instance().var_manager.MakeNew(L"__calculated") = (Is_Only_Int ? Cal_Value.i : Cal_Value.d);
 				}
 
 				void SendAssignError(const std::wstring& Sentence) {
-					event::Manager::Instance().error_handler.SendLocalError(assign_error, (L"変数: " + var_name).c_str(), &MathCommand::Reassign);
+					event::Manager::Instance().error_handler.SendLocalError(assign_error, L"コマンド名: " + GetOperatorName() + L'\n' + (L"変数: " + var_name).c_str(), &MathCommand::Reassign);
 					Program::Instance().var_manager.MakeNew(L"__assignable") = var_name;
 					Program::Instance().var_manager.MakeNew(L"__calculated") = Sentence;
 				}
+
+				const std::wstring& GetOperatorName() const noexcept {
+					return self_class_name;
+				}
 			public:
-				MathCommand(const std::vector<std::wstring>&Params) : DynamicCommand(Params) {
+				MathCommand(const std::vector<std::wstring>&Params, const std::wstring& Self_Class_Name) : DynamicCommand(Params) {
 					if (operation_error_class == nullptr) [[unlikely]]
 						operation_error_class = error::UserErrorHandler::MakeErrorClass(L"演算エラー");
 					if (assign_error == nullptr) [[unlikely]]
-						assign_error = error::UserErrorHandler::MakeError(operation_error_class, L"代入先の変数が存在しません。\n新しくこの変数を作成しますか?", MB_YESNO | MB_ICONERROR, 2);
+						assign_error = error::UserErrorHandler::MakeError(operation_error_class,  L"代入先の変数が存在しません。\n新しくこの変数を作成しますか?", MB_YESNO | MB_ICONERROR, 2);
+					self_class_name = Self_Class_Name;
 				}
 
 				std::wstring var_name{};
@@ -2412,10 +2418,10 @@ namespace karapo::event {
 					}
 					return true;
 				lack_error:
-					event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error);
+					event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error, L"コマンド名: " + GetOperatorName());
 					goto failed_exit;
 				type_error:
-					event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error);
+					event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error, L"コマンド名: " + GetOperatorName());
 					goto failed_exit;
 				failed_exit:
 					return false;
@@ -2424,7 +2430,7 @@ namespace karapo::event {
 
 			class Assign final : public MathCommand {
 			public:
-				using MathCommand::MathCommand;
+				Assign(const std::vector<std::wstring>&Params) noexcept : MathCommand(Params, L"assign/代入") {}
 				~Assign() final {}
 
 				void Execute() final {
@@ -2474,8 +2480,7 @@ namespace karapo::event {
 			// 加算
 			class Sum final : public MathCommand {
 			public:
-				using MathCommand::MathCommand;
-
+				Sum(const std::vector<std::wstring>&Params) noexcept : MathCommand(Params, L"sum/加算") {}
 				~Sum() final {}
 
 				void Execute() final {
@@ -2522,7 +2527,7 @@ namespace karapo::event {
 							}
 							return;
 						type_error:
-							event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error);
+							event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error, L"コマンド名: " + GetOperatorName());
 						}
 					}
 				}
@@ -2531,7 +2536,7 @@ namespace karapo::event {
 			// 減算
 			class Sub final : public MathCommand {
 			public:
-				using MathCommand::MathCommand;
+				Sub(const std::vector<std::wstring>&Params) noexcept : MathCommand(Params, L"sub/減算") {}
 				~Sub() final {}
 
 				void Execute() final {
@@ -2566,7 +2571,7 @@ namespace karapo::event {
 			// 乗算
 			class Mul final : public MathCommand {
 			public:
-				using MathCommand::MathCommand;
+				Mul(const std::vector<std::wstring>&Params) noexcept : MathCommand(Params, L"mul/乗算") {}
 				~Mul() final {}
 
 				void Execute() final {
@@ -2601,7 +2606,7 @@ namespace karapo::event {
 			// 徐算
 			class Div final : public MathCommand {
 			public:
-				using MathCommand::MathCommand;
+				Div(const std::vector<std::wstring>&Params) noexcept : MathCommand(Params, L"div/除算") {}
 				~Div() final {}
 
 				void Execute() final {
@@ -2635,7 +2640,7 @@ namespace karapo::event {
 
 			class Mod final : public MathCommand {
 			public:
-				using MathCommand::MathCommand;
+				Mod(const std::vector<std::wstring>&Params) noexcept : MathCommand(Params, L"mod/剰余") {}
 				~Mod() final {}
 
 				void Execute() final {
@@ -2710,7 +2715,7 @@ namespace karapo::event {
 					event::Manager::Instance().error_handler.SendLocalError(not_integer_error, extra_message);
 				}
 			public:
-				BitCommand(const std::vector<std::wstring>& Params) : MathCommand(Params) {
+				BitCommand(const std::vector<std::wstring>& Params, const std::wstring& Self_Class_Name) : MathCommand(Params, Self_Class_Name) {
 					if (logic_operation_error_class == nullptr) [[unlikely]]
 						logic_operation_error_class = error::UserErrorHandler::MakeErrorClass(L"論理演算エラー");
 					if (not_integer_error == nullptr) [[unlikely]]
@@ -2723,7 +2728,7 @@ namespace karapo::event {
 			// ビット論理和
 			class Or final : public BitCommand {
 			public:
-				using BitCommand::BitCommand;
+				Or(const std::vector<std::wstring>&Params) noexcept : BitCommand(Params, L"or/論理和") {}
 				~Or() final {}
 
 				void Execute() final {
@@ -2754,7 +2759,7 @@ namespace karapo::event {
 			// ビット論理積
 			class And final : public BitCommand {
 			public:
-				using BitCommand::BitCommand;
+				And(const std::vector<std::wstring>&Params) noexcept : BitCommand(Params, L"and/論理積") {}
 				~And() final {}
 
 				void Execute() final {
@@ -2784,7 +2789,7 @@ namespace karapo::event {
 			// ビット排他的論理和
 			class Xor final : public BitCommand {
 			public:
-				using BitCommand::BitCommand;
+				Xor(const std::vector<std::wstring>&Params) noexcept : BitCommand(Params, L"xor/排他的論理和") {}
 				~Xor() final {}
 
 				void Execute() final {
@@ -2815,7 +2820,7 @@ namespace karapo::event {
 			// ビット論理否定
 			class Not final : public BitCommand {
 			public:
-				using BitCommand::BitCommand;
+				Not(const std::vector<std::wstring>&Params) noexcept : BitCommand(Params, L"not/論理否定") {}
 				~Not() final {}
 
 				void Execute() final {
