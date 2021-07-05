@@ -106,15 +106,24 @@ namespace karapo {
 		// Record型変数のメンバ変数を作成する。
 		std::any& Manager::MakeStruct(const std::wstring& Struct_Name, const std::wstring& Member_Name) noexcept {
 			// Recordの変数名を探す。
-			auto record = vars.find(Struct_Name);
-			if (record == vars.end()) {
+			auto record_candidate = vars.find(Struct_Name);
+			Record *record{};
+			if (record_candidate == vars.end()) {
 				vars[Struct_Name] = Record();	// 存在しない場合、新しく構造体変数を作成。
-				record = vars.find(Struct_Name);
-			} else if (record->second.type() != typeid(Record)) {
-				record->second = Record();		// 型が違う場合、値を上書き。
+				record_candidate = vars.find(Struct_Name);
+				record = &std::any_cast<Record&>(record_candidate->second);
+				goto get_from_map_pair;
+			} else if (IsReference(record_candidate->second)) {
+				record = &std::any_cast<Record&>(std::any_cast<std::reference_wrapper<std::any>&>(record_candidate->second).get());
+			} else if (record_candidate->second.type() != typeid(Record)) {
+				record_candidate->second = Record();		// 型が違う場合、値を上書き。
+				goto get_from_map_pair;
+			} else {
+			get_from_map_pair:
+				record = &std::any_cast<Record&>(record_candidate->second);
 			}
 			// 構造体変数に対して、メンバ変数を作成して返す。
-			return std::any_cast<Record&>(record->second).members[Member_Name];
+			return record->members[Member_Name];
 		}
 
 		std::any& Manager::Get(const std::wstring& Name) noexcept {
