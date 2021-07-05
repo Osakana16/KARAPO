@@ -538,19 +538,19 @@ namespace karapo::entity {
 		if (Image::Origin()[0] < mouse->Origin()[0] && Image::Origin()[1] < mouse->Origin()[1] && 
 			Image::Origin()[0] + Image::Length()[0] >= mouse->Origin()[0] && Image::Origin()[1] + Image::Length()[1] >= mouse->Origin()[1])
 		{
-			Program::Instance().event_manager.Call(Colliding_Event_Name);
+			Program::Instance().event_manager.Push(Colliding_Event_Name);
 			if (!collided_enough) {
-				Program::Instance().event_manager.Call(Collided_Event_Name);
+				Program::Instance().event_manager.Push(Collided_Event_Name);
 				collided_enough = true;
 			}
 
 			const bool Is_Clicking = std::any_cast<int>(Program::Instance().var_manager.Get(L"マウスポインタ.左クリック"));
 			if (Is_Clicking) {
-				Program::Instance().event_manager.Call(Clicking_Event_Name);
+				Program::Instance().event_manager.Push(Clicking_Event_Name);
 			}
 		} else {
 			if (collided_enough) {
-				Program::Instance().event_manager.Call(Released_Event_Name);
+				Program::Instance().event_manager.Push(Released_Event_Name);
 				collided_enough = false;
 			}
 		}
