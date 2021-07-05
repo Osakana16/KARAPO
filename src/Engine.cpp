@@ -407,6 +407,7 @@ namespace karapo {
 		.LoadEvent = [](const std::wstring& Path) { Program::Instance().event_manager.LoadEvent(Path); },
 		.ExecuteEventByName = [](const std::wstring& Name) { Program::Instance().event_manager.Call(Name); },
 		.ExecuteEventByOrigin = [](const WorldVector& Origin) { Program::Instance().event_manager.ExecuteEvent(Origin); },
+		.PushEventByName = [](const std::wstring& Name) { Program::Instance().event_manager.Push(Name); },
 		.MakeVar = [](const std::wstring& Var_Name) -> std::any& { return Program::Instance().var_manager.MakeNew(Var_Name); },
 		.GetVar = [](const std::wstring& Var_Name) -> std::any& { return Program::Instance().var_manager.Get(Var_Name); },
 		.GetEventEditor = []() { return Program::Instance().MakeEventEditor(); },

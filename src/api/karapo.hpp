@@ -228,6 +228,7 @@ namespace karapo {
 		std::function<void(const std::wstring&)> LoadEvent;
 		std::function<void(const std::wstring&)> ExecuteEventByName;
 		std::function<void(const WorldVector)> ExecuteEventByOrigin;
+		std::function<void(const std::wstring&)> PushEventByName;
 		std::function<std::any&(const std::wstring&)> MakeVar, GetVar;
 
 		std::function<event::EventEditor*()> GetEventEditor;
