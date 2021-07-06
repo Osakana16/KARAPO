@@ -65,19 +65,19 @@ namespace karapo::event {
 			}
 		};
 
-		// 動的コマンド向け抽象クラス。
-		// 引数をコマンド実行時に読み込む為のメンバ関数を持つ。
 		class DynamicCommand : public Command {
 			using ReferenceAny = std::reference_wrapper<std::any>;
 
 			// 読み込む予定の引数名。
 			std::vector<std::wstring> param_names{};
 		protected:
+			// コマンドエラークラス。
 			inline static error::ErrorClass *command_error_class{};
-			inline static error::ErrorContent *incorrect_type_error{},
-				*lack_of_parameters_error{},
-				*empty_name_error{},
-				*entity_not_found_error{};
+			// エラー群
+			inline static error::ErrorContent *incorrect_type_error{},		// 型不一致エラー
+				*lack_of_parameters_error{},										// 引数不足エラー
+				*empty_name_error{},													// 空名エラー
+				*entity_not_found_error{};											// Entityが見つからないエラー
 
 			DynamicCommand() noexcept {
 				if (command_error_class == nullptr) [[unlikely]]
@@ -101,6 +101,7 @@ namespace karapo::event {
 				return !param_names.empty();
 			}
 
+			// 引数を取得する。
 			template<const bool Get_Param_Name = false>
 			std::any GetParam(const int Index) const noexcept {
 				if (Index < 0 || Index >= param_names.size())
@@ -108,6 +109,7 @@ namespace karapo::event {
 
 				auto [var, type] = Default_ProgramInterface.GetParamInfo(param_names[Index]);
 				if constexpr (!Get_Param_Name) {
+					// 引数を適切な値に変換した上で返す処理。
 					if (Default_ProgramInterface.IsNumberType(type)) {
 						auto [iv, ip] = ToInt(var.c_str());
 						auto [fv, fp] = ToDec<Dec>(var.c_str());
@@ -128,6 +130,7 @@ namespace karapo::event {
 						return Program::Instance().var_manager.Get(param_names[Index]);
 					}
 				} else {
+					// 引数名を取得する処理。
 					if (Default_ProgramInterface.IsStringType(type) || Default_ProgramInterface.IsNumberType(type))
 						return var;
 					else
@@ -135,6 +138,7 @@ namespace karapo::event {
 				}
 			}
 
+			// 引数を配列に直接設定する。
 			void SetAllParams(std::vector<std::any>* to) {
 				for (int i = 0; i < param_names.size(); i++) {
 					auto value = GetParam(i);
