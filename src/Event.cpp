@@ -1864,7 +1864,10 @@ namespace karapo::event {
 								auto& newvar = Program::Instance().var_manager.MakeNew(event_name + std::wstring(L"@") + event_param_name.substr(1));
 								auto&& referrencable_name = std::any_cast<std::wstring>(GetParam<true>(i + 1));
 								auto& referrencable = Program::Instance().var_manager.Get(referrencable_name);
-								newvar = std::ref(referrencable);
+								if (referrencable.type() != typeid(std::reference_wrapper<std::any>))
+									newvar = std::ref(referrencable);
+								else
+									newvar = referrencable;
 							} else {
 								auto& newvar = Program::Instance().var_manager.MakeNew(event_name + std::wstring(L"@") + event_param_name);
 								if (value.type() == typeid(int))
@@ -2414,9 +2417,9 @@ namespace karapo::event {
 									Program::Instance().var_manager.Get(std::any_cast<std::wstring>(GetParam<true>(i + 1)))
 								)
 								);
-							} else if (value[i].type() == typeid(std::nullptr_t)) [[unlikely]]
+							} else if (value[i].type() == typeid(std::nullptr_t)) {
 								goto lack_error;
-							else
+							} else
 								goto type_error;
 						}
 					}
