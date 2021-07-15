@@ -475,6 +475,85 @@ namespace karapo::event {
 			}
 		};
 
+		DYNAMIC_COMMAND(Spawn) {
+			std::wstring name{}, kind_name{};
+			WorldVector origin{}, length{};
+		public:
+			Spawn(const std::wstring & Name, const std::wstring & Kind_Name, const WorldVector O, const WorldVector L) noexcept : Spawn({}) {
+				name = Name;
+				kind_name = Kind_Name;
+				origin = O;
+				length = L;
+			}
+
+			DYNAMIC_COMMAND_CONSTRUCTOR(Spawn) {}
+			~Spawn() override {}
+
+			void Execute() override {
+				if (MustSearch()) {
+					auto name_param = GetParam(0),
+						kind_name_param = GetParam(1),
+						x_param = GetParam(2),
+						y_param = GetParam(3),
+						w_param = GetParam(4),
+						h_param = GetParam(5);
+
+					if (name_param.type() == typeid(std::nullptr_t) ||
+						kind_name_param.type() == typeid(std::nullptr_t) ||
+						x_param.type() == typeid(std::nullptr_t) ||
+						y_param.type() == typeid(std::nullptr_t) ||
+						w_param.type() == typeid(std::nullptr_t) ||
+						h_param.type() == typeid(std::nullptr_t)) [[unlikely]]
+					{
+						goto lack_error;
+					}
+					else if (!IsSameType<std::wstring>(name_param) || !IsSameType<std::wstring>(kind_name_param) ||
+						(!IsSameType<int>(x_param) && !IsSameType<Dec>(x_param)) ||
+						(!IsSameType<int>(y_param) && !IsSameType<Dec>(y_param)) ||
+						(!IsSameType<int>(w_param) && !IsSameType<Dec>(w_param)) ||
+						(!IsSameType<int>(h_param) && !IsSameType<Dec>(h_param))) [[unlikely]]
+					{
+						goto type_error;
+					}
+					name = (IsReferenceType<std::wstring>(name_param) ? GetReferencedValue<std::wstring>(name_param) : std::any_cast<std::wstring>(name_param));
+					kind_name = (IsReferenceType<std::wstring>(kind_name_param) ? GetReferencedValue<std::wstring>(kind_name_param) : std::any_cast<std::wstring>(kind_name_param));
+					Dec x{}, y{}, w{}, h{};
+					if (IsSameType<int>(x_param))
+						x = (IsReferenceType<int>(x_param) ? GetReferencedValue<int>(x_param) : std::any_cast<int>(x_param));
+					else
+						x = (IsReferenceType<Dec>(x_param) ? GetReferencedValue<Dec>(x_param) : std::any_cast<Dec>(x_param));
+
+					if (IsSameType<int>(y_param))
+						y = (IsReferenceType<int>(y_param) ? GetReferencedValue<int>(y_param) : std::any_cast<int>(y_param));
+					else
+						y = (IsReferenceType<Dec>(y_param) ? GetReferencedValue<Dec>(y_param) : std::any_cast<Dec>(y_param));
+
+					if (IsSameType<int>(w_param))
+						w = (IsReferenceType<int>(w_param) ? GetReferencedValue<int>(w_param) : std::any_cast<int>(w_param));
+					else
+						w = (IsReferenceType<Dec>(w_param) ? GetReferencedValue<Dec>(w_param) : std::any_cast<Dec>(w_param));
+
+					if (IsSameType<int>(h_param))
+						h = (IsReferenceType<int>(h_param) ? GetReferencedValue<int>(h_param) : std::any_cast<int>(h_param));
+					else
+						h = (IsReferenceType<Dec>(h_param) ? GetReferencedValue<Dec>(h_param) : std::any_cast<Dec>(h_param));
+
+					origin = WorldVector{ x, y };
+					length = WorldVector{ w, h };
+				}
+				karapo::entity::Manager::Instance().Register(std::make_shared<karapo::entity::Character>(origin, length, name, kind_name));
+				goto end_of_function;
+			lack_error:
+				event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error, L"コマンド名: spawn/生成");
+				goto end_of_function;
+			type_error:
+				event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error, L"コマンド名: spawn/生成");
+				goto end_of_function;
+			end_of_function:
+				return;
+			}
+		};
+
 		// 画像を読み込み、表示させる。
 		DYNAMIC_COMMAND(Image) {
 			std::shared_ptr<karapo::entity::Image> image;
@@ -3162,6 +3241,52 @@ namespace karapo::event {
 						already_new_trigger_type_defined_error = error::UserErrorHandler::MakeError(event::Manager::Instance().error_class, L"既に発生タイプが指定されています。", MB_OK | MB_ICONERROR, 1);
 
 					Program::Instance().dll_manager.RegisterExternalCommand(&words);
+
+					words[L"spawn"] = 
+						words[L"生成"] = [](const std::vector<std::wstring>& params) -> KeywordInfo
+					{
+						return {
+							.Result = [&]() noexcept -> CommandPtr {
+								const auto [Name, Name_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								const auto [Kind_Name, Kind_Name_Type] = Default_ProgramInterface.GetParamInfo(params[1]);
+								const auto [X, X_Type] = Default_ProgramInterface.GetParamInfo(params[2]);
+								const auto [Y, Y_Type] = Default_ProgramInterface.GetParamInfo(params[3]);
+								const auto [W, W_Type] = Default_ProgramInterface.GetParamInfo(params[4]);
+								const auto [H, H_Type] = Default_ProgramInterface.GetParamInfo(params[5]);
+								if (Default_ProgramInterface.IsStringType(Name_Type) &&
+									Default_ProgramInterface.IsStringType(Kind_Name_Type) &&
+									Default_ProgramInterface.IsNumberType(X_Type) &&
+									Default_ProgramInterface.IsNumberType(Y_Type) && 
+									Default_ProgramInterface.IsNumberType(W_Type) &&
+									Default_ProgramInterface.IsNumberType(H_Type))
+								{
+									auto [xv, xp] = ToDec<Dec>(X.c_str());
+									auto [yv, yp] = ToDec<Dec>(Y.c_str());
+									auto [wv, wp] = ToDec<Dec>(W.c_str());
+									auto [hv, hp] = ToDec<Dec>(H.c_str());
+									return std::make_unique<command::Spawn>(Name, Kind_Name, WorldVector{ xv, yv }, WorldVector{ wv, hv });
+								} else
+									return std::make_unique<command::Spawn>(params);
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+									case 1:
+									case 2:
+									case 3:
+									case 4:
+									case 5:
+										return KeywordInfo::ParamResult::Lack;
+									case 6:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
 
 					words[L"text"] =
 						words[L"文章"] = [](const std::vector<std::wstring>& params) -> KeywordInfo
