@@ -12,6 +12,40 @@ namespace karapo::entity {
 		void Teleport(WorldVector) override;
 	};
 
+	class Character : public Object {
+		const std::wstring Update_Event_Name,
+			Colliding_Event_Name,
+			Collided_Event_Name,
+			Clicking_Event_Name,
+			OnMoving_Event_Name,
+			Stopping_Event_Name;
+
+		bool can_delete{};
+
+		bool collided_enough{};
+		WorldVector old_origin{};
+		std::wstring name{}, kind_name{};
+		std::wstring *colliding_name{};
+		std::any *path{}, old_path{};
+		Dec *x{}, *y{}, *moving_ax{}, *moving_ay{};
+		resource::Image image;
+
+		WorldVector length{};
+
+		std::shared_ptr<Entity> Collide(const WorldVector) const noexcept;
+	public:
+		Character(const WorldVector&, const WorldVector&, const std::wstring&, const std::wstring&);
+		int Main() override;
+		const wchar_t *Name() const noexcept override;
+		const wchar_t *KindName() const noexcept override;
+
+		bool CanDelete() const noexcept override;
+		void Delete() override;
+		void Draw(WorldVector) override;
+		void Load(const std::wstring&), Load(animation::FrameRef*);
+		WorldVector Length() const noexcept;
+	};
+
 	// ‰æ‘œEntityƒNƒ‰ƒX
 	class Image : public Object {
 		resource::Image image;

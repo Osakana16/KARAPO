@@ -280,6 +280,171 @@ namespace karapo::entity {
 		origin = wv;
 	}
 
+	Character::Character(const WorldVector& O, const WorldVector& L, const std::wstring& N, const std::wstring& KN):
+		Update_Event_Name(N + L".update"),
+		Colliding_Event_Name(N + L".colliding"),
+		Collided_Event_Name(N + L".collided"),
+		Clicking_Event_Name(N + L".clicking"),
+		OnMoving_Event_Name(N + L".moving"),
+		Stopping_Event_Name(N + L".stopping")
+	{
+		origin = O;
+		length = L;
+		name = N;
+		kind_name = KN;
+
+		// 衝突中Entity名
+		Program::Instance().var_manager.MakeNew(N + L".colliding_type") = std::wstring(L"");
+		Program::Instance().var_manager.MakeNew(N + L".moving_ax") = 0.0;
+		Program::Instance().var_manager.MakeNew(N + L".moving_ay") = 0.0;
+		Program::Instance().var_manager.MakeNew(N + L".is_dead") = 0;
+		Program::Instance().var_manager.MakeNew(N + L".x") = Origin()[0];
+		Program::Instance().var_manager.MakeNew(N + L".y") = Origin()[1];
+		Program::Instance().var_manager.MakeNew(N + L".path") = std::wstring(L"");
+		old_origin = Origin();
+
+		colliding_name = &std::any_cast<std::wstring&>(Program::Instance().var_manager.Get(N + L".colliding_type"));
+		moving_ax = &std::any_cast<Dec&>(Program::Instance().var_manager.Get(N + L".moving_ax"));
+		moving_ay = &std::any_cast<Dec&>(Program::Instance().var_manager.Get(N + L".moving_ay"));
+		x = &std::any_cast<Dec&>(Program::Instance().var_manager.Get(N + L".x"));
+		y = &std::any_cast<Dec&>(Program::Instance().var_manager.Get(N + L".y"));
+		path = &Program::Instance().var_manager.Get(N + L".path");
+	}
+
+	int Character::Main() {
+		{
+			if (path->type() == typeid(std::wstring) && (path->type() != old_path.type() || std::any_cast<std::wstring&>(*path) != std::any_cast<std::wstring&>(old_path))) {
+				old_path = *path;
+				image = Program::Instance().engine.LoadImage(std::any_cast<std::wstring&>(*path));
+			} else if (path->type() == typeid(std::reference_wrapper<animation::FrameRef>) && (path->type() != old_path.type() || &std::any_cast<std::reference_wrapper<animation::FrameRef>&>(*path).get() != &std::any_cast<std::reference_wrapper<animation::FrameRef>&>(old_path).get())) {
+				old_path = *path;
+			}
+		}
+
+		Program::Instance().event_manager.Push(Update_Event_Name);
+		// 衝突関連
+		{
+			std::wstring colliding_kind_name{};
+			if (auto entity = Collide(Origin()); entity != nullptr) {
+				colliding_kind_name = entity->KindName();
+				if (colliding_kind_name == L"マウスポインタ" && Program::Instance().engine.IsPressingMouse(Default_ProgramInterface.keys.Left_Click)) {
+					Program::Instance().event_manager.Push(Clicking_Event_Name);
+				}
+
+				if (!collided_enough) {
+					collided_enough = true;
+					Program::Instance().event_manager.Push(Collided_Event_Name);
+				} else
+					Program::Instance().event_manager.Push(Colliding_Event_Name);
+			} else {
+				collided_enough = false;
+			}
+			Program::Instance().var_manager.Get(std::wstring(Name()) + L".colliding_type") = colliding_kind_name;
+		}
+
+		// 移動関連
+		{
+			const auto Dist = old_origin - Origin();
+			*moving_ax = Dist[0];
+			*moving_ay = Dist[1];
+			if (std::abs(Dist[0]) > 1.0 || std::abs(Dist[1]) > 1.0) {
+				Program::Instance().event_manager.Push(OnMoving_Event_Name);
+				old_origin = Origin();
+			} else {
+				Program::Instance().event_manager.Push(Stopping_Event_Name);
+			}
+		}
+		*x = Origin()[0];
+		*y = Origin()[1];
+		return 0;
+	}
+
+	std::shared_ptr<Entity> Character::Collide(const WorldVector Base) const noexcept {
+		return Manager::Instance().GetEntity([&](std::shared_ptr<Entity> entity) -> bool {
+			if (this != entity.get() && entity != nullptr) {
+				if (Origin()[0] < entity->Origin()[0] && Origin()[1] < entity->Origin()[1] &&
+					Origin()[0] + Length()[0] >= entity->Origin()[0] && Origin()[1] + Length()[1] >= entity->Origin()[1])
+				{
+					return true;
+				}
+			}
+			return false;
+		}, Manager::Instance().GetEntity(Name()));
+	}
+
+	const wchar_t *Character::Name() const noexcept {
+		return name.c_str();
+	}
+
+	const wchar_t *Character::KindName() const noexcept {
+		return kind_name.c_str();
+	}
+
+	bool Character::CanDelete() const noexcept {
+		return can_delete;
+	}
+
+	void Character::Delete() {
+		can_delete = true;
+	}
+
+	WorldVector Character::Length() const noexcept {
+		return length;
+	}
+
+	void Character::Draw(WorldVector base) {
+		Dec x{}, y{};
+		if (base[0] > .0 || base[1] > .0) {
+			auto relative_origin = Origin() - base;
+			relative_origin += { Program::Instance().WindowSize().first / 2.0, Program::Instance().WindowSize().second / 2.0 };
+			x = relative_origin[0];
+			y = relative_origin[1];
+		} else {
+			x = Origin()[0];
+			y = Origin()[1];
+		}
+
+		if (path->type() == typeid(std::reference_wrapper<animation::FrameRef>)) {
+			Program::Instance().engine.DrawRect(Rect({
+						static_cast<int>(x),
+						static_cast<int>(y),
+						static_cast<int>(x + Length()[0]),
+						static_cast<int>(y + Length()[1])
+				}),
+				*std::any_cast<std::reference_wrapper<animation::FrameRef>&>(*path).get());
+		} else {
+			if (path->type() == typeid(std::wstring)) {
+				if (!image.IsValid())
+					image = Program::Instance().engine.LoadImage(std::any_cast<std::wstring&>(*path));
+				Program::Instance().engine.DrawRect(Rect({
+						static_cast<int>(x),
+						static_cast<int>(y),
+						static_cast<int>(x + Length()[0]),
+						static_cast<int>(y + Length()[1])
+					}),
+					image);
+			} else {
+				Program::Instance().engine.DrawRect(Rect({
+						static_cast<int>(x),
+						static_cast<int>(y),
+						static_cast<int>(x + Length()[0]),
+						static_cast<int>(y + Length()[1])
+					}),
+					{ .r = 0xEC, .g = 0x00, .b = 0x8C },
+					true);
+			}
+		}
+	}
+
+	void Character::Load(const std::wstring& Path) {
+		*path = Path;
+		image = Program::Instance().engine.LoadImage(Path);
+	}
+
+	void Character::Load(animation::FrameRef* frame_reference) {
+		*path = std::ref(*frame_reference);
+	}
+
 	Image::Image(const WorldVector& WV, const WorldVector& Size) {
 		origin = WV;
 		length = Size;
