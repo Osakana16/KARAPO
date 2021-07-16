@@ -14,6 +14,7 @@ namespace karapo::entity {
 
 	class Character : public Object {
 		const std::wstring Update_Event_Name,
+			EndUpdate_Event_Name,
 			Colliding_Event_Name,
 			Collided_Event_Name,
 			Clicking_Event_Name,

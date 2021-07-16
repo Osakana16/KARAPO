@@ -282,6 +282,7 @@ namespace karapo::entity {
 
 	Character::Character(const WorldVector& O, const WorldVector& L, const std::wstring& N, const std::wstring& KN):
 		Update_Event_Name(N + L".update"),
+		EndUpdate_Event_Name(N + L".endupdate"),
 		Colliding_Event_Name(N + L".colliding"),
 		Collided_Event_Name(N + L".collided"),
 		Clicking_Event_Name(N + L".clicking"),
@@ -354,6 +355,7 @@ namespace karapo::entity {
 				Program::Instance().event_manager.Push(Stopping_Event_Name);
 			}
 		}
+		Program::Instance().event_manager.Push(EndUpdate_Event_Name);
 		*x = Origin()[0];
 		*y = Origin()[1];
 		return 0;
