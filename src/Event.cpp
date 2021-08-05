@@ -53,6 +53,385 @@ namespace karapo::event {
 			}
 		}
 	}
+
+	namespace wrapper {
+		template<typename T>
+		std::optional<T> AnyCast(std::any& castable) noexcept {
+			if (castable.type() == typeid(T))
+				return std::any_cast<T>(castable);
+			else
+				return std::nullopt;
+		}
+
+		template<typename T>
+		class Variable final {
+			enum class Error {
+				Invalid_Type
+			} error;
+
+			std::wstring variable_name{};
+			std::any inner_value{};
+			std::any *real_value{};
+			T *value{};
+
+			void ResetValue() noexcept {
+				if (real_value->type() == typeid(T))
+					value = &std::any_cast<T&>(*real_value);
+				else
+					error = Error::Invalid_Type;
+			}
+
+			T& Reallocate() {
+				inner_value.reset();
+				real_value = &Program::Instance().var_manager.MakeNew(variable_name) = T();
+				return *value;
+			}
+		public:
+			auto What() {
+				return error;
+			}
+
+			operator T() noexcept {
+				return *value;
+			}
+
+			T& operator=(T v) noexcept {
+				*value = v;
+				return *value;
+			}
+
+			T& operator=(std::any& v) noexcept {
+				*real_value = v;
+				ResetValue();
+				return *value;
+			}
+
+			explicit Variable(const std::wstring& VName) : Variable(Program::Instance().var_manager.Get(VName)) {
+				variable_name = VName;
+				if (real_value->type() == typeid(std::nullptr_t)) {
+					Allocate(VName);
+					ResetValue();
+				}
+			}
+
+			explicit Variable(std::any *const any_value) {
+				real_value = any_value;
+				ResetValue();
+			}
+
+			explicit Variable(std::any& any_value) {
+				inner_value = any_value;
+				real_value = &inner_value;
+				ResetValue();
+			}
+
+			explicit Variable(std::any&& any_value) {
+				inner_value = any_value;
+				real_value = &inner_value;
+				ResetValue();
+			}
+
+			T& Allocate(const std::wstring& VName) {
+				variable_name = VName;
+				return Reallocate();
+			}
+
+			bool HasValue() const noexcept {
+				return (real_value->has_value() && real_value->type() != typeid(std::nullptr_t));
+			}
+
+			bool IsBroken() const noexcept {
+				return real_value->type() != typeid(T);
+			}
+		};
+
+		template<typename T>
+		class Variable<T&> final {
+			std::wstring variable_name{};
+			using NormalType = std::remove_reference<T&>::type;
+			std::reference_wrapper<std::any> real_value{};
+			NormalType *value;
+
+			void ResetValue() {
+				if (real_value.get().type() == typeid(T))
+					value = &std::any_cast<T&>(real_value.get());
+				else
+					MYGAME_ASSERT(0);
+			}
+		public:
+			explicit Variable(const std::wstring& VName) : Variable(Program::Instance().var_manager.Get(VName)) {
+				variable_name = VName;
+			}
+
+			explicit Variable(std::any& any_value) : real_value(std::ref(any_value)) {
+				ResetValue();
+			}
+
+			explicit Variable(std::any&& any_value) : real_value(std::ref(any_value)) {
+				ResetValue();
+			}
+
+			operator NormalType() noexcept {
+				return *value;
+			}
+
+			NormalType& operator=(NormalType v) noexcept {
+				real_value = std::ref(v);
+				value = &std::any_cast<T&>(real_value.get());
+				return *value;
+			}
+
+			NormalType& operator=(std::any& v) noexcept(false) {
+				real_value = std::ref(v);
+				value = &std::any_cast<T&>(real_value.get());
+				return *value;
+			}
+
+			bool HasValue() const noexcept {
+				return (real_value.get().has_value() && real_value.get().type() != typeid(std::nullptr_t));
+			}
+
+			bool IsBroken() const noexcept {
+				return real_value.get().type() != typeid(T);
+			}
+		};
+
+		template<>
+		class Variable<std::any> final {
+			std::wstring variable_name{};
+			std::any inner_value{};
+		public:
+			operator std::any() {
+				return inner_value;
+			}
+
+			template<typename T>
+			std::any& operator=(T& v) noexcept {
+				inner_value = v;
+				return inner_value;
+			}
+
+			template<typename T>
+			std::any& operator=(T&& v) noexcept {
+				inner_value = v;
+				return inner_value;
+			}
+
+			explicit Variable() = default;
+
+			explicit Variable(const std::wstring& VName) noexcept : Variable(Program::Instance().var_manager.Get(VName)) {
+				variable_name = VName;
+			}
+
+			explicit Variable(std::any& any_value) noexcept : inner_value(any_value) {}
+
+			explicit Variable(std::any&& any_value) noexcept : inner_value(any_value) {}
+
+			bool HasValue() const noexcept {
+				return (inner_value.has_value() && inner_value.type() != typeid(std::nullptr_t));
+			}
+		};
+
+		template<>
+		class Variable<std::any&> final {
+			std::wstring variable_name{};
+			std::reference_wrapper<std::any> inner_value;
+		public:
+			operator std::any() {
+				return inner_value.get();
+			}
+
+			template<typename T>
+			std::any& operator=(T& v) noexcept {
+				inner_value.get() = v;
+				return inner_value.get();
+			}
+
+			template<typename T>
+			std::any& operator=(T&& v) noexcept {
+				inner_value.get() = v;
+				return inner_value.get();
+			}
+
+			explicit Variable(const std::wstring& VName) : Variable(Program::Instance().var_manager.Get(VName)) {
+				variable_name = VName;
+			}
+
+			explicit Variable(std::any& any_value) : inner_value(std::ref(any_value)) {}
+
+			explicit Variable(std::any&& any_value) : inner_value(std::ref(any_value)) {}
+
+			bool HasValue() const noexcept {
+				return (inner_value.get().has_value() && inner_value.get().type() != typeid(std::nullptr_t));
+			}
+		};
+
+		class ValueConverter final {
+			std::wstring var_name{}, var_type{};
+		public:
+			ValueConverter(const std::wstring& Convertable_Sentence) noexcept {
+				auto [var, type] = Default_ProgramInterface.GetParamInfo(Convertable_Sentence);
+				var_name = var;
+				var_type = type;
+			}
+
+			std::any Convert() {
+				// à¯êîÇìKêÿÇ»ílÇ…ïœä∑ÇµÇΩè„Ç≈ï‘Ç∑èàóùÅB
+				if (Default_ProgramInterface.IsNumberType(var_type)) {
+					auto [iv, ip] = ToInt(var_name.c_str());
+					auto [fv, fp] = ToDec<Dec>(var_name.c_str());
+					if (wcslen(ip) <= 0)
+						return iv;
+					else
+						return fv;
+				} else if (Default_ProgramInterface.IsStringType(var_type)) {
+					return var_name;
+				} else {
+					auto event_name = std::any_cast<std::wstring>(Program::Instance().var_manager.Get(variable::Executing_Event_Name));
+					event_name = event_name.substr(0, event_name.size() - 1);
+					if (auto pos = event_name.rfind(L'\n'); pos != std::wstring::npos)
+						event_name = event_name.substr(pos);
+					if (auto pos = event_name.find(L'\n'); pos != std::wstring::npos)
+						event_name.erase(event_name.begin());
+
+					return Program::Instance().var_manager.Get(var_name);
+				}
+			}
+
+			const std::wstring& TypeName() const noexcept {
+				return var_type;
+			}
+
+			const std::wstring& ValueName() const noexcept {
+				return var_name;
+			}
+		};
+
+		template<typename BaseType, typename CastableType = std::nullptr_t>
+		class ValueTypeChecker {
+			std::wstring var_name{}, type_name{};
+			std::any inner_value{};
+
+			bool IsReferenceWrapper() const noexcept {
+				return inner_value.type() == typeid(std::reference_wrapper<std::any>);
+			}
+
+			static bool IsCorrectType(const std::any& Checkable) noexcept {
+				if constexpr (!std::is_same_v<CastableType, std::nullptr_t>)
+					return Checkable.type() == typeid(BaseType) || Checkable.type() == typeid(CastableType);
+				else
+					return Checkable.type() == typeid(BaseType);
+			}
+		public:
+			ValueTypeChecker(const std::wstring& Var_Name) noexcept {
+				auto&& converter = ValueConverter(Var_Name);
+				if (converter.TypeName().empty()) {
+					var_name = Var_Name;
+					inner_value = Program::Instance().var_manager.Get(Var_Name);
+				} else {
+					inner_value = converter.Convert();
+					var_name = converter.ValueName();
+					type_name = converter.TypeName();
+				}
+			}
+
+			ValueTypeChecker(std::any& any_value) noexcept : inner_value(any_value) {}
+			ValueTypeChecker(std::any&& any_value) noexcept : inner_value(any_value) {}
+
+			template<typename S = BaseType>
+			auto AsVariable() noexcept {
+				static_assert(std::is_same_v<S, BaseType> || std::is_same_v<std::remove_reference_t<S>, BaseType> || std::is_same_v<S, CastableType> || std::is_same_v< std::remove_reference_t<S>, CastableType>);
+				return Variable<S>(std::forward<std::any>(inner_value));
+			}
+
+			const auto& ValueName() const noexcept {
+				return var_name;
+			}
+
+			bool IsAllSame() const noexcept {
+				return IsSame() || IsReference();
+			}
+
+			bool IsSame() const noexcept {
+				return IsCorrectType(inner_value);
+			}
+
+			bool IsReference() const noexcept {
+				return IsReferenceWrapper() && IsCorrectType(std::any_cast<std::reference_wrapper<std::any>>(inner_value).get());
+			}
+
+			bool IsNull() const noexcept {
+				return inner_value.type() == typeid(std::nullptr_t);
+			}
+		};
+
+		template<>
+		class ValueTypeChecker<std::any> {
+			std::wstring var_name{};
+			std::any inner_value{};
+			std::any *referensing_value{};
+
+			template<typename S>
+			static bool IsCorrectType(const std::any& Checkable) noexcept {
+				return Checkable.type() == typeid(S);
+			}
+		public:
+			ValueTypeChecker() = default;
+
+			ValueTypeChecker(const std::wstring& Var_Name) noexcept : inner_value(Program::Instance().var_manager.Get(Var_Name)) {
+				var_name = Var_Name;
+				if (inner_value.type() == typeid(std::nullptr_t)) {
+					auto&& converter = ValueConverter(Var_Name);
+					inner_value = converter.Convert();
+					var_name = converter.ValueName();
+				}
+			}
+
+			ValueTypeChecker(std::any& any_value) noexcept : inner_value(any_value) {}
+			ValueTypeChecker(std::any&& any_value) noexcept : inner_value(any_value) {}
+			ValueTypeChecker(Variable<std::any> any_variable) noexcept {
+				inner_value = static_cast<std::any>(any_variable);
+			}
+
+			bool Reference(const std::wstring& Var_Name) noexcept {
+				var_name = Var_Name;
+				referensing_value = &Program::Instance().var_manager.Get(Var_Name);
+				inner_value = std::ref(*referensing_value);
+				return !IsNull();
+			}
+
+			template<typename S>
+			auto AsVariable() noexcept {
+				if (!IsReferenceWrapper())
+					return Variable<S>(std::forward<std::any>(inner_value));
+				else
+					return Variable<S>(std::forward<std::any>(std::any_cast<std::reference_wrapper<std::any>>(inner_value).get()));
+			}
+
+			bool IsReferenceWrapper() const noexcept {
+				return inner_value.type() == typeid(std::reference_wrapper<std::any>);
+			}
+
+			template<typename S>
+			bool IsReference() const noexcept {
+				return IsReferenceWrapper() && IsCorrectType<S>(std::any_cast<std::reference_wrapper<std::any>>(inner_value).get());
+			}
+
+			template<typename S>
+			bool CanCast() const noexcept {
+				return inner_value.type() == typeid(S) || IsReference<S>();
+			}
+
+			bool IsNull() const noexcept {
+				return inner_value.type() == typeid(std::nullptr_t);
+			}
+
+			std::string TypeName() {
+				return inner_value.type().name();
+			}
+		};
+	}
+
 	using Context = std::list<std::wstring>;
 
 	namespace command {
