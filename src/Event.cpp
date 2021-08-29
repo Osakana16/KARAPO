@@ -5406,6 +5406,33 @@ namespace karapo::event {
 
 			// 最適化機構
 			class Optimizer final {
+				void RelateCase(std::list<CommandGraph>::iterator begin, std::list<CommandGraph>::iterator end) {
+					std::list<std::list<CommandGraph>::iterator> condition_iterators{};
+					int dont_add_count = 0;
+					for (auto current = std::next(begin, 1); current != end; current++) {
+						if (current->word == L"case") {
+							dont_add_count++;
+						} else if (current->word == L"endcase") {
+							dont_add_count--;
+						} else if (current->word == L"of" || current->word == L"else") {
+							if (dont_add_count > 0)
+								continue;
+
+							condition_iterators.push_back(current);
+						}
+					}
+
+					for (auto current = condition_iterators.begin(); current != condition_iterators.end(); current++) {
+						auto&& it = std::next(current, 1);
+						if (it != condition_iterators.end())
+							(*current)->neighbor = &(**it);
+						else
+							(*current)->neighbor = &(*end);
+
+						(*current)--;
+						if ((*current) != begin) (*current)->parent = &(*end);
+					}
+				}
 			public:
 				Optimizer() = default;
 
@@ -5417,91 +5444,29 @@ namespace karapo::event {
 
 				// of/elseコマンドをstd::list内のcaseの直後に並べ直す。
 				void SortOfElse(std::list<CommandGraph> *commands) noexcept {
-					std::list<std::list<CommandGraph>::iterator> case_iterators{}, endcase_iterators{}, neighbor_caididate_iterators{};
-					{						
+					using GraphIterator = std::list<CommandGraph>::iterator;
+					std::list<std::pair<GraphIterator, GraphIterator>> condition_iterators{};
+					decltype(condition_iterators)::iterator condition_relative_iterator{};
+					{
 						// 最初に、全てのcaseとencaseを探す。
 						for (auto it = commands->begin(); it != commands->end(); it++) {
 							if (it->word == L"case") {
-								case_iterators.push_front(it);
+								condition_iterators.push_front({});
+								condition_relative_iterator = condition_iterators.begin();
+								condition_relative_iterator->first = it;
 							} else if (it->word == L"endcase") {
-								endcase_iterators.push_front(it);
+								condition_relative_iterator->second = it;
+								condition_relative_iterator = std::prev(condition_iterators.end(), 1);
 							}
 						}
 
-						// caseとendcase数が一致しない場合、構文的におかしいので終了。
-						if (case_iterators.size() != endcase_iterators.size())
-							return;
-						else if (case_iterators.empty() || endcase_iterators.empty())
+						if (condition_iterators.empty())
 							return;
 
-						decltype(neighbor_caididate_iterators) candidate_iterators{};
-						int lock_count = 0;
-						int iterator_count = 0;
-						// 
-						for (auto it = case_iterators.front(); it != commands->end(); it++) {
-							if (it->word == L"case" && it != *std::next(case_iterators.begin(), iterator_count)) {
-								lock_count++;
-							} else if (lock_count <= 0 && (it->word == L"of" || it->word == L"else")) {
-								candidate_iterators.push_back(it);
-							} else if (it->word == L"endcase") {
-								if (lock_count > 0) {
-									lock_count--;
-								} else {
-									candidate_iterators.pop_front();
-									while (!candidate_iterators.empty()) {
-										neighbor_caididate_iterators.push_back(candidate_iterators.front());
-										candidate_iterators.pop_front();
-									}
-									if (++iterator_count < case_iterators.size()) {
-										it = *std::next(case_iterators.begin(), iterator_count);
-									}
-								}
-							}
+						for (auto& condition : condition_iterators) {
+							RelateCase(condition.first, condition.second);
 						}
 					}
-					
- 					std::list<std::list<CommandGraph>::iterator> fixed_iterators{};
-					auto it = case_iterators.front();
-					auto reversed_endcase_iterators = endcase_iterators;
-					std::reverse(reversed_endcase_iterators.begin(), reversed_endcase_iterators.end());
-					decltype(it) last_endcase_iterator{};
-
-					// 
-					while (it != commands->end()) {
-						if (std::find(fixed_iterators.begin(), fixed_iterators.end(), it) == fixed_iterators.end()) {
-							if (it->word == L"of" || it->word == L"else") {
-								fixed_iterators.push_back(it);
-								if (!neighbor_caididate_iterators.empty() && std::distance(commands->begin(), it) < std::distance(commands->begin(), neighbor_caididate_iterators.front())) {
-									if (it->word != L"else") {
-										it->neighbor = &(*neighbor_caididate_iterators.front());
-										neighbor_caididate_iterators.pop_front();
-									}
-								}
-
-								it--;
-								if (it->word != L"case" && it->word != L"of" && it->word != L"else") {
-									if (!endcase_iterators.empty())
-										it->parent = &(*reversed_endcase_iterators.front());
-									else
-										it->parent = &(*last_endcase_iterator);
-								}
-								it++;
-							} else if (it->word == L"endcase") {
-								fixed_iterators.push_back(case_iterators.front());
-								fixed_iterators.push_back(endcase_iterators.front());
-
-								it = case_iterators.back();
-								last_endcase_iterator = reversed_endcase_iterators.front();
-
-								case_iterators.pop_front();
-								endcase_iterators.pop_front();
-								reversed_endcase_iterators.pop_front();
-								continue;
-							}
-						}
-						it++;
-					}
-					it = it;
 				}
 			};
 
