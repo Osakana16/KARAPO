@@ -12,6 +12,7 @@ namespace karapo::error {
 		ErrorElement local_errors{};
 
 		static bool ShowError(ErrorElement*, const unsigned Error_Level);
+		static void PushError(ErrorElement*, ErrorContent*, const std::wstring & = L"", void(*)(const int) = nullptr);
 	public:
 		static void SendGlobalError(ErrorContent*, const std::wstring & = L"", void(*)(const int) = nullptr);
 		static bool ShowGlobalError(const unsigned Error_Level);

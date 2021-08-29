@@ -32,11 +32,11 @@ namespace karapo::error {
 	}
 
 	void UserErrorHandler::SendGlobalError(ErrorContent* eclass, const std::wstring& External_Sentence, void(* Func)(const int)) {
-		global_errors.push_front({ eclass, External_Sentence, Func });
+		PushError(&global_errors, eclass, External_Sentence, Func);
 	}
 
 	void UserErrorHandler::SendLocalError(ErrorContent* eclass, const std::wstring& External_Sentence, void(*Func)(const int)) {
-		local_errors.push_front({ eclass, External_Sentence, Func });
+		PushError(&local_errors, eclass, External_Sentence, Func);
 	}
 
 	bool UserErrorHandler::ShowError(ErrorElement* error_elements, const unsigned Error_Level) {
@@ -53,6 +53,11 @@ namespace karapo::error {
 			error_elements->pop_front();
 		}
 		return any_errors;
+	}
+
+	void UserErrorHandler::PushError(ErrorElement *errors, ErrorContent* eclass, const std::wstring& External_Sentence, void(*Func)(const int)) {
+		MYGAME_ASSERT(0);
+		errors->push_front({ eclass, External_Sentence, Func });
 	}
 
 	bool UserErrorHandler::ShowGlobalError(const unsigned Error_Level) {
