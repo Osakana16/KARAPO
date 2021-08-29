@@ -12,6 +12,7 @@ namespace karapo {
 	}
 
 	int Program::Main() {
+#if 0
 		try {
 			// DLLフォルダ内のDLLを全て読み込む。
 			for (const auto& dll_dir : std::filesystem::directory_iterator(L"DLL")) {
@@ -20,19 +21,19 @@ namespace karapo {
 					dll_manager.Load(path);
 			}
 		} catch (std::filesystem::filesystem_error& error) {
-			MessageBoxA(nullptr, error.what(), "エラー", MB_OK | MB_ICONERROR);
+			//MessageBoxA(nullptr, error.what(), "エラー", MB_OK | MB_ICONERROR);
 		}
-
-		dll_manager.LoadedInit();
+#endif
+		//dll_manager.LoadedInit();
 		var_manager.MakeNew(L"window_width") = WindowSize().first;
 		var_manager.MakeNew(L"window_height") = WindowSize().second;
-
+		event::Manager::Instance().LoadEvent(L"main.ks");
 		while (UpdateMessage() == 0) {
 			engine.UpdateKeys();
 			engine.UpdateBindedKeys();
 			engine.ClearScreen();
 			Frame();
-			dll_manager.Update();
+			//dll_manager.Update();
 			canvas.Update();
 			event_manager.Update();
 			entity_manager.Update();
@@ -92,9 +93,10 @@ namespace karapo {
 			std::any_cast<std::wstring&>(vars[Managing_Var_Name]) += Name + L"\n";
 			// 作成された変数を返す為の変数。
 			std::any *returnable_candidate{};
+			auto at_pos = Name.find(L'@');
 
 			// Record型かそれ以外の場合の処理。
-			if (const size_t Pos = Name.find(L'.'); Pos != std::wstring::npos) {
+			if (const size_t Pos = Name.find(L'.', (at_pos != std::wstring::npos ? at_pos : 0)); Pos != std::wstring::npos) {
 				// 変数名に「.」が含まれていたら、Record型として認識する。
 				returnable_candidate = &MakeStruct(Name.substr(0, Pos), Name.substr(Pos + 1));
 			} else
@@ -235,9 +237,11 @@ namespace karapo {
 		}
 
 		void Manager::RegisterExternalCommand(std::unordered_map<std::wstring, event::GenerateFunc>* words) {
+#if 0
 			for (auto& dll : dlls) {
 				dll.second.RegisterExternalCommand(words);
 			}
+#endif
 		}
 
 		void Manager::Detach(const std::wstring& Path) {
@@ -246,11 +250,15 @@ namespace karapo {
 		}
 
 		HMODULE Manager::Get(const std::wstring& Name) noexcept {
+#if 0
 			auto dll = dlls.find(Name);
 			if (dll != dlls.end())
 				dll->second.mod;
 			else
 				return nullptr;
+#else
+			return nullptr;
+#endif
 		}
 	}
 }
