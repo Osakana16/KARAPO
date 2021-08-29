@@ -3,6 +3,7 @@
 #include "Util.hpp"
 
 #include "Engine.hpp"
+#include "Component.hpp"
 
 #include <thread>
 #include <future>
@@ -283,9 +284,6 @@ namespace karapo::entity {
 	Character::Character(const WorldVector& O, const WorldVector& L, const std::wstring& N, const std::wstring& KN):
 		Update_Event_Name(N + L".update"),
 		EndUpdate_Event_Name(N + L".endupdate"),
-		Colliding_Event_Name(N + L".colliding"),
-		Collided_Event_Name(N + L".collided"),
-		Clicking_Event_Name(N + L".clicking"),
 		OnMoving_Event_Name(N + L".moving"),
 		Stopping_Event_Name(N + L".stopping")
 	{
@@ -296,8 +294,6 @@ namespace karapo::entity {
 
 		// 衝突中Entity名
 		Program::Instance().var_manager.MakeNew(N + L".colliding_type") = std::wstring(L"");
-		Program::Instance().var_manager.MakeNew(N + L".moving_ax") = 0.0;
-		Program::Instance().var_manager.MakeNew(N + L".moving_ay") = 0.0;
 		Program::Instance().var_manager.MakeNew(N + L".is_dead") = 0;
 		Program::Instance().var_manager.MakeNew(N + L".x") = Origin()[0];
 		Program::Instance().var_manager.MakeNew(N + L".y") = Origin()[1];
@@ -305,8 +301,6 @@ namespace karapo::entity {
 		old_origin = Origin();
 
 		colliding_name = &std::any_cast<std::wstring&>(Program::Instance().var_manager.Get(N + L".colliding_type"));
-		moving_ax = &std::any_cast<Dec&>(Program::Instance().var_manager.Get(N + L".moving_ax"));
-		moving_ay = &std::any_cast<Dec&>(Program::Instance().var_manager.Get(N + L".moving_ay"));
 		x = &std::any_cast<Dec&>(Program::Instance().var_manager.Get(N + L".x"));
 		y = &std::any_cast<Dec&>(Program::Instance().var_manager.Get(N + L".y"));
 		path = &Program::Instance().var_manager.Get(N + L".path");
@@ -322,32 +316,11 @@ namespace karapo::entity {
 			}
 		}
 
-		Program::Instance().event_manager.Push(Update_Event_Name);
-		// 衝突関連
-		{
-			std::wstring colliding_kind_name{};
-			if (auto entity = Collide(Origin()); entity != nullptr) {
-				colliding_kind_name = entity->KindName();
-				if (colliding_kind_name == L"マウスポインタ" && Program::Instance().engine.IsPressingMouse(Default_ProgramInterface.keys.Left_Click)) {
-					Program::Instance().event_manager.Push(Clicking_Event_Name);
-				}
-
-				if (!collided_enough) {
-					collided_enough = true;
-					Program::Instance().event_manager.Push(Collided_Event_Name);
-				} else
-					Program::Instance().event_manager.Push(Colliding_Event_Name);
-			} else {
-				collided_enough = false;
-			}
-			Program::Instance().var_manager.Get(std::wstring(Name()) + L".colliding_type") = colliding_kind_name;
-		}
+		component::Manager::Instance().RunComponents(Name());
 
 		// 移動関連
 		{
 			const auto Dist = old_origin - Origin();
-			*moving_ax = Dist[0];
-			*moving_ay = Dist[1];
 			if (std::abs(Dist[0]) > 1.0 || std::abs(Dist[1]) > 1.0) {
 				Program::Instance().event_manager.Push(OnMoving_Event_Name);
 				old_origin = Origin();
@@ -416,8 +389,11 @@ namespace karapo::entity {
 				*std::any_cast<std::reference_wrapper<animation::FrameRef>&>(*path).get());
 		} else {
 			if (path->type() == typeid(std::wstring)) {
-				if (!image.IsValid())
+				if (!image.IsValid()) {
 					image = Program::Instance().engine.LoadImage(std::any_cast<std::wstring&>(*path));
+					if (!image.IsValid())
+						goto no_texture;
+				}
 				Program::Instance().engine.DrawRect(Rect({
 						static_cast<int>(x),
 						static_cast<int>(y),
@@ -426,6 +402,7 @@ namespace karapo::entity {
 					}),
 					image);
 			} else {
+			no_texture:
 				Program::Instance().engine.DrawRect(Rect({
 						static_cast<int>(x),
 						static_cast<int>(y),
@@ -538,9 +515,17 @@ namespace karapo::entity {
 		return L"画像";
 	}
 
+	Sound::~Sound() {
+		can_play = true;
+		Stop();
+	}
+
 	int Sound::Main() {
 		if (can_play && (play_type == PlayType::Normal || (play_type == PlayType::Loop && !Program::Instance().engine.IsPlayingSound(sound))))
 			Play();
+
+		if (play_type == PlayType::Normal)
+			can_play = false;
 		return 0;
 	}
 

@@ -15,20 +15,16 @@ namespace karapo::entity {
 	class Character : public Object {
 		const std::wstring Update_Event_Name,
 			EndUpdate_Event_Name,
-			Colliding_Event_Name,
-			Collided_Event_Name,
-			Clicking_Event_Name,
 			OnMoving_Event_Name,
 			Stopping_Event_Name;
 
 		bool can_delete{};
 
-		bool collided_enough{};
 		WorldVector old_origin{};
 		std::wstring name{}, kind_name{};
 		std::wstring *colliding_name{};
 		std::any *path{}, old_path{};
-		Dec *x{}, *y{}, *moving_ax{}, *moving_ay{};
+		Dec *x{}, *y{};
 		resource::Image image;
 
 		WorldVector length{};
@@ -81,6 +77,7 @@ namespace karapo::entity {
 			play_type = pt;
 			origin = WV;
 		}
+		~Sound();
 
 		int Main() override;
 		inline void Draw(WorldVector) override {}
