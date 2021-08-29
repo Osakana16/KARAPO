@@ -71,6 +71,16 @@ namespace karapo {
 		};
 	}
 
+	namespace component {
+		class Component {
+		public:
+			virtual ~Component() = 0;
+
+			// コンポーネントを実行する。
+			virtual void Run() = 0;
+		};
+	}
+
 	struct Color {
 		int r, g, b;
 	};

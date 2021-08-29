@@ -1,6 +1,7 @@
 #include "karapo.hpp"
 namespace karapo {
 	Entity::~Entity() {}
+	component::Component::~Component() {}
 	event::Command::~Command() {}
 
 	namespace resource {

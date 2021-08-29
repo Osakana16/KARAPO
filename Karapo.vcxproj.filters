@@ -42,6 +42,9 @@
     <ClCompile Include="src\api\Animation.cpp">
       <Filter>src\api</Filter>
     </ClCompile>
+    <ClCompile Include="src\Component.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Canvas.hpp">
@@ -73,6 +76,9 @@
     </ClInclude>
     <ClInclude Include="src\api\Animation.hpp">
       <Filter>src\api</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Component.hpp">
+      <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

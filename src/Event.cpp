@@ -1,8 +1,7 @@
 #include "Event.hpp"
-
 #include "Canvas.hpp"
-
 #include "Engine.hpp"
+#include "Component.hpp"
 
 #include <queue>
 #include <chrono>
