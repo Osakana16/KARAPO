@@ -3439,6 +3439,13 @@ namespace karapo::event {
 					if (invalid_operator_error == nullptr)
 						invalid_operator_error = error::UserErrorHandler::MakeError(event::Manager::Instance().error_class, L"\•¶‚ÉŒë‚è‚ª‚ ‚è‚Ü‚·B", MB_OK | MB_ICONERROR, 1);
 
+					enum class ParsingMode {
+						Name,
+						Trigger,
+						Parameter,
+						Command
+					} parsing_mode;
+
 					error::ErrorContent *error_occurred{};
 
 					decltype(Syntax::line) line = 1;
@@ -3451,13 +3458,28 @@ namespace karapo::event {
 						auto str = lexical_context->front();
 						switch (str[0]) {
 							case L'{':
-							case L'}':
+								parsing_mode = ParsingMode::Command;
+								goto operators;
 							case L'[':
-							case L']':
+								parsing_mode = ParsingMode::Name;
+								goto operators;
 							case L'<':
-							case L'>':
+								if (parsing_mode == ParsingMode::Command)
+									goto not_operator;
+								else {
+									parsing_mode = ParsingMode::Trigger;
+									goto operators;
+								}
 							case L'(':
+								parsing_mode = ParsingMode::Parameter;
+								goto operators;
+							case L'>':
+								if (parsing_mode == ParsingMode::Command)
+									goto not_operator;
+							case L'}':
+							case L']':
 							case L')':
+							operators:
 							{
 								if (str.size() > 1)
 									goto not_operator;
