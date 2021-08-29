@@ -492,6 +492,13 @@ namespace karapo::event {
 				return std::nullopt;
 			}
 
+			std::wstring GetPlainParam(const int Index) const noexcept {
+				if (Index < 0 || Index >= param_names.size())
+					return L"";
+
+				return param_names[Index];
+			}
+
 			// ˆø”‚ğæ“¾‚·‚éB
 			template<const bool Get_Param_Name = false>
 			std::any GetParam(const int Index) const noexcept {
