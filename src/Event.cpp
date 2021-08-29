@@ -3747,6 +3747,39 @@ namespace karapo::event {
 						};
 					};
 
+					words[L"addcomponent"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
+						return {
+							.Result = [&]() noexcept -> CommandPtr {
+								const auto [Entity_Name, Entity_Name_Type] = Default_ProgramInterface.GetParamInfo(params[0]);
+								const auto [Component_Name, Component_Name_Type] = Default_ProgramInterface.GetParamInfo(params[1]);
+
+								if (Default_ProgramInterface.IsNoType(Entity_Name_Type) &&
+									Default_ProgramInterface.IsStringType(Component_Name))
+								{
+									return std::make_unique<command::AddComponent>(
+										Entity_Name,
+										Component_Name
+									);
+								} else {
+									return std::make_unique<command::AddComponent>(params);
+								}
+							},
+							.checkParamState = [params]() -> KeywordInfo::ParamResult {
+								switch (params.size()) {
+									case 0:
+									case 1:
+										return KeywordInfo::ParamResult::Lack;
+									case 2:
+										return KeywordInfo::ParamResult::Maximum;
+									default:
+										return KeywordInfo::ParamResult::Excess;
+								}
+							},
+							.is_static = false,
+							.is_dynamic = true
+						};
+					};
+
 					words[L"font"] =
 						words[L"ƒtƒHƒ“ƒg"] = [](const std::vector<std::wstring>& params) -> KeywordInfo {
 						return {
