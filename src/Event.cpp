@@ -3034,7 +3034,7 @@ namespace karapo::event {
 						if (!value[0].CanCast<std::wstring>() && !value[1].CanCast<std::wstring>()) {
 							const bool Is_Only_Int = value[0].CanCast<int>() && value[1].CanCast<int>();
 							CalculateValue cal;
-							MATH_COMMAND_CALCULATE(/ );
+							MATH_COMMAND_CALCULATE(/);
 							auto v = target.AsVariable<std::any&>();
 							if (v.HasValue()) {
 								if (Is_Only_Int)
