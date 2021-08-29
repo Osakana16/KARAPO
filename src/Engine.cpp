@@ -94,8 +94,16 @@ namespace karapo {
 		return DxLib::CheckSoundMem(static_cast<raw::TargetRender>(R));
 	}
 
+	int Program::Engine::GetSoundLength(const resource::Resource Sound_Resource) const noexcept {
+		return DxLib::GetSoundTotalTime(static_cast<int>(Sound_Resource));
+	}
+
+	int Program::Engine::GetSoundTime(const resource::Resource Sound_Resource) const noexcept {
+		return DxLib::GetCurrentPositionSoundMem(static_cast<int>(Sound_Resource));
+	}
+
 	int Program::Engine::GetSoundPosition(const resource::Resource Sound_Resource) const noexcept {
-		return DxLib::GetSoundCurrentPosition(static_cast<int>(Sound_Resource));
+		return DxLib::GetSoundTotalSample(static_cast<int>(Sound_Resource));
 	}
 
 	void Program::Engine::SetSoundPosition(const int Position, const resource::Resource Sound_Resource) noexcept {

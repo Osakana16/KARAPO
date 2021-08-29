@@ -121,7 +121,8 @@ namespace karapo {
 
 			void PlaySound(const resource::Resource, PlayType, const bool = false), StopSound(const resource::Resource) noexcept;
 			bool IsPlayingSound(const resource::Resource) const noexcept;
-			int GetSoundPosition(const resource::Resource) const noexcept;
+			int GetSoundLength(const resource::Resource) const noexcept;
+			int GetSoundPosition(const resource::Resource) const noexcept, GetSoundTime(const resource::Resource) const noexcept;
 			void SetSoundPosition(const int, const resource::Resource) noexcept;
 
 			resource::Resource MakeFont(const std::wstring& New_Font_Name, const std::wstring& Source_Font_Name, const size_t Length, const size_t Thick, const FontKind) noexcept;
