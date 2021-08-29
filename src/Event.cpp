@@ -476,9 +476,22 @@ namespace karapo::event {
 				param_names = Param;
 			}
 
-			// 引数をコマンド実行時に読み込む必要があるか否か。
-			bool MustSearch() const noexcept {
-				return !param_names.empty();
+			template<typename BaseType, typename CastableType = std::nullptr_t>
+			std::optional<BaseType> ValueFromChecker(wrapper::ValueTypeChecker<BaseType, CastableType> &checker) {
+				if (auto base = checker.AsVariable<BaseType>(); !base.IsBroken())
+					return base;
+				else if (auto base_ref = checker.AsVariable<BaseType&>(); !base_ref.IsBroken())
+					return base_ref;
+				
+				if constexpr (!std::is_same_v<CastableType, std::nullptr_t>) {
+					auto castable = checker.AsVariable<CastableType>();
+					auto castable_ref = checker.AsVariable<CastableType&>();
+					if (!castable.IsBroken())
+						return castable;
+					else if (!castable_ref.IsBroken())
+						return castable_ref;
+				}
+				return std::nullopt;
 			}
 
 			template<typename BaseType>
@@ -490,6 +503,11 @@ namespace karapo::event {
 				else if (!base_ref.IsBroken())
 					return base_ref;
 				return std::nullopt;
+			}
+
+			// 引数をコマンド実行時に読み込む必要があるか否か。
+			bool MustSearch() const noexcept {
+				return !param_names.empty();
 			}
 
 			std::wstring GetPlainParam(const int Index) const noexcept {
@@ -696,18 +714,18 @@ namespace karapo::event {
 
 			void Execute() final {
 				if (MustSearch()) {
-					auto variable_name_param = GetParam<true>(0),
-						string_content_param = GetParam(1);
+					auto variable_name_param_checker = wrapper::ValueTypeChecker<std::wstring>(GetPlainParam(0)),
+						string_content_param_checker = wrapper::ValueTypeChecker<std::wstring>(GetPlainParam(1));
 
-					if (variable_name_param.type() == typeid(std::nullptr_t) || string_content_param.type() == typeid(std::nullptr_t)) {
+					if (string_content_param_checker.IsNull()) {
 						goto lack_error;
-					} else if (!IsSameType<std::wstring>(variable_name_param) || !IsSameType<std::wstring>(string_content_param)) {
+					} else if (!string_content_param_checker.IsAllSame()) {
 						goto type_error;
 					}
-					variable_name = (!IsReferenceType<std::wstring>(variable_name_param) ? std::any_cast<std::wstring&>(variable_name_param) : GetReferencedValue<std::wstring>(variable_name_param));
-					string_content = (!IsReferenceType<std::wstring>(string_content_param) ? std::any_cast<std::wstring&>(string_content_param) : GetReferencedValue<std::wstring>(string_content_param));
+					variable_name = variable_name_param_checker.ValueName();
+					string_content = *ValueFromChecker(string_content_param_checker);
 				}
-				
+
 				if (variable_name.front() == L'&') {
 					Program::Instance().var_manager.MakeNew(variable_name.substr(1)) = std::ref(Program::Instance().var_manager.Get(string_content));
 				} else {
@@ -970,51 +988,34 @@ namespace karapo::event {
 
 			void Execute() override {
 				if (MustSearch()) {
-					auto path_param = GetParam(0),
-						x_param = GetParam(1),
-						y_param = GetParam(2),
-						w_param = GetParam(3),
-						h_param = GetParam(4);
+					wrapper::ValueTypeChecker<std::wstring> path_param_checker(GetPlainParam(0));
+					wrapper::ValueTypeChecker<Dec, int> x_param_checker(GetPlainParam(1)),
+						y_param_checker(GetPlainParam(2)),
+						w_param_checker(GetPlainParam(3)),
+						h_param_checker(GetPlainParam(4));
 
-					if (path_param.type() == typeid(std::nullptr_t) ||
-						x_param.type() == typeid(std::nullptr_t) ||
-						y_param.type() == typeid(std::nullptr_t) ||
-						w_param.type() == typeid(std::nullptr_t) ||
-						h_param.type() == typeid(std::nullptr_t)) [[unlikely]]
+					if (path_param_checker.IsNull() ||
+						x_param_checker.IsNull() ||
+						y_param_checker.IsNull() ||
+						w_param_checker.IsNull() ||
+						h_param_checker.IsNull()) [[unlikely]]
 					{
 						goto lack_error;
-					} else if (!IsSameType<std::wstring>(path_param) ||
-						(!IsSameType<int>(x_param) && !IsSameType<Dec>(x_param)) ||
-						(!IsSameType<int>(y_param) && !IsSameType<Dec>(y_param)) ||
-						(!IsSameType<int>(w_param) && !IsSameType<Dec>(w_param)) ||
-						(!IsSameType<int>(h_param) && !IsSameType<Dec>(h_param))) [[unlikely]]
+					} else if (!path_param_checker.IsAllSame() ||
+						!x_param_checker.IsAllSame() ||
+						!y_param_checker.IsAllSame() ||
+						!w_param_checker.IsAllSame() ||
+						!h_param_checker.IsAllSame()) [[unlikely]]
 					{
 						goto type_error;
 					}
 
-
-					path = std::any_cast<std::wstring>(path_param);
-					Dec x{}, y{}, w{}, h{};
-					if (x_param.type() == typeid(int) || x_param.type() == typeid(Dec))
-						x = (x_param.type() == typeid(Dec) ? std::any_cast<Dec>(x_param) : std::any_cast<int>(x_param));
-					else if (IsReferenceType<int>(x_param) || IsReferenceType<Dec>(y_param))
-						x = (IsReferenceType<Dec>(x_param) ? GetReferencedValue<Dec>(x_param) : GetReferencedValue<int>(x_param));
-
-					if (y_param.type() == typeid(int) || y_param.type() == typeid(Dec))
-						y = (x_param.type() == typeid(Dec) ? std::any_cast<Dec>(y_param) : std::any_cast<int>(y_param));
-					else if (IsReferenceType<int>(y_param) || IsReferenceType<Dec>(y_param))
-						y = (IsReferenceType<Dec>(y_param) ? GetReferencedValue<Dec>(y_param) : GetReferencedValue<int>(y_param));
-
-					if (w_param.type() == typeid(int) || w_param.type() == typeid(Dec))
-						w = (x_param.type() == typeid(Dec) ? std::any_cast<Dec>(w_param) : std::any_cast<int>(w_param));
-					else if (IsReferenceType<int>(w_param) || IsReferenceType<Dec>(w_param))
-						w = (IsReferenceType<Dec>(w_param) ? GetReferencedValue<Dec>(w_param) : GetReferencedValue<int>(w_param));
-
-					if (h_param.type() == typeid(int) || h_param.type() == typeid(Dec))
-						h = (h_param.type() == typeid(Dec) ? std::any_cast<Dec>(h_param) : std::any_cast<int>(h_param));
-					else if (IsReferenceType<int>(h_param) || IsReferenceType<Dec>(h_param))
-						h = (IsReferenceType<Dec>(h_param) ? GetReferencedValue<Dec>(h_param) : GetReferencedValue<int>(h_param));
-
+					path = *ValueFromChecker<std::wstring>(path_param_checker);
+					Dec x = *ValueFromChecker<Dec, int>(x_param_checker),
+						y = *ValueFromChecker<Dec, int>(y_param_checker),
+						w = *ValueFromChecker<Dec, int>(w_param_checker),
+						h = *ValueFromChecker<Dec, int>(h_param_checker);
+					
 					image = std::make_shared<karapo::entity::Image>(WorldVector{ x, y }, WorldVector{ w, h });
 				}
 				image->Load(path.c_str());
@@ -1202,33 +1203,33 @@ namespace karapo::event {
 			void Execute() override {
 				int x{}, y{}, w{}, h{};
 				if (MustSearch()) {
-					auto var_name = GetParam<true>(0),
-						path_param = GetParam(1),
-						x_param = GetParam(2),
-						y_param = GetParam(3),
-						w_param = GetParam(4),
-						h_param = GetParam(5);
+					auto var_name_param_checker = wrapper::ValueTypeChecker<std::wstring>(GetPlainParam(0)),
+						path_param_checker = wrapper::ValueTypeChecker<std::wstring>(GetPlainParam(1));
+					auto x_param_checker = wrapper::ValueTypeChecker<int>(GetPlainParam(2)),
+						y_param_checker = wrapper::ValueTypeChecker<int>(GetPlainParam(3)),
+						w_param_checker = wrapper::ValueTypeChecker<int>(GetPlainParam(4)),
+						h_param_checker = wrapper::ValueTypeChecker<int>(GetPlainParam(5));
 
-					if (var_name.type() == typeid(std::nullptr_t) ||
-						path_param.type() == typeid(std::nullptr_t) ||
-						x_param.type() == typeid(std::nullptr_t) ||
-						y_param.type() == typeid(std::nullptr_t) ||
-						w_param.type() == typeid(std::nullptr_t) ||
-						h_param.type() == typeid(std::nullptr_t)) [[unlikely]]
+					if (path_param_checker.IsNull() ||
+						x_param_checker.IsNull() ||
+						y_param_checker.IsNull() ||
+						w_param_checker.IsNull() ||
+						h_param_checker.IsNull()) [[unlikely]]
 					{
 						goto lack_error;
-					} else if (!IsSameType<std::wstring>(var_name) || !IsSameType<std::wstring>(path_param) ||
-						!IsSameType<int>(x_param) || !IsSameType<int>(y_param) ||
-						!IsSameType<int>(w_param) || !IsSameType<int>(h_param)) [[unlikely]]
+					}
+					else if (!path_param_checker.IsAllSame() ||
+						!x_param_checker.IsAllSame() || !y_param_checker.IsAllSame() ||
+						!w_param_checker.IsAllSame() || !h_param_checker.IsAllSame()) [[unlikely]]
 					{
 						goto type_error;
 					}
-					variable_name = (!IsReferenceType<std::wstring>(var_name) ? std::any_cast<std::wstring>(var_name) : GetReferencedValue<std::wstring>(var_name));
-					path = (!IsReferenceType<std::wstring>(path_param) ? std::any_cast<std::wstring>(path_param) : GetReferencedValue<std::wstring>(path_param));
-					position[0] = (!IsReferenceType<int>(x_param) ? std::any_cast<int>(x_param) : GetReferencedValue<int>(x_param));
-					position[1] = (!IsReferenceType<int>(y_param) ? std::any_cast<int>(y_param) : GetReferencedValue<int>(y_param));
-					length[0] = (!IsReferenceType<int>(w_param) ? std::any_cast<int>(w_param) : GetReferencedValue<int>(w_param));
-					length[1] = (!IsReferenceType<int>(h_param) ? std::any_cast<int>(h_param) : GetReferencedValue<int>(h_param));
+					variable_name = *ValueFromChecker(var_name_param_checker);
+					path = *ValueFromChecker(path_param_checker);
+					position[0] = *ValueFromChecker(x_param_checker);
+					position[1] = *ValueFromChecker(y_param_checker);
+					length[0] = *ValueFromChecker(w_param_checker);
+					length[1] = *ValueFromChecker(h_param_checker);
 				}
 				Program::Instance().engine.CopyImage(&path, position, length);
 				Program::Instance().var_manager.Get(variable_name) = path;
@@ -1262,19 +1263,18 @@ namespace karapo::event {
 
 			void Execute() override {
 				if (MustSearch()) {
-					auto path_param = GetParam(0);
-					if (path_param.type() == typeid(std::nullptr_t)) [[unlikely]]
+					auto path_param_checker = wrapper::ValueTypeChecker<std::wstring>(GetPlainParam(0));
+					if (path_param_checker.IsNull()) [[unlikely]]
 						goto lack_error;
-					else if (!IsSameType<std::wstring>(path_param)) [[unlikely]]
+					else if (!path_param_checker.IsAllSame()) [[unlikely]]
 						goto type_error;
 
-					path = (!IsReferenceType<std::wstring>(path_param) ? std::any_cast<std::wstring>(path_param) : GetReferencedValue<std::wstring>(path_param));
+					path = *ValueFromChecker(path_param_checker);
 				}
 				ReplaceFormat(&path);
 				music->Load(path);
 				Program::Instance().entity_manager.Register(music);
 				return;
-
 			lack_error:
 				event::Manager::Instance().error_handler.SendLocalError(lack_of_parameters_error, L"コマンド名: music/BGM/音楽");
 				goto end_of_function;
@@ -1302,33 +1302,24 @@ namespace karapo::event {
 
 			void Execute() override {
 				if (MustSearch()) {
-					auto path_param = GetParam(0),
-						x_param = GetParam(1),
-						y_param = GetParam(2);
-					if (path_param.type() == typeid(std::nullptr_t) ||
-						x_param.type() == typeid(std::nullptr_t) ||
-						y_param.type() == typeid(std::nullptr_t)) [[unlikely]]
+					wrapper::ValueTypeChecker<std::wstring> path_param_checker(GetPlainParam(0));
+					wrapper::ValueTypeChecker<Dec, int> x_param_checker(GetPlainParam(1)),
+						y_param_checker(GetPlainParam(2));
+
+					if (path_param_checker.IsNull() ||
+						x_param_checker.IsNull() ||
+						y_param_checker.IsNull()) [[unlikely]]
 					{
 						goto lack_error;
-					} else if (!IsSameType<std::wstring>(path_param) ||
-						(!IsSameType<Dec>(x_param) && !IsSameType<int>(x_param)) ||
-						(!IsSameType<Dec>(y_param) && !IsSameType<int>(y_param))) [[unlikely]]
+					} else if (!path_param_checker.IsAllSame() ||
+						x_param_checker.IsAllSame() ||
+						y_param_checker.IsAllSame()) [[unlikely]]
 					{
 						goto type_error;
 					}
-
-					path = (!IsReferenceType<std::wstring>(path_param) ? std::any_cast<std::wstring>(path_param) : GetReferencedValue<std::wstring>(path_param));
-					Dec x{}, y{};
-					if (IsReferenceType<int>(x_param) || IsReferenceType<Dec>(x_param))
-						x = (IsReferenceType<Dec>(x_param) ? GetReferencedValue<Dec>(x_param) : GetReferencedValue<int>(x_param));
-					else
-						x = (x_param.type() == typeid(Dec) ? std::any_cast<Dec>(x_param) : std::any_cast<int>(x_param));
-
-					if (IsReferenceType<int>(y_param) || IsReferenceType<Dec>(y_param))
-						y = (IsReferenceType<Dec>(y_param) ? GetReferencedValue<Dec>(y_param) : GetReferencedValue<int>(y_param));
-					else
-						y = (y_param.type() == typeid(Dec) ? std::any_cast<Dec>(y_param) : std::any_cast<int>(y_param));
-
+					path = *ValueFromChecker(path_param_checker);
+					Dec x = *ValueFromChecker(x_param_checker),
+						y = *ValueFromChecker(y_param_checker);
 					sound = std::make_shared<karapo::entity::Sound>(PlayType::Normal, WorldVector{ x, y });
 				}
 				ReplaceFormat(&path);
@@ -1363,30 +1354,29 @@ namespace karapo::event {
 
 			void Execute() {
 				if (MustSearch()) {
-					auto variable_name_param = GetParam<true>(0),
-						source_font_name_param = GetParam(1),
-						length_param = GetParam(2),
-						thick_param = GetParam(3),
-						font_kind_param = GetParam(4);
+					auto variable_name_param_checker = wrapper::ValueTypeChecker<std::wstring>(GetPlainParam(0)),
+						source_font_name_param_checker = wrapper::ValueTypeChecker<std::wstring>(GetPlainParam(1));
+					auto length_param_checker = wrapper::ValueTypeChecker<int>(GetPlainParam(2)),
+						thick_param_checker = wrapper::ValueTypeChecker<int>(GetPlainParam(3)),
+						font_kind_param_checker = wrapper::ValueTypeChecker<int>(GetPlainParam(4));
 
-					if (variable_name_param.type() == typeid(std::nullptr_t) ||
-						source_font_name_param.type() == typeid(std::nullptr_t) ||
-						length_param.type() == typeid(std::nullptr_t) ||
-						thick_param.type() == typeid(std::nullptr_t) ||
-						font_kind_param.type() == typeid(std::nullptr_t)) [[unlikely]]
+					if (source_font_name_param_checker.IsNull() ||
+						length_param_checker.IsNull() ||
+						thick_param_checker.IsNull() ||
+						font_kind_param_checker.IsNull()) [[unlikely]]
 					{
 						goto lack_error;
 					}
-					else if (!IsSameType<std::wstring>(variable_name_param) || !IsSameType<std::wstring>(source_font_name_param) ||
-						!IsSameType<int>(length_param) || !IsSameType<int>(thick_param) || !IsSameType<int>(font_kind_param)) [[unlikely]]
+					else if (!source_font_name_param_checker.IsAllSame() ||
+						!length_param_checker.IsAllSame() || !thick_param_checker.IsAllSame() || !font_kind_param_checker.IsAllSame()) [[unlikely]]
 					{
 						goto type_error;
 					}
-					variable_name = (!IsReferenceType<std::wstring>(variable_name_param) ? std::any_cast<std::wstring>(variable_name_param) : GetReferencedValue<std::wstring>(variable_name_param));
-					source_font_name = (!IsReferenceType<std::wstring>(source_font_name_param) ? std::any_cast<std::wstring>(source_font_name_param) : GetReferencedValue<std::wstring>(source_font_name_param));
-					length = (!IsReferenceType<int>(length_param) ? std::any_cast<int>(length_param) : GetReferencedValue<int>(length_param));
-					thick = (!IsReferenceType<int>(thick_param) ? std::any_cast<int>(thick_param) : GetReferencedValue<int>(thick_param));
-					font_kind = ((!IsReferenceType<int>(font_kind_param) ? std::any_cast<int>(font_kind_param) : GetReferencedValue<int>(font_kind_param)) == 1 ? FontKind::Anti_Aliasing : FontKind::Normal);
+					variable_name = variable_name_param_checker.ValueName();
+					source_font_name = *ValueFromChecker(source_font_name_param_checker);
+					length = *ValueFromChecker(length_param_checker);
+					thick = *ValueFromChecker(thick_param_checker);
+					font_kind = static_cast<FontKind>(*ValueFromChecker(font_kind_param_checker));
 				}
 
 				if (variable_name.empty() || source_font_name.empty()) {
@@ -1433,13 +1423,13 @@ namespace karapo::event {
 
 			void Execute() final {
 				if (MustSearch()) {
-					auto file_path_param = GetParam(0);
-					if (file_path_param.type() == typeid(std::nullptr_t))
+					auto file_path_param = wrapper::ValueTypeChecker<std::wstring>(GetPlainParam(0));
+					if (file_path_param.IsNull())
 						goto lack_error;
-					else if (!IsSameType<std::wstring>(file_path_param))
+					else if (!file_path_param.IsAllSame())
 						goto type_error;
 					
-					file_path = (!IsReferenceType<std::wstring>(file_path_param) ? std::any_cast<std::wstring>(file_path_param) : GetReferencedValue<std::wstring>(file_path_param));
+					file_path = *ValueFromChecker(file_path_param);
 				}
 				if (file_path.empty())
 					goto name_error;
@@ -1499,13 +1489,13 @@ namespace karapo::event {
 
 			void Execute() final {
 				if (MustSearch()) {
-					auto file_path_param = GetParam(0);
-					if (file_path_param.type() == typeid(std::nullptr_t))
+					auto file_path_param = wrapper::ValueTypeChecker<std::wstring>(GetPlainParam(0));
+					if (file_path_param.IsNull())
 						goto lack_error;
-					else if (!IsSameType<std::wstring>(file_path_param))
+					else if (!file_path_param.IsAllSame())
 						goto type_error;
 
-					file_path = (!IsReferenceType<std::wstring>(file_path_param) ? std::any_cast<std::wstring>(file_path_param) : GetReferencedValue<std::wstring>(file_path_param));
+					file_path = *ValueFromChecker(file_path_param);
 				}
 
 				if (file_path.empty())
@@ -1564,13 +1554,13 @@ namespace karapo::event {
 
 			void Execute() final {
 				if (MustSearch()) {
-					auto file_path_param = GetParam(0);
-					if (file_path_param.type() == typeid(std::nullptr_t))
+					auto file_path_param = wrapper::ValueTypeChecker<std::wstring>(GetPlainParam(0));
+					if (file_path_param.IsNull())
 						goto lack_error;
-					else if (!IsSameType<std::wstring>(file_path_param))
+					else if (!file_path_param.IsAllSame())
 						goto type_error;
 
-					file_path = (!IsReferenceType<std::wstring>(file_path_param) ? std::any_cast<std::wstring>(file_path_param) : GetReferencedValue<std::wstring>(file_path_param));
+					file_path = *ValueFromChecker(file_path_param);
 				}
 
 				if (file_path.empty())
@@ -1627,46 +1617,32 @@ namespace karapo::event {
 
 			void Execute() final {
 				if (MustSearch()) {
-					auto name_param = GetParam(0),
-						x_param = GetParam(1),
-						y_param = GetParam(2);
-					if (name_param.type() == typeid(std::nullptr_t) ||
-						x_param.type() == typeid(std::nullptr_t) ||
-						y_param.type() == typeid(std::nullptr_t)) [[unlikely]]
+					wrapper::ValueTypeChecker<std::wstring> name_param_checker(GetPlainParam(0));
+					wrapper::ValueTypeChecker<Dec, int> x_param_checker(GetPlainParam(1)),
+						y_param_checker(GetPlainParam(2));
+
+					if (name_param_checker.IsNull() ||
+						x_param_checker.IsNull() ||
+						y_param_checker.IsNull()) [[unlikely]]
 					{
 						goto lack_error;
-					} else if (!IsSameType<std::wstring>(name_param) ||
-						(!IsSameType<Dec>(x_param) && !IsSameType<int>(x_param)) ||
-						(!IsSameType<Dec>(y_param) && !IsSameType<int>(y_param))) [[unlikely]]
+					} else if (!name_param_checker.IsAllSame() ||
+						!x_param_checker.IsAllSame() ||
+						!y_param_checker.IsAllSame()) [[unlikely]]
 					{
 						goto type_error;
 					}
+					auto name = *ValueFromChecker(name_param_checker);
+					Dec x = *ValueFromChecker(x_param_checker),
+						y = *ValueFromChecker(y_param_checker);
 
-					auto name = (!IsReferenceType<std::wstring>(name_param) ? std::any_cast<std::wstring>(name_param) : GetReferencedValue<std::wstring>(name_param));
-					Dec x{}, y{};
-					if (IsReferenceType<int>(x_param) || IsReferenceType<Dec>(x_param))
-						x = (IsReferenceType<Dec>(x_param) ? GetReferencedValue<Dec>(x_param) : GetReferencedValue<int>(x_param));
-					else
-						x = (x_param.type() == typeid(Dec) ? std::any_cast<Dec>(x_param) : std::any_cast<int>(x_param));
-					if (IsReferenceType<int>(y_param) || IsReferenceType<Dec>(y_param))
-						y = (IsReferenceType<Dec>(y_param) ? GetReferencedValue<Dec>(y_param) : GetReferencedValue<int>(y_param));
-					else
-						y = (y_param.type() == typeid(Dec) ? std::any_cast<Dec>(y_param) : std::any_cast<int>(y_param));
-
-					auto w_param = GetParam(3),
-						h_param = GetParam(4),
-						path_param = GetParam(5);
+					wrapper::ValueTypeChecker<Dec, int> w_param_checker(GetPlainParam(3)), h_param_checker(GetPlainParam(4));
+					wrapper::ValueTypeChecker<std::wstring> path_param_checker(GetPlainParam(5));
 					Dec w{}, h{};
-					if (w_param.type() != typeid(std::nullptr_t) && h_param.type() != typeid(std::nullptr_t) && path_param.type() != typeid(std::nullptr_t)) {
-						if (IsReferenceType<int>(w_param) || IsReferenceType<Dec>(w_param))
-							w = (IsReferenceType<Dec>(w_param) ? GetReferencedValue<Dec>(w_param) : GetReferencedValue<int>(w_param));
-						else
-							w = (w_param.type() == typeid(Dec) ? std::any_cast<Dec>(w_param) : std::any_cast<int>(w_param));
-						if (IsReferenceType<int>(h_param) || IsReferenceType<Dec>(h_param))
-							h = (IsReferenceType<Dec>(h_param) ? GetReferencedValue<Dec>(h_param) : GetReferencedValue<int>(h_param));
-						else
-							h = (h_param.type() == typeid(Dec) ? std::any_cast<Dec>(h_param) : std::any_cast<int>(h_param));
-						path = (!IsReferenceType<std::wstring>(path_param) ? std::any_cast<std::wstring>(path_param) : GetReferencedValue<std::wstring>(path_param));
+					if (!w_param_checker.IsNull() && !h_param_checker.IsNull() && !path_param_checker.IsNull()) {
+						w = *ValueFromChecker(w_param_checker);
+						h = *ValueFromChecker(h_param_checker);
+						path = *ValueFromChecker(path_param_checker);
 					}
 					ReplaceFormat(&name);
 					button = std::make_shared<karapo::entity::Button>(name, WorldVector{ x, y }, WorldVector{ w, h });
@@ -1716,31 +1692,23 @@ namespace karapo::event {
 
 			void Execute() final {
 				if (MustSearch()) {
-					auto name_param = GetParam(0),
-						x_param = GetParam(1),
-						y_param = GetParam(2);
-					if (name_param.type() == typeid(std::nullptr_t) ||
-						x_param.type() == typeid(std::nullptr_t) ||
-						y_param.type() == typeid(std::nullptr_t)) [[unlikely]]
+					wrapper::ValueTypeChecker<std::wstring> name_param_checker(GetPlainParam(0));
+					wrapper::ValueTypeChecker<Dec, int> x_param_checker(GetPlainParam(1)),
+						y_param_checker(GetPlainParam(2));
+
+					if (name_param_checker.IsNull() ||
+						x_param_checker.IsNull() ||
+						y_param_checker.IsNull()) [[unlikely]]
 					{
 						goto lack_error;
-					} else if (!IsSameType<std::wstring>(name_param) ||
-						(!IsSameType<Dec>(x_param) && !IsSameType<int>(x_param)) ||
-						(!IsSameType<Dec>(y_param) && !IsSameType<int>(y_param))) [[unlikely]]
+					} else if (!name_param_checker.IsAllSame() ||
+						!x_param_checker.IsAllSame() ||
+						!y_param_checker.IsAllSame()) [[unlikely]]
 					{
 						goto type_error;
 					}
-
-					name = (!IsReferenceType<std::wstring>(name_param) ? std::any_cast<std::wstring>(name_param) : GetReferencedValue<std::wstring>(name_param));
-					Dec x{}, y{};
-					if (IsReferenceType<int>(x_param) || IsReferenceType<Dec>(x_param))
-						x = (IsReferenceType<Dec>(x_param) ? GetReferencedValue<Dec>(x_param) : GetReferencedValue<int>(x_param));
-					else
-						x = (x_param.type() == typeid(Dec) ? std::any_cast<Dec>(x_param) : std::any_cast<int>(x_param));
-					if (IsReferenceType<int>(y_param) || IsReferenceType<Dec>(y_param))
-						y = (IsReferenceType<Dec>(y_param) ? GetReferencedValue<Dec>(y_param) : GetReferencedValue<int>(y_param));
-					else
-						y = (y_param.type() == typeid(Dec) ? std::any_cast<Dec>(y_param) : std::any_cast<int>(y_param));
+					name = *ValueFromChecker(name_param_checker);
+					Dec x = *ValueFromChecker(x_param_checker), y = *ValueFromChecker(y_param_checker);
 
 					ReplaceFormat(&name);
 					text = std::make_shared<karapo::entity::Text>(name, WorldVector{ x, y });
@@ -1773,27 +1741,27 @@ namespace karapo::event {
 
 			void Execute()final {
 				if (MustSearch()) {
-					auto name_param = GetParam<true>(0),
-						x_param = GetParam(1),
-						y_param = GetParam(2),
-						len_param = GetParam(3);
-					if (name_param.type() == typeid(std::nullptr_t) ||
-						x_param.type() == typeid(std::nullptr_t) ||
-						y_param.type() == typeid(std::nullptr_t) ||
-						len_param.type() == typeid(std::nullptr_t)) [[unlikely]]
+					wrapper::ValueTypeChecker<std::wstring> name_param_checker(GetPlainParam(0));
+					wrapper::ValueTypeChecker<int> x_param_checker(GetPlainParam(1)),
+						y_param_checker(GetPlainParam(2)),
+						len_param_checker(GetPlainParam(3));
+					if (name_param_checker.IsNull() ||
+						x_param_checker.IsNull() ||
+						y_param_checker.IsNull() ||
+						len_param_checker.IsNull()) [[unlikely]]
 					{
 						goto lack_error;
-					} else if (!IsSameType<std::wstring>(name_param) ||
-						!IsSameType<int>(x_param) ||
-						!IsSameType<int>(y_param) ||
-						!IsSameType<int>(len_param)) [[unlikely]]
+					} else if (!name_param_checker.IsAllSame() ||
+						!x_param_checker.IsAllSame() ||
+						!y_param_checker.IsAllSame() ||
+						!len_param_checker.IsAllSame()) [[unlikely]]
 					{
 						goto type_error;
 					}
-					var = &Program::Instance().var_manager.Get(std::any_cast<std::wstring>(name_param));
-					pos[0] = (!IsReferenceType<int>(x_param) ? std::any_cast<int>(x_param) : GetReferencedValue<int>(x_param));
-					pos[1] = (!IsReferenceType<int>(y_param) ? std::any_cast<int>(y_param) : GetReferencedValue<int>(y_param));
-					length = (!IsReferenceType<int>(len_param) ? std::any_cast<int>(len_param) : GetReferencedValue<int>(len_param));
+					var = &Program::Instance().var_manager.Get(std::any_cast<std::wstring>(*ValueFromChecker(name_param_checker)));
+					pos[0] = *ValueFromChecker(x_param_checker);
+					pos[1] = *ValueFromChecker(y_param_checker);
+					length = *ValueFromChecker(len_param_checker);
 				}
 				wchar_t str[10000];
 				Program::Instance().engine.GetString(pos, str, length);
@@ -1827,33 +1795,20 @@ namespace karapo::event {
 
 				void Execute() override {
 					if (MustSearch()) {
-						auto name_param = GetParam(0),
-							x_param = GetParam(1),
-							y_param = GetParam(2);
-						if (name_param.type() == typeid(std::nullptr_t) ||
-							x_param.type() == typeid(std::nullptr_t) ||
-							y_param.type() == typeid(std::nullptr_t)) [[unlikely]]
+						wrapper::ValueTypeChecker<std::wstring> name_param_checker(GetPlainParam(0));
+						wrapper::ValueTypeChecker<Dec, int> x_param_checker(GetPlainParam(1)),
+							y_param_checker(GetPlainParam(2));
+						if (name_param_checker.IsNull() ||
+							x_param_checker.IsNull() ||
+							y_param_checker.IsNull()) [[unlikely]]
 						{
 							goto lack_error;
-						} else if (!IsSameType<std::wstring>(name_param)) [[unlikely]]
+						} else if (!name_param_checker.IsAllSame()) [[unlikely]]
 							goto type_error;
 
-						entity_name = (!IsReferenceType<std::wstring>(name_param) ? std::any_cast<std::wstring>(name_param) : GetReferencedValue<std::wstring>(name_param));
+						entity_name = *ValueFromChecker(name_param_checker);
 
-						Dec x{}, y{};
-						if (IsReferenceType<Dec>(x_param) || IsReferenceType<int>(x_param))
-							x = (IsReferenceType<Dec>(x_param) ? GetReferencedValue<Dec>(x_param) : GetReferencedValue<int>(x_param));
-						else if (x_param.type() == typeid(int) || x_param.type() == typeid(Dec))
-							x = (x_param.type() == typeid(Dec) ? std::any_cast<Dec>(x_param) : std::any_cast<int>(x_param));
-						else [[unlikely]]
-							goto type_error;
-
-						if (IsReferenceType<Dec>(y_param) || IsReferenceType<int>(y_param))
-							y = (IsReferenceType<Dec>(y_param) ? GetReferencedValue<Dec>(y_param) : GetReferencedValue<int>(y_param));
-						else if (y_param.type() == typeid(int) || y_param.type() == typeid(Dec))
-							y = (y_param.type() == typeid(Dec) ? std::any_cast<Dec>(y_param) : std::any_cast<int>(y_param));
-						else [[unlikely]]
-							goto type_error;
+						Dec x = *ValueFromChecker(x_param_checker), y = *ValueFromChecker(y_param_checker);
 						move = { x, y };
 					}
 
@@ -1895,13 +1850,13 @@ namespace karapo::event {
 
 				void Execute() override {
 					if (MustSearch()) {
-						auto name_param = GetParam(0);
-						if (name_param.type() == typeid(std::nullptr_t)) [[unlikely]]
+						wrapper::ValueTypeChecker<std::wstring> name_param_checker(GetPlainParam(0));
+						if (name_param_checker.IsNull()) [[unlikely]]
 							goto lack_error;
-						else if (!IsSameType<std::wstring>(name_param)) [[unlikely]]
+						else if (!name_param_checker.IsAllSame()) [[unlikely]]
 							goto type_error;
 
-						entity_name = (!IsReferenceType<std::wstring>(name_param) ? std::any_cast<std::wstring>(name_param) : GetReferencedValue<std::wstring>(name_param));
+						entity_name = *ValueFromChecker(name_param_checker);
 					}
 					if (entity_name.empty())
 						goto name_error;
@@ -1959,11 +1914,11 @@ namespace karapo::event {
 
 				void Execute() override {
 					if (MustSearch()) {
-						auto candidate_name_param = GetParam(0);
-						if (!IsSameType<std::wstring>(candidate_name_param)) {
+						wrapper::ValueTypeChecker<std::wstring> candidate_name_param_checker(GetPlainParam(0));
+						if (!candidate_name_param_checker.IsAllSame()) {
 							goto type_error;
 						}
-						candidate_name = (!IsReferenceType<std::wstring>(candidate_name_param) ? std::any_cast<std::wstring>(candidate_name_param) : GetReferencedValue<std::wstring>(candidate_name_param));
+						candidate_name = *ValueFromChecker(candidate_name_param_checker);
 					}
 
 					if (candidate_name.empty()) {
@@ -2005,11 +1960,11 @@ namespace karapo::event {
 
 				void Execute() override {
 					if (MustSearch()) {
-						auto candidate_name_param = GetParam(0);
-						if (!IsSameType<std::wstring>(candidate_name_param)) {
+						wrapper::ValueTypeChecker<std::wstring> candidate_name_param_checker(GetPlainParam(0));
+						if (!candidate_name_param_checker.IsAllSame()) {
 							goto type_error;
 						}
-						candidate_name = (!IsReferenceType<std::wstring>(candidate_name_param) ? std::any_cast<std::wstring>(candidate_name_param) : GetReferencedValue<std::wstring>(candidate_name_param));
+						candidate_name = *ValueFromChecker(candidate_name_param_checker);
 					}
 					if (candidate_name.empty()) {
 						goto name_error;
@@ -2119,7 +2074,7 @@ namespace karapo::event {
 			};
 
 			DYNAMIC_COMMAND(Pop final) {
-				std::wstring array_name{};
+				wrapper::Variable<std::any> any_array{};
 				std::optional<int> index = std::nullopt;
 
 				template<typename T>
@@ -2137,7 +2092,7 @@ namespace karapo::event {
 				}
 			public:
 				Pop(const std::wstring& Array_Name, const std::optional<int> Index) noexcept : Pop(std::vector<std::wstring>{}) {
-					array_name = Array_Name;
+					any_array = std::ref(Program::Instance().var_manager.Get(Array_Name));
 					index = Index;
 				}
 
@@ -2147,25 +2102,24 @@ namespace karapo::event {
 
 				void Execute() final {
 					if (MustSearch()) {
-						auto array_name_param = GetParam<true>(0),
-							index_param = GetParam(1);
-						if (array_name_param.type() == typeid(std::nullptr_t))
+						auto&& array_name_param_checker = wrapper::ValueTypeChecker<std::any>(GetPlainParam(0));
+						auto index_param_checker = wrapper::ValueTypeChecker<int>(GetPlainParam(1));
+						if (array_name_param_checker.IsNull())
 							goto lack_error;
-						else if (index_param.type() == typeid(int))
-							index = std::any_cast<int>(index_param);
+						if (index_param_checker.IsAllSame())
+							index = *ValueFromChecker(index_param_checker);
 
-						array_name = std::any_cast<std::wstring>(array_name_param);
+						any_array = array_name_param_checker.AsVariable<std::any&>();
 					}
 
-					if (!array_name.empty()) {
-						auto& source_array = Program::Instance().var_manager.Get(array_name);
-						if (IsSameType<std::wstring>(source_array)) {
-							PopArray((!IsReferenceType<std::wstring>(source_array) ? std::any_cast<std::wstring&>(source_array) : GetReferencedValue<std::wstring>(source_array)));
-						} else {
-							goto type_error;
+					if (any_array.HasValue()) {
+						auto&& checker = wrapper::ValueTypeChecker<std::any>(any_array);
+						if (checker.CanCast<std::wstring>()) {
+							auto&& temp = static_cast<std::wstring>(checker.AsVariable<std::wstring&>());
+							PopArray(temp);
 						}
 					} else {
-						goto name_error;
+						goto type_error;
 					}
 					goto end_of_function;
 				name_error:
@@ -2225,23 +2179,24 @@ namespace karapo::event {
 
 			void Execute() final {
 				if (MustSearch()) {
-					auto layer_name_param = GetParam(0),
-						kind_name_param = GetParam(1),
-						potecy_param = GetParam(2);
-					if (layer_name_param.type() == typeid(std::nullptr_t) ||
-						kind_name_param.type() == typeid(std::nullptr_t) ||
-						potecy_param.type() == typeid(std::nullptr_t)) [[unlikely]]
+					auto layer_name_param_checker = wrapper::ValueTypeChecker<std::wstring>(GetPlainParam(0)),
+						kind_name_param_checker = wrapper::ValueTypeChecker<std::wstring>(GetPlainParam(1));
+					auto potecy_param_checker = wrapper::ValueTypeChecker<int>(GetPlainParam(2));
+
+					if (layer_name_param_checker.IsNull() ||
+						kind_name_param_checker.IsNull() ||
+						potecy_param_checker.IsNull()) [[unlikely]]
 					{
 						goto lack_error;
-					} else if (!IsSameType<std::wstring>(layer_name_param) ||
-						!IsSameType<std::wstring>(kind_name_param) ||
-						!IsSameType<int>(potecy_param)) [[unlikely]]
+					} else if (!layer_name_param_checker.IsAllSame() ||
+						!kind_name_param_checker.IsAllSame() ||
+						!potecy_param_checker.IsAllSame()) [[unlikely]]
 					{
 						goto type_error;
 					}
-					layer_name = (!IsReferenceType<std::wstring>(layer_name_param) ? std::any_cast<std::wstring>(layer_name_param) : GetReferencedValue<std::wstring>(layer_name_param));
-					kind_name = (!IsReferenceType<std::wstring>(kind_name_param) ? std::any_cast<std::wstring>(kind_name_param) : GetReferencedValue<std::wstring>(kind_name_param));
-					potency = (!IsReferenceType<int>(potecy_param) ? std::any_cast<int>(potecy_param) : GetReferencedValue<int>(potecy_param));
+					layer_name = *ValueFromChecker(layer_name_param_checker);
+					kind_name = *ValueFromChecker(kind_name_param_checker);
+					potency = *ValueFromChecker(potecy_param_checker);
 				}
 
 				if (layer_name.empty() || kind_name.empty()) [[unlikely]] {
@@ -2250,7 +2205,6 @@ namespace karapo::event {
 				ReplaceFormat(&layer_name);
 				ReplaceFormat(&kind_name);
 				Program::Instance().canvas.ApplyFilter(layer_name, kind_name, potency);
-
 				return;
 			name_error:
 				event::Manager::Instance().error_handler.SendLocalError(empty_name_error, L"コマンド名: filter/フィルター");
@@ -2319,12 +2273,13 @@ namespace karapo::event {
 				std::vector<std::any> params{};
 				SetAllParams(&params);
 				if (MustSearch()) {
-					if (params[0].type() == typeid(std::nullptr_t)) [[unlikely]]
+					auto event_name_param_checker = wrapper::ValueTypeChecker<std::wstring>(GetPlainParam(0));
+					if (event_name_param_checker.IsNull()) [[unlikely]]
 						goto lack_error;
-					else if (!IsSameType<std::wstring>(params[0])) [[unlikely]]
+					else if (!event_name_param_checker.IsAllSame()) [[unlikely]]
 						goto type_error;
 
-					event_name = (!IsReferenceType<std::wstring>(params[0]) ? std::any_cast<std::wstring>(params[0]) : GetReferencedValue<std::wstring>(params[0]));
+					event_name = *ValueFromChecker(event_name_param_checker);
 				}
 				if (event_name.empty()) [[unlikely]]
 					goto name_error;
@@ -2394,13 +2349,13 @@ namespace karapo::event {
 
 			void Execute() override {
 				if (MustSearch()) {
-					auto name_param = GetParam(0);
-					if (name_param.type() == typeid(std::nullptr_t)) [[unlikely]]
+					auto name_param_checker = wrapper::ValueTypeChecker<std::wstring>(GetPlainParam(0));
+					if (name_param_checker.IsNull()) [[unlikely]]
 						goto lack_error;
-					else if (!IsSameType<std::wstring>(name_param)) [[unlikely]]
+					else if (!name_param_checker.IsAllSame()) [[unlikely]]
 						goto type_error;
 
-					file_name = (!IsReferenceType<std::wstring>(name_param) ? std::any_cast<std::wstring>(name_param) : GetReferencedValue<std::wstring>(name_param));
+					file_name = *ValueFromChecker(name_param_checker);
 				}
 				if (file_name.empty()) [[unlikely]]
 					goto name_error;
@@ -2437,13 +2392,13 @@ namespace karapo::event {
 
 			void Execute() override {
 				if (MustSearch()) {
-					auto name_param = GetParam(0);
-					if (name_param.type() == typeid(std::nullptr_t)) [[unlikely]]
+					auto name_param_checker = wrapper::ValueTypeChecker<std::wstring>(GetPlainParam(0));
+					if (name_param_checker.IsNull()) [[unlikely]]
 						goto lack_error;
-					else if (!IsSameType<std::wstring>(name_param)) [[unlikely]]
+					else if (!name_param_checker.IsAllSame()) [[unlikely]]
 						goto type_error;
 
-					file_name = (!IsReferenceType<std::wstring>(name_param) ? std::any_cast<std::wstring>(name_param) : GetReferencedValue<std::wstring>(name_param));
+					file_name = *ValueFromChecker(name_param_checker);
 				}
 				if (file_name.empty()) [[unlikely]]
 					goto name_error;
@@ -2462,6 +2417,38 @@ namespace karapo::event {
 				event::Manager::Instance().error_handler.SendLocalError(incorrect_type_error, L"コマンド名: load/読込");
 				goto end_of_function;
 			end_of_function:
+				return;
+			}
+		};
+
+		DYNAMIC_COMMAND(AddComponent final) {
+			std::wstring entity_name{}, component_name{};
+		public:
+			AddComponent(const std::wstring& Entity_Name, const std::wstring& Component_Name) noexcept : AddComponent(std::vector<std::wstring>{}) {
+				entity_name = Entity_Name;
+				component_name = Component_Name;
+			}
+
+			DYNAMIC_COMMAND_CONSTRUCTOR(AddComponent) {}
+
+			~AddComponent() noexcept final {}
+
+			void Execute() override {
+				if (MustSearch()) {
+					auto entity_name_param_checker = wrapper::ValueTypeChecker<std::wstring>(GetPlainParam(0)),
+						component_name_param_checker = wrapper::ValueTypeChecker<std::wstring>(GetPlainParam(1));
+
+					if (entity_name_param_checker.IsNull() || component_name_param_checker.IsNull()) [[unlikely]]
+						goto lack_error;
+					else if (!entity_name_param_checker.IsAllSame() || !component_name_param_checker.IsAllSame()) [[unlikely]]
+						goto type_error;
+
+					entity_name = *ValueFromChecker(entity_name_param_checker);
+					component_name = *ValueFromChecker(component_name_param_checker);
+				}
+				component::Manager::Instance().AddComponentToEntity(entity_name, component_name);
+			lack_error:
+			type_error:
 				return;
 			}
 		};
@@ -2501,24 +2488,24 @@ namespace karapo::event {
 
 				void Execute() final {
 					if (MustSearch()) {
-						auto index_param = GetParam(0),
-							kind_param = GetParam(1),
-							layer_param = GetParam(2);
-						if (index_param.type() == typeid(std::nullptr_t) ||
-							kind_param.type() == typeid(std::nullptr_t) ||
-							layer_param.type() == typeid(std::nullptr_t)) [[unlikely]]
+						auto index_param = wrapper::ValueTypeChecker<int>(GetPlainParam(0));
+						auto kind_param = wrapper::ValueTypeChecker<std::wstring>(GetPlainParam(1)),
+							layer_param = wrapper::ValueTypeChecker<std::wstring>(GetPlainParam(2));
+						if (index_param.IsNull() ||
+							kind_param.IsNull() ||
+							layer_param.IsNull()) [[unlikely]]
 						{
 							goto lack_error;
-						} else if (!IsSameType<int>(index_param) ||
-							!IsSameType<std::wstring>(kind_param) ||
-							!IsSameType<std::wstring>(layer_param)) [[unlikely]]
+						} else if (!index_param.IsAllSame() ||
+							!kind_param.IsAllSame() ||
+							!layer_param.IsAllSame()) [[unlikely]]
 						{
 							goto type_error;
 						}
 
-						index = (!IsReferenceType<int>(index_param) ? std::any_cast<int>(index_param) : GetReferencedValue<int>(index_param));
-						kind_name = (!IsReferenceType<std::wstring>(kind_param) ? std::any_cast<std::wstring>(kind_param) : GetReferencedValue<std::wstring>(kind_param));
-						layer_name = (!IsReferenceType<std::wstring>(layer_param) ? std::any_cast<std::wstring>(layer_param) : GetReferencedValue<std::wstring>(layer_param));
+						index = *ValueFromChecker(index_param);
+						kind_name = *ValueFromChecker(kind_param);
+						layer_name = *ValueFromChecker(layer_param);
 					}
 					if (kind_name.empty() || layer_name.empty()) [[unlikely]]
 						goto name_error;
