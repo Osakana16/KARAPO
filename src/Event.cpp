@@ -5669,16 +5669,22 @@ namespace karapo::event {
 	bool Manager::ConditionManager::Evalute(const std::wstring& Mode, const std::any& Right_Value) noexcept {
 		can_execute = true;
 		auto& target_type = target_value.type();
+		const bool Can_Cast = ((target_type == typeid(int) || target_type == typeid(Dec)) && (Right_Value.type() == typeid(int) || Right_Value.type() == typeid(Dec)));
 
 		// ìØÇ∂å^ÇÃÇ›Çî‰ärÇ∑ÇÈÅB
 		if (target_type == Right_Value.type()) {
-			if (target_type == typeid(int) || target_type == typeid(std::reference_wrapper<int>)) {
+			if (target_type == typeid(int)) {
 				can_execute = EvaluteValues<int>(target_value, Right_Value, compares<int>[Mode]);
 			} else if (target_type == typeid(Dec)) {
 				can_execute = EvaluteValues<Dec>(target_value, Right_Value, compares<Dec>[Mode]);
 			} else if (target_type == typeid(std::wstring)) {
 				can_execute = EvaluteValues<std::wstring>(target_value, Right_Value, compares<std::wstring>[Mode]);
 			}
+		} else if (Can_Cast) {
+			std::any dec_target, dec_right;
+			dec_target = static_cast<Dec>(target_type == typeid(int) ? std::any_cast<int>(target_value) : std::any_cast<Dec>(target_value));
+			dec_right = static_cast<Dec>(Right_Value.type() == typeid(int) ? std::any_cast<int>(Right_Value) : std::any_cast<Dec>(Right_Value));
+			can_execute = EvaluteValues<Dec>(dec_target, dec_right, compares<Dec>[Mode]);
 		}
 		return can_execute;
 	}
