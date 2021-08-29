@@ -481,6 +481,17 @@ namespace karapo::event {
 				return !param_names.empty();
 			}
 
+			template<typename BaseType>
+			std::optional<BaseType> ValueFromChecker(wrapper::ValueTypeChecker<std::any> &checker) {
+				auto base = checker.AsVariable<BaseType>();
+				auto base_ref = checker.AsVariable<BaseType&>();
+				if (!base.IsBroken())
+					return base;
+				else if (!base_ref.IsBroken())
+					return base_ref;
+				return std::nullopt;
+			}
+
 			// ˆø”‚ğæ“¾‚·‚éB
 			template<const bool Get_Param_Name = false>
 			std::any GetParam(const int Index) const noexcept {
