@@ -152,10 +152,12 @@ namespace karapo::event {
 			NormalType *value;
 
 			void ResetValue() {
-				if (real_value.get().type() == typeid(T))
-					value = &std::any_cast<T&>(real_value.get());
-				else
-					MYGAME_ASSERT(0);
+				try {
+					if (real_value.get().type() == typeid(T))
+						value = &std::any_cast<T&>(real_value.get());
+					else
+						MYGAME_ASSERT(0);
+				} catch (std::bad_any_cast& e) {}
 			}
 		public:
 			explicit Variable(const std::wstring& VName) : Variable(Program::Instance().var_manager.Get(VName)) {
