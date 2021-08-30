@@ -5308,6 +5308,12 @@ namespace karapo::event {
 										command_name = std::move(stack->front()->text);
 										generator_candidate = it->second;
 									} else {
+										if (command_name.empty()) {
+											error_occurred = command_not_found_error;
+											event::Manager::Instance().error_handler.SendLocalError(error_occurred, L"コマンド名: " + stack->front()->text);
+											return;
+										}
+
 										auto param = std::move(stack->front()->text);
 										if (iswdigit(param[0]) || param[0] == L'-') {
 											param += std::wstring(L":") + innertype::Number;
@@ -5365,11 +5371,6 @@ namespace karapo::event {
 												(L"コマンド名: " + command_name).c_str()
 											);
 											break;
-									}
-								} else {
-									if (!command_name.empty()) {
-										error_occurred = command_not_found_error;
-										event::Manager::Instance().error_handler.SendLocalError(error_occurred, L"コマンド名: " + command_name);
 									}
 								}
 								command_parameters.clear();
