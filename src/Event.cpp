@@ -5555,6 +5555,8 @@ namespace karapo::event {
 					wchar_t *converted = new wchar_t[str.size()];
 					UTF8ToWide(converted, str.c_str(), str.size());
 					sentence = converted;
+					// BOMíœ
+					sentence.erase(sentence.begin());
 					delete[] plain_text;
 					delete[] converted;
 					break;
