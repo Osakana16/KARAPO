@@ -105,7 +105,7 @@ namespace {
 		TextFileReader(const char* File_Name) noexcept {
 			std::ifstream ifs(File_Name, std::ios_base::in | std::ios_base::binary);
 			if (!ifs.fail()) {
-				plain_length = GetFileSize(ifs) + 1;
+				plain_length = GetFileSize(ifs) + 2;
 				plain_text = new char[plain_length] { '\0' };
 				for (int i = 0;; i++) {
 					char ch = '\0';
@@ -124,7 +124,7 @@ namespace {
 		TextFileReader(const wchar_t* File_Name) {
 			std::wifstream ifs(File_Name, std::ios_base::in | std::ios_base::binary);
 			if (!ifs.fail()) {
-				plain_length = GetFileSize(ifs) + 1;
+				plain_length = GetFileSize(ifs) + 2;
 				plain_text = new char[plain_length] { '\0' };
 				for (int i = 0;; i++) {
 					wchar_t ch = '\0';
