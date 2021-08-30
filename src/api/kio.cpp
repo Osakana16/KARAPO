@@ -75,7 +75,7 @@ namespace {
 		}
 
 		void CheckBOM() {
-			CharBytes chbyte;
+			CharBytes chbyte{};
 			chbyte.c32 = reinterpret_cast<char32_t*>(plain_text)[0];
 			char_code = GetCodeType(chbyte);
 			switch (char_code) {
@@ -144,11 +144,10 @@ namespace {
 			return char_code;
 		}
 
-		char* GetCopied() {
+		void GetCopied(char** allocatable_text) {
 			size_t convert_length = plain_length + 1;
-			char *target_text = new char[convert_length] { 0 };
-			memmove(target_text, plain_text, plain_length);
-			return std::move(target_text);
+			*allocatable_text = new char[convert_length] { 0 };
+			memmove(*allocatable_text, plain_text, convert_length);
 		}
 
 		~TextFileReader() {
@@ -159,33 +158,32 @@ namespace {
 
 void ReadTextFile(const char* File_Name, char** allocatable_text, CharCode* const copied_code) {
 	TextFileReader txt_reader(File_Name);
-	*allocatable_text = txt_reader.GetCopied();
+	txt_reader.GetCopied(allocatable_text);
 	*copied_code = txt_reader.GetCharCode();
 }
 
 void ReadWTextFile(const wchar_t* File_Name, char** allocatable_text, CharCode* const copied_code) {
 	TextFileReader txt_reader(File_Name);
-	*allocatable_text = txt_reader.GetCopied();
+	txt_reader.GetCopied(allocatable_text);
 	*copied_code = txt_reader.GetCharCode();
 }
 
 namespace {
-	size_t ToWide(wchar_t* replaced_text, const char* Source_Text, const size_t Source_Length, const char* Locale) {
-		setlocale(LC_CTYPE, Locale);
-		return mbstowcs(replaced_text, Source_Text, Source_Length);
+	size_t ToWide(wchar_t* replaced_text, const char* Source_Text, const size_t Source_Length, const int CP_Set) {
+		return MultiByteToWideChar(CP_Set, 0, Source_Text, -1, replaced_text, Source_Length);
 	}
 }
 
 size_t CP932ToWide(wchar_t* replaced_text, const char* Source_Text, const size_t Source_Length) {
-	return ToWide(replaced_text, Source_Text, Source_Length, "ja_JP");
+	return ToWide(replaced_text, Source_Text, Source_Length, CP_ACP);
 }
 
 size_t UTF8ToWide(wchar_t* replaced_text, const char8_t* Source_Text, const size_t Source_Length) {
-	return ToWide(replaced_text, reinterpret_cast<const char*>(Source_Text), Source_Length, "ja_JP.UTF-8");
+	return ToWide(replaced_text, reinterpret_cast<const char*>(Source_Text), Source_Length, CP_UTF8);
 }
 
 size_t UTF16ToWide(wchar_t* replaced_text, const char16_t* Source_Text, const size_t Source_Length) {
-	setlocale(LC_CTYPE, "ja_JP.UTF-8");
+#if 1
 	char* convert_text = new char[Source_Length * 4]{ '\0' };
 	for (int i = 1;; i++) {
 		if (Source_Text[i] == u'\0') {
@@ -196,13 +194,15 @@ size_t UTF16ToWide(wchar_t* replaced_text, const char16_t* Source_Text, const si
 		c16rtomb(ch, Source_Text[i], nullptr);
 		strcat_s(convert_text, Source_Length * 4, ch);
 	}
-	auto len = ToWide(replaced_text, convert_text, Source_Length, "ja_JP.UTF-8");
+	auto len = ToWide(replaced_text, convert_text, Source_Length, CP_UTF8);
 	delete[] convert_text;
-	return len;
+#else
+	wcscpy(replaced_text, reinterpret_cast<const wchar_t*>(Source_Text));
+#endif
+	return Source_Length;
 }
 
 size_t UTF32ToWide(wchar_t* replaced_text, const char32_t* Source_Text, const size_t Source_Length) {
-	setlocale(LC_CTYPE, "ja_JP.UTF-8");
 	char* convert_text = new char[Source_Length * 4]{ '\0' };
 	for (int i = 0;; i++) {
 		if (Source_Text[i] == u'\0') {
@@ -213,14 +213,13 @@ size_t UTF32ToWide(wchar_t* replaced_text, const char32_t* Source_Text, const si
 		c32rtomb(ch, Source_Text[i], nullptr);
 		strcat_s(convert_text, Source_Length * 4, ch);
 	}
-	auto len = ToWide(replaced_text, convert_text, Source_Length, "ja_JP.UTF-8");
+	auto len = ToWide(replaced_text, convert_text, Source_Length, CP_UTF8);
 	delete[] convert_text;
 	return len;
 }
 
 size_t WideToCP932(char* replaced_text, const wchar_t* Source_Text, const size_t Source_Length) {
-	setlocale(LC_CTYPE, "ja_JP");
-	return wcstombs(replaced_text, Source_Text, Source_Length);
+	return WideCharToMultiByte(CP_ACP, 0, Source_Text, -1, replaced_text, Source_Length, nullptr, nullptr);
 }
 
 void Reverse16Endian(char16_t* target_text) {
